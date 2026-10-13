@@ -1,173 +1,72 @@
 package dev.slne.surf.odyssey.runtime.paper.common.menu.home.dialog
 
 import com.github.shynixn.mccoroutine.folia.launch
-import dev.slne.surf.api.paper.dialog.base
-import dev.slne.surf.api.paper.dialog.dialog
-import dev.slne.surf.api.paper.dialog.type
 import dev.slne.surf.api.paper.inventory.framework.open
 import dev.slne.surf.odyssey.core.common.home.Home
+import dev.slne.surf.odyssey.runtime.paper.common.dialog.DialogSchema
+import dev.slne.surf.odyssey.runtime.paper.common.dialog.inputDialog
 import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playNoSound
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playYesSound
 import dev.slne.surf.odyssey.runtime.paper.common.plugin
 import io.papermc.paper.dialog.Dialog
 
-private const val NAME_INPUT = "name"
-private const val DESCRIPTION_INPUT = "description"
+object HomeDialogSchema : DialogSchema() {
+    val name by string("Name") {
+        trim()
+        nonEmpty("Der Name darf nicht leer sein.")
+        max(16, "Der Name darf maximal 16 Zeichen lang sein.")
+    }
+
+    val description by string("Beschreibung") {
+        multiline(maxLines = 10, height = 300)
+        trim()
+        max(500, "Die Beschreibung darf maximal 500 Zeichen lang sein.")
+    }
+}
 
 object HomeDialog {
-    fun open(
-        home: Home? = null,
-        name: String? = home?.name,
-        description: String? = home?.description,
-    ): Dialog = dialog {
-        base {
-            title {
-                primary("Home erstellen")
+    fun open(home: Home? = null): Dialog = inputDialog(HomeDialogSchema) {
+        title { primary(if (home == null) "Home erstellen" else "Home bearbeiten") }
 
-                body {
-                    input {
-                        text(NAME_INPUT) {
-                            labelVisible(true)
-                            label {
-                                text("Name")
-                            }
+        initial(HomeDialogSchema.name, home?.name)
+        initial(HomeDialogSchema.description, home?.description)
 
-                            initial(name ?: "")
-                            maxLength(16)
-                        }
+        submit(if (home == null) "Erstellen" else "Speichern") { player, values ->
+            val name = values[HomeDialogSchema.name]
+            val description = values[HomeDialogSchema.description]
+
+            plugin.launch {
+                if (home != null) {
+                    home.edit {
+                        this.name = name
+                        this.description = description
                     }
+                } else {
+                    val location = player.location
 
-                    input {
-                        text(DESCRIPTION_INPUT) {
-                            labelVisible(true)
-                            label {
-                                text("Beschreibung")
-                            }
-
-                            initial(description ?: "")
-                            maxLength(500)
-                            multiline(10, 300)
-                        }
-                    }
+                    Home(
+                        ownerUuid = player.uniqueId,
+                        worldUuid = location.world.uid,
+                        name = name,
+                        description = description,
+                        x = location.x,
+                        y = location.y,
+                        z = location.z,
+                        yaw = location.yaw,
+                        pitch = location.pitch
+                    ).save()
                 }
-            }
 
-            type {
-                confirmation {
-                    yes {
-                        label {
-                            success("Erstellen")
-                        }
+                player.playYesSound()
 
-                        action {
-                            customPlayerClick { response, player ->
-                                val nameInput = response.getText(NAME_INPUT) ?: ""
-                                val descriptionInput = response.getText(DESCRIPTION_INPUT) ?: ""
-
-                                val normalizedName = normalizeName(nameInput)
-                                val normalizedDescription = normalizeDescription(descriptionInput)
-
-                                if (!normalizedName.state || !normalizedDescription.state) {
-                                    player.showDialog(
-                                        HomeErrorDialog.create(
-                                            name = normalizedName,
-                                            description = normalizedDescription,
-                                            home = home
-                                        )
-                                    )
-
-                                    return@customPlayerClick
-                                }
-
-                                plugin.launch {
-                                    if (home != null) {
-                                        home.edit {
-                                            this.name = normalizedName.value
-                                            this.description = normalizedDescription.value
-                                        }
-                                    } else {
-                                        val location = player.location
-
-                                        val newHome = Home(
-                                            ownerUuid = player.uniqueId,
-                                            worldUuid = location.world.uid,
-                                            name = normalizedName.value,
-                                            description = normalizedDescription.value,
-                                            x = location.x,
-                                            y = location.y,
-                                            z = location.z,
-                                            yaw = location.yaw,
-                                            pitch = location.pitch
-                                        )
-
-                                        newHome.save()
-                                    }
-
-                                    player.playYesSound()
-
-                                    // SHOW HOME VIEW
-                                }
-                            }
-                        }
-                    }
-
-                    no {
-                        label {
-                            text("Abbrechen")
-                        }
-
-                        action {
-                            playerCallback { player ->
-                                player.playNoSound()
-                                homeListView.open(player)
-                            }
-                        }
-                    }
-                }
+                // SHOW HOME VIEW
             }
         }
-    }
 
-    private fun normalizeName(name: String): HomeDialogInputState {
-        val trimmedName = name.trim()
-
-        if (trimmedName.isEmpty()) {
-            return HomeDialogInputState(
-                state = false,
-                value = trimmedName,
-                error = "Der Name darf nicht leer sein."
-            )
+        cancel("Abbrechen") { player ->
+            player.playNoSound()
+            homeListView.open(player)
         }
-
-        if (trimmedName.length > 16) {
-            return HomeDialogInputState(
-                state = false,
-                value = trimmedName,
-                error = "Der Name darf maximal 16 Zeichen lang sein."
-            )
-        }
-
-        return HomeDialogInputState(
-            state = true,
-            value = trimmedName
-        )
-    }
-
-    private fun normalizeDescription(description: String): HomeDialogInputState {
-        val trimmedDescription = description.trim()
-
-        if (trimmedDescription.length > 500) {
-            return HomeDialogInputState(
-                state = false,
-                value = trimmedDescription,
-                error = "Die Beschreibung darf maximal 500 Zeichen lang sein."
-            )
-        }
-
-        return HomeDialogInputState(
-            state = true,
-            value = trimmedDescription
-        )
     }
 }

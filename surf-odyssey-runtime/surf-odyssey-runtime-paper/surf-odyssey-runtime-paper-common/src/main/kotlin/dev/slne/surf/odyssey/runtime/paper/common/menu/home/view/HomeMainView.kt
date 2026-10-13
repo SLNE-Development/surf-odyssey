@@ -5,19 +5,16 @@ import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.dsl.onItemClick
 import dev.slne.surf.api.paper.inventory.framework.dsl.slot
+import dev.slne.surf.api.paper.inventory.framework.view.*
 import dev.slne.surf.api.paper.inventory.framework.view.container.dsl.blockRow
-import dev.slne.surf.api.paper.inventory.framework.view.containerDefaults
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconColor
 import dev.slne.surf.api.paper.inventory.framework.view.icon.ViewIconType
 import dev.slne.surf.api.paper.inventory.framework.view.icon.viewIcon
-import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
-import dev.slne.surf.api.paper.inventory.framework.view.settings
 import dev.slne.surf.api.paper.inventory.framework.view.settings.ViewRows
-import dev.slne.surf.api.paper.inventory.framework.view.surfView
+import dev.slne.surf.odyssey.runtime.paper.common.menu.home.dialog.HomeDialog
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playGeneralClickSound
-import kotlin.jvm.java
 
-val homeView = surfView("Homes") {
+val homeView: AbstractSurfView = surfView("Homes") {
     settings {
         rows(ViewRows.THREE)
         navigateBackOnOutsideClick(false)
@@ -35,7 +32,6 @@ val homeView = surfView("Homes") {
 
             onItemClick {
                 playGeneralClickSound()
-
                 openForPlayer(homeListView::class.java)
             }
         }
@@ -44,8 +40,7 @@ val homeView = surfView("Homes") {
 
             onItemClick {
                 playGeneralClickSound()
-
-                // Open Create Dialog
+                player.showDialog(HomeDialog.open())
             }
         }
     }

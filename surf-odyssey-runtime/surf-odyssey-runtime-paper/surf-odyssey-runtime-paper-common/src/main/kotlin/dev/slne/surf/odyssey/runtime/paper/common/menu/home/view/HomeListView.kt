@@ -10,6 +10,7 @@ import dev.slne.surf.api.paper.inventory.framework.dsl.onItemClick
 import dev.slne.surf.api.paper.inventory.framework.view.layoutTarget
 import dev.slne.surf.api.paper.inventory.framework.view.onFirstRender
 import dev.slne.surf.api.paper.inventory.framework.view.paginatedSurfView
+import dev.slne.surf.api.paper.inventory.framework.view.pagination.AbstractPaginatedSurfView
 import dev.slne.surf.api.paper.inventory.framework.view.pagination.pagination
 import dev.slne.surf.api.paper.inventory.framework.view.settings
 import dev.slne.surf.api.paper.inventory.framework.view.settings.PaginationViewRows
@@ -21,7 +22,7 @@ import org.bukkit.Registry
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
 
-val homeListView = paginatedSurfView("Meine Homes") {
+val homeListView: AbstractPaginatedSurfView = paginatedSurfView("Meine Homes") {
     settings {
         paginationViewRows(PaginationViewRows.THREE)
     }

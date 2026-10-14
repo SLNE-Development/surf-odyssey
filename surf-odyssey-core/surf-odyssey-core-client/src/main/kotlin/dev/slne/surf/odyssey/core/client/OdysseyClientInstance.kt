@@ -12,7 +12,7 @@ abstract class OdysseyClientInstance {
     val rabbitApi = ClientRabbitMQApi.create("surf-odyssey", dataPath)
 
     suspend fun onLoad() {
-
+        rabbitApi.freezeAndConnect()
     }
 
     suspend fun onEnable() {
@@ -20,7 +20,7 @@ abstract class OdysseyClientInstance {
     }
 
     suspend fun onDisable() {
-
+        rabbitApi.disconnect()
     }
 
     companion object {

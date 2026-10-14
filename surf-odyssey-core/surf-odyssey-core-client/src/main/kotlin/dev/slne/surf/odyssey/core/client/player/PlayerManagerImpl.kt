@@ -61,4 +61,8 @@ class PlayerManagerImpl : PlayerManager {
             }
         }
     }
+
+    override fun uncachePlayer(uuid: UUID) {
+        playerCache.invalidate(uuid)
+    }
 }

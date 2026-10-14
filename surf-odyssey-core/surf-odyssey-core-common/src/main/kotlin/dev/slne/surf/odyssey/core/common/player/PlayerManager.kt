@@ -28,6 +28,9 @@ interface PlayerManager {
         cache: Boolean = false
     ): OdysseyPlayer?
 
+    /** Removes the player with [uuid] from the local cache, if present. */
+    fun uncachePlayer(uuid: UUID)
+
     companion object : PlayerManager by manager {
         val INSTANCE get() = manager
     }

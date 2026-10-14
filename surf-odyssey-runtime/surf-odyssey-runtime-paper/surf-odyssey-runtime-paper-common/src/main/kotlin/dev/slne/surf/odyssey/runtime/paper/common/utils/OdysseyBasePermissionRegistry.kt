@@ -9,9 +9,19 @@ object OdysseyBasePermissionRegistry : PermissionRegistry() {
     private const val HOME_BASE = "$PREFIX.home"
     private const val HOME_COMMAND_BASE = "$COMMAND_PREFIX.home"
 
+    private const val SKILL_BASE = "$PREFIX.skill"
+    private const val SKILL_COMMAND_BASE = "$COMMAND_PREFIX.skill"
+
+    // Home
     val HOME_COMMAND = create("$HOME_COMMAND_BASE.use")
     val HOME_CREATE = create("$HOME_BASE.create")
     val HOME_DELETE = create("$HOME_BASE.delete")
     val HOME_LIST = create("$HOME_BASE.list")
     val HOME_EDIT = create("$HOME_BASE.edit")
+
+    //Skills
+    val SKILL_COMMAND = create("$SKILL_COMMAND_BASE.use")
+
+
+
 }

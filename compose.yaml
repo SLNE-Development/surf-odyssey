@@ -159,10 +159,13 @@ services:
       CFG_SURF_SERVER_NAME: home
       CFG_SURF_SERVER_DISPLAY_NAME: Home
       CFG_SURF_SERVER_CATEGORY: home
+      # docker/paper/home/plugins holds the configs only the home server needs, e.g. surf-polar-paper
+      COPY_PLUGINS_SRC: /plugins,/plugins-home
     volumes:
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run:/data
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/home/plugins:/plugins-home:ro
 
 volumes:
   postgres-data:

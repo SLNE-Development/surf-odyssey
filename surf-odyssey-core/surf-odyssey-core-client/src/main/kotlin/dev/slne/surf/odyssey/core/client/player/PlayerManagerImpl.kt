@@ -24,6 +24,8 @@ class PlayerManagerImpl : PlayerManager {
     override val players: @UnmodifiableView ObjectSet<OdysseyPlayer>
         get() = playerCache.asMap().values.toObjectSet()
 
+    override fun cachedPlayer(uuid: UUID): OdysseyPlayer? = playerCache.getIfPresent(uuid)
+
     override suspend fun findOrCreatePlayer(
         uuid: UUID,
         cache: Boolean

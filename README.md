@@ -1,41 +1,79 @@
 # surf-odyssey
 
-## Development
+## Development stack
 
-Requires Java 25 and Docker.
+The development stack runs the whole network locally in Docker:
+
+| Service             | What it is                                                                                 |
+|---------------------|--------------------------------------------------------------------------------------------|
+| `proxy`             | Velocity proxy, the only server players connect to                                         |
+| `hub`, `home`       | Paper servers behind the proxy, running the odyssey hub and home plugins                   |
+| `odyssey`           | This repository's microservice, built from its Dockerfile                                  |
+| `core`              | surf-core microservice, pulled from `ghcr.io/slne-development/surf-core-microservice`      |
+| `polar-paper`       | surf-polar-paper microservice, pulled from `ghcr.io/slne-development/surf-polar-paper-microservice` |
+| `postgres`          | One database (`surf`) for everything, with a schema per microservice and for LuckPerms     |
+| `rabbitmq`, `valkey` | Messaging between the plugins and the microservices                                      |
+
+### Requirements
+
+- Java 25
+- Docker with Docker Compose. The ghcr images are public, no login needed.
+- Free ports 25565, 5432, 5672, 6379 and 15672. Stop other development stacks first, or change the ports in `.env`.
+
+### First start
+
+1. **Put the server plugins into the run folders.** The stack deploys the odyssey plugins itself, everything else has to
+   be put into the `plugins` folders below once. The folders are gitignored.
+
+   | Server  | Plugins folder                                                                                 |
+   |---------|------------------------------------------------------------------------------------------------|
+   | `proxy` | `surf-odyssey-runtime/surf-odyssey-runtime-velocity/run/plugins`                               |
+   | `hub`   | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run/plugins`   |
+   | `home`  | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run/plugins`  |
+
+   | Plugin                         | proxy | hub | home | Download                                                                      |
+   |--------------------------------|:-----:|:---:|:----:|-------------------------------------------------------------------------------|
+   | surf-api                       |   x   |  x  |  x   | `surf-api-velocity-server` / `surf-api-paper-server` from surf-api            |
+   | surf-rabbitmq                  |   x   |  x  |  x   | `surf-rabbitmq-velocity` / `surf-rabbitmq-paper` from surf-rabbitmq            |
+   | surf-redis                     |   x   |  x  |  x   | [releases](https://github.com/SLNE-Development/surf-redis/releases)           |
+   | surf-core                      |   x   |  x  |  x   | [releases](https://github.com/SLNE-Development/surf-core/releases)            |
+   | CommandAPI                     |   x   |  x  |  x   | [releases](https://github.com/CommandAPI/CommandAPI/releases), Velocity or Paper jar |
+   | LuckPerms                      |   x   |  x  |  x   | [luckperms.net](https://luckperms.net/download), Velocity or Bukkit jar        |
+   | packetevents                   |   x   |  x  |  x   | [modrinth](https://modrinth.com/plugin/packetevents), Velocity or Spigot jar   |
+   | polarpaper                     |       |     |  x   | [releases](https://github.com/MinehubMC/polarpaper/releases)                  |
+   | surf-polar-paper-runtime-paper |       |     |  x   | [releases](https://github.com/SLNE-Development/surf-polar-paper/releases)     |
+
+2. **Start the stack.**
+
+   ```shell
+   ./gradlew startDevelopmentStack
+   ```
+
+   This builds the plugins and copies them into the run folders, checks that every plugin above is there (and names the
+   missing ones), builds the odyssey microservice image, pulls the other microservices and starts everything. The
+   first start takes a few minutes; Paper and Velocity are downloaded into the run folders.
+
+3. **Join** `localhost:25565`. You land on the hub.
+
+4. **Give yourself permissions.** LuckPerms of the proxy and both servers share their storage, so one command from
+   any console applies everywhere:
+
+   ```shell
+   docker compose exec -u 1000 hub mc-send-to-console lp user <name> permission set '*' true
+   ```
+
+### Everyday use
 
 ```shell
-./gradlew build                    # build and run all tests
-./gradlew startDevelopmentStack    # start the infrastructure, the microservices, the proxy and the hub and home servers
-./gradlew deployDevelopmentPlugin  # rebuild the plugins and restart the running servers with them
-./gradlew stopDevelopmentStack     # stop the stack
-./gradlew cleanDevelopmentStack    # stop the stack and delete its volumes
+./gradlew startDevelopmentStack    # (re)build and start everything, also picks up changes to compose.yaml
+./gradlew deployDevelopmentPlugin  # rebuild the odyssey plugins and restart the running servers with them
+./gradlew stopDevelopmentStack     # stop the stack, data is kept
+./gradlew cleanDevelopmentStack    # stop the stack and delete the database, RabbitMQ and Valkey data
 ```
 
-The stack is defined by `compose.yaml` and the `developmentStack` block in `build.gradle.kts`:
-
-- `server(...)` entries name a compose service of `compose.yaml` and the plugin project deployed into its `run/plugins`
-  folder. The other plugins a server needs have to be put there manually; `startDevelopmentStack` names any that are
-  missing.
-- `microservice(...)` entries are added to the stack through a generated compose file. A microservice either runs a
-  published `image`, pulled on every start, or is built from a `dockerfile` of a local Gradle build, like this
-  repository's own microservice. All microservices share one PostgreSQL database, each with its own `schema`, and
-  `redis = true` connects one to Valkey.
-
-| Service      | Folder                                                                     | Plugins                                                                          |
-|--------------|----------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| `proxy`      | `surf-odyssey-runtime/surf-odyssey-runtime-velocity/run`                   | surf-api-velocity, surf-rabbitmq-velocity, surf-redis-velocity, surf-core-velocity, CommandAPI, LuckPerms, packetevents |
-| `hub`        | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run`  | surf-api-paper-server, surf-rabbitmq-paper, surf-redis-paper, surf-core-paper, CommandAPI, LuckPerms, packetevents |
-| `home`       | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run` | as `hub`                                                                         |
-
-LuckPerms on the proxy and both servers is configured through `LUCKPERMS_*` variables in `compose.yaml` and shares
-its storage in the `luckperms` schema, so permissions set on one apply everywhere, e.g. from a server console:
-`docker compose exec -u 1000 hub mc-send-to-console lp user <name> permission set '*' true`.
-
-Players join through the proxy, which forwards them to the servers with Velocity modern forwarding. `docker/velocity`,
-`docker/paper/config` and `docker/paper/plugins` (e.g. the surf-core server config) are synced into the proxy and
-server folders on every start. Copy `.env.example` to `.env`
-to change ports, credentials and the forwarding secret.
+Consoles are attached with `docker compose attach proxy` (or `hub`, `home`, `odyssey`, `core`, `polar-paper`) and
+detached with Ctrl+P, Ctrl+Q. Logs: `docker compose logs -f <service>`. For the microservices, run these through the
+Gradle tasks or set `COMPOSE_FILE` as described below, since they live in a generated compose file.
 
 | Service     | Address                |
 |-------------|------------------------|
@@ -44,4 +82,26 @@ to change ports, credentials and the forwarding secret.
 | PostgreSQL  | `localhost:5432`       |
 | Valkey      | `localhost:6379`       |
 
-Consoles can be attached with `docker compose attach proxy` (or `hub`, `home`), detach with Ctrl+P, Ctrl+Q.
+Users and passwords are `surf` / `surf`. Copy `.env.example` to `.env` to change ports, credentials, memory and the
+Velocity forwarding secret.
+
+### How it is put together
+
+- `compose.yaml` holds the infrastructure, the proxy and the servers. The servers run from their `run` folders.
+- `build.gradle.kts` configures the `developmentStack` extension of `build-logic`:
+    - `server(...)` names a compose service, the odyssey plugin project deployed to it and the plugins it needs.
+    - `microservice(...)` adds a microservice. It either runs a published `image`, pulled on every start, or is built
+      from a `dockerfile` of a local Gradle build. `schema` gives it a schema in the shared database, `redis = true`
+      connects it to Valkey. The microservices are written to `build/development-stack/microservices.compose.yaml`,
+      which every Gradle task passes to compose next to `compose.yaml`. To use plain `docker compose` with them, set
+      `COMPOSE_FILE=compose.yaml:build/development-stack/microservices.compose.yaml` (`;` instead of `:` on Windows).
+    - `schemas` lists further schemas to create, e.g. `luckperms`.
+- `docker/` holds config files synced into the run folders on every start, with `${CFG_...}` placeholders filled from
+  the container environment:
+    - `docker/velocity`: `velocity.toml`, the forwarding secret and the surf-core config of the proxy
+    - `docker/paper/config`: `paper-global.yml` of hub and home, enabling Velocity forwarding
+    - `docker/paper/plugins`: plugin configs of hub and home, e.g. the surf-core server name per server
+    - `docker/paper/home/plugins`: plugin configs of home only, e.g. surf-polar-paper with DATABASE storage
+
+  Change these files instead of the copies in the run folders; a copy is only replaced when its source is newer.
+- LuckPerms is configured through the `LUCKPERMS_*` variables in `compose.yaml`.

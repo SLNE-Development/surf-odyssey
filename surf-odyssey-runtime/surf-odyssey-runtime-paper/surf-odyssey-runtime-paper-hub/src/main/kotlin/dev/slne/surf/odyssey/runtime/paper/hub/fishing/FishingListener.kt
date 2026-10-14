@@ -2,10 +2,14 @@ package dev.slne.surf.odyssey.runtime.paper.hub.fishing
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent
 import com.github.benmanes.caffeine.cache.Caffeine
+import dev.slne.surf.api.core.messages.adventure.playSound
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.core.rarity.Rarity
 import dev.slne.surf.api.paper.builder.buildItem
-import dev.slne.surf.api.paper.extensions.server
+import dev.slne.surf.odyssey.runtime.paper.hub.fishing.fish.Fishes
 import dev.slne.surf.odyssey.runtime.paper.hub.plugin
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.entity.*
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -45,7 +49,39 @@ object FishingListener : Listener {
             handleThrown(event)
         }
 
-        server.sendPlainMessage(event.state.name)
+        if (event.state == PlayerFishEvent.State.CAUGHT_FISH) {
+            handleCaught(event)
+        }
+    }
+
+    private fun handleCaught(event: PlayerFishEvent) {
+        event.caught?.remove()
+
+        val player = event.player
+        val hook = event.hook
+
+        val randomFish = Fishes.randomFish(hook.location)
+        val item = randomFish.buildItemStack(Rarity.entries.random())
+
+        val toDrop = player.inventory.addItem(item)
+        if (toDrop.isNotEmpty()) {
+            toDrop.forEach { (_, stack) ->
+                hook.world.dropItemNaturally(hook.location, stack)
+            }
+        } else {
+            player.sendText {
+                appendInfoPrefix()
+
+                info("Du hast ")
+                append(randomFish)
+                info(" gefangen!")
+            }
+
+            player.playSound(true) {
+                type(Sound.ENTITY_PLAYER_LEVELUP)
+                volume(.5f)
+            }
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

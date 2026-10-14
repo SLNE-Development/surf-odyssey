@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.common
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.odyssey.core.client.OdysseyClientInstance
 import dev.slne.surf.odyssey.runtime.paper.common.commands.home.homeCommand
+import dev.slne.surf.odyssey.runtime.paper.common.menu.registerViews
 
 abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
     init {
@@ -12,6 +13,8 @@ abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
     abstract val serverType: OdysseyPaperServerType
 
     final override suspend fun onLoadAsync() {
+        registerViews()
+
         OdysseyClientInstance.INSTANCE.onLoad()
 
         onLoaded()

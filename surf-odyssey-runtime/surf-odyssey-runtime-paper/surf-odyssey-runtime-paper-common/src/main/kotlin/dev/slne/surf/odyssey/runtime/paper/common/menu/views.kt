@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.common.menu
 
 import dev.slne.surf.api.paper.inventory.framework.register
+import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeDetailView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeView
 
@@ -8,4 +9,5 @@ import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeView
 internal fun registerViews() {
     homeView.register()
     homeListView.register()
+    homeDetailView.register()
 }

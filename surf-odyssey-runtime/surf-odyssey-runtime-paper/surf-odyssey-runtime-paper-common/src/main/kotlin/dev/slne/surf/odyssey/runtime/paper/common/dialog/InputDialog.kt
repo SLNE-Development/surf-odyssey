@@ -41,6 +41,7 @@ class InputDialogBuilder<S : DialogSchema> internal constructor(private val sche
     private val initialValues = mutableMapOf<String, Any>()
     private var submit: Button<(Player, SchemaValues) -> Unit>? = null
     private var cancel: Button<(Player) -> Unit>? = null
+    private var validator: ((Player, SchemaValues) -> Map<DialogField<*, *>, String>)? = null
 
     fun title(title: Component) {
         this.title = title
@@ -62,6 +63,14 @@ class InputDialogBuilder<S : DialogSchema> internal constructor(private val sche
     fun <T : Any> initial(field: DialogField<*, T>, value: T?) {
         require(field in schema.fields) { "Field '${field.key}' is not part of this schema" }
         if (value == null) initialValues -= field.key else initialValues[field.key] = field.encode(value)
+    }
+
+    /**
+     * Checks that need more than the field's own rules, e.g. comparing against existing data. Runs after the schema
+     * accepted the input; every returned field is shown with its message and the dialog reopens instead of submitting.
+     */
+    fun validate(validator: (player: Player, values: SchemaValues) -> Map<DialogField<*, *>, String>) {
+        this.validator = validator
     }
 
     fun submit(label: Component, onSubmit: (player: Player, values: SchemaValues) -> Unit) {
@@ -130,7 +139,15 @@ class InputDialogBuilder<S : DialogSchema> internal constructor(private val sche
         action {
             customPlayerClick { response, player ->
                 when (val result = schema.parse(response)) {
-                    is SchemaResult.Success -> submit.handler(player, result.values)
+                    is SchemaResult.Success -> {
+                        val errors = validator?.invoke(player, result.values).orEmpty()
+
+                        if (errors.isEmpty()) {
+                            submit.handler(player, result.values)
+                        } else {
+                            player.showDialog(build(result.raw, errors.mapKeys { it.key.key }))
+                        }
+                    }
                     is SchemaResult.Failure -> player.showDialog(build(result.raw, result.errors))
                 }
             }

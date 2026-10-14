@@ -6,11 +6,7 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.extensions.server
 import dev.slne.surf.odyssey.runtime.paper.hub.plugin
 import org.bukkit.Material
-import org.bukkit.entity.Entity
-import org.bukkit.entity.EntityType
-import org.bukkit.entity.FishHook
-import org.bukkit.entity.ItemDisplay
-import org.bukkit.entity.Player
+import org.bukkit.entity.*
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -37,9 +33,6 @@ object FishingListener : Listener {
     private val fishingRodCache = Caffeine.newBuilder()
         .maximumSize(10_000)
         .removalListener<UUID, Bobber> { uuid, bobber, cause ->
-            server.sendPlainMessage("Fishing rod for player $uuid was removed from cache due to $cause")
-
-            // Removed independently, so a hook that is already gone cannot keep the display alive
             bobber?.bobberEntity?.removeOnOwnThread()
             bobber?.itemDisplayEntity?.removeOnOwnThread()
         }

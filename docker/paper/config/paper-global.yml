@@ -1,0 +1,7 @@
+# Synced into the config folder of the hub and home dev servers on start, with CFG_ placeholders filled from the
+# container environment. Paper adds every other setting with its default.
+proxies:
+  velocity:
+    enabled: true
+    online-mode: true
+    secret: ${CFG_VELOCITY_SECRET}

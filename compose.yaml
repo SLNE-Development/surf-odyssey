@@ -1,0 +1,170 @@
+# Local development stack: PostgreSQL, RabbitMQ, Valkey, a Velocity proxy and the hub and home Paper servers, which run
+# from the run folders of their runtime modules. The microservices of the developmentStack extension in
+# build.gradle.kts are added through a compose file generated into build/development-stack.
+#
+# Use the Gradle tasks in the "developmentStack" group to build, start, stop and clean it.
+# Every value below can be overridden in a .env file next to this one (see .env.example).
+
+name: surf-odyssey
+
+x-rabbitmq-environment: &rabbitmq-environment
+  SURF_RABBITMQ_HOST: rabbitmq
+  SURF_RABBITMQ_PORT: 5672
+  SURF_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-surf}
+  SURF_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-surf}
+  SURF_RABBITMQ_VHOST: /
+
+x-valkey-environment: &valkey-environment
+  SURF_REDIS_HOST: valkey
+  SURF_REDIS_PORT: 6379
+  SURF_REDIS_PASSWORD: ${VALKEY_PASSWORD:-surf}
+
+# Every LuckPerms shares its storage in the luckperms schema, LUCKPERMS_SERVER names the server for contexts
+x-luckperms-environment: &luckperms-environment
+  LUCKPERMS_STORAGE_METHOD: postgresql
+  LUCKPERMS_DATA_ADDRESS: postgres:5432
+  LUCKPERMS_DATA_DATABASE: ${POSTGRES_DATABASE:-surf}
+  LUCKPERMS_DATA_USERNAME: ${POSTGRES_USERNAME:-surf}
+  LUCKPERMS_DATA_PASSWORD: ${POSTGRES_PASSWORD:-surf}
+  LUCKPERMS_DATA_POOL_SETTINGS_PROPERTIES: currentSchema=luckperms
+
+# Docker's default seccomp profile blocks io_uring, which Netty would otherwise pick for the RabbitMQ client.
+# surf-rabbitmq and surf-redis shade Netty and read relocated property names.
+x-java-tool-options: &java-tool-options >-
+  -Dio.netty.transport.noNative=true
+  -Ddev.slne.surf.rabbitmq.shaded.io.netty.transport.noNative=true
+  -Ddev.slne.surf.redis.shaded.io.netty.transport.noNative=true
+
+x-paper: &paper
+  image: itzg/minecraft-server:2026.9.2-java25
+  environment: &paper-environment
+    <<: [ *rabbitmq-environment, *valkey-environment, *luckperms-environment ]
+    JVM_OPTS: *java-tool-options
+    EULA: "TRUE"
+    TYPE: PAPER
+    VERSION: "26.3"
+    MEMORY: ${PAPER_MEMORY:-2G}
+    # Players are authenticated by the proxy, which forwards them with the secret in paper-global.yml
+    ONLINE_MODE: "false"
+    REPLACE_ENV_DURING_SYNC: "true"
+    CFG_VELOCITY_SECRET: ${VELOCITY_FORWARDING_SECRET:-surf-odyssey-development}
+    # Lets the console be attached with "docker compose attach" (detach with Ctrl+P, Ctrl+Q)
+    CREATE_CONSOLE_IN_PIPE: "true"
+  stdin_open: true
+  tty: true
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+    valkey:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    # One database for all microservices, each one uses its own schema
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE:-surf}
+      POSTGRES_USER: ${POSTGRES_USERNAME:-surf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-surf}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4.1.4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-surf}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-surf}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  valkey:
+    image: valkey/valkey:9.0.6-alpine
+    command: [ "valkey-server", "--requirepass", "${VALKEY_PASSWORD:-surf}" ]
+    ports:
+      - "${VALKEY_PORT:-6379}:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "valkey-cli -a \"$${VALKEY_PASSWORD:-surf}\" --no-auth-warning ping | grep -q PONG" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-surf}
+
+  proxy:
+    image: itzg/mc-proxy:java25-2026.9.0
+    environment:
+      <<: [ *rabbitmq-environment, *valkey-environment, *luckperms-environment ]
+      LUCKPERMS_SERVER: proxy
+      JVM_OPTS: *java-tool-options
+      TYPE: VELOCITY
+      MEMORY: ${PROXY_MEMORY:-512M}
+      # Fills forwarding.secret, which has to match the secret in paper-global.yml
+      CFG_VELOCITY_SECRET: ${VELOCITY_FORWARDING_SECRET:-surf-odyssey-development}
+      REPLACE_ENV_SUFFIXES: "toml,secret,yml"
+    ports:
+      - "${PROXY_PORT:-25565}:25565"
+    volumes:
+      # Proxy files and plugins live in the run folder, docker/velocity is synced into it on start
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-velocity/run:/server
+      - ./docker/velocity:/config:ro
+    stdin_open: true
+    tty: true
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      hub:
+        condition: service_started
+      home:
+        condition: service_started
+
+  hub:
+    <<: *paper
+    environment:
+      <<: *paper-environment
+      LUCKPERMS_SERVER: hub
+      CFG_SURF_SERVER_NAME: hub
+      CFG_SURF_SERVER_DISPLAY_NAME: Hub
+      CFG_SURF_SERVER_CATEGORY: hub
+    volumes:
+      # Server files, plugins and plugin configs all live in the run folder. docker/paper/config and
+      # docker/paper/plugins are synced into its config and plugins folders on start.
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run:/data
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+
+  home:
+    <<: *paper
+    environment:
+      <<: *paper-environment
+      LUCKPERMS_SERVER: home
+      CFG_SURF_SERVER_NAME: home
+      CFG_SURF_SERVER_DISPLAY_NAME: Home
+      CFG_SURF_SERVER_CATEGORY: home
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run:/data
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  valkey-data:

@@ -1,0 +1,4 @@
+# Synced into the plugins folder of the dev proxy on start.
+server-name: proxy
+server-display-name: Proxy
+server-category: proxy

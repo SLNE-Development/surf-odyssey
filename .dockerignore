@@ -1,0 +1,10 @@
+.git
+.github
+.claude
+.idea
+.env
+**/.gradle
+**/.kotlin
+**/build
+**/run
+**/out

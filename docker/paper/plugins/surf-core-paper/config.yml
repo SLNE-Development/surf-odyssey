@@ -1,0 +1,5 @@
+# Synced into the plugins folder of the hub and home dev servers on start, the CFG_ placeholders are set per server
+# in compose.yaml. surf-core-paper refuses to start while any of these is unknown.
+server-name: ${CFG_SURF_SERVER_NAME}
+server-display-name: ${CFG_SURF_SERVER_DISPLAY_NAME}
+server-category: ${CFG_SURF_SERVER_CATEGORY}

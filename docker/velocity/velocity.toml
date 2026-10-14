@@ -1,0 +1,13 @@
+# Synced into the dev proxy folder on start. Velocity uses its defaults for every setting missing here.
+config-version = "2.7"
+bind = "0.0.0.0:25565"
+motd = "<aqua>surf-odyssey development"
+online-mode = true
+player-info-forwarding-mode = "modern"
+
+[servers]
+hub = "hub:25565"
+home = "home:25565"
+try = ["hub"]
+
+[forced-hosts]

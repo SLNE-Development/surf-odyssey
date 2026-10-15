@@ -3,7 +3,9 @@ package dev.slne.surf.odyssey.runtime.paper.hub
 import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
-import dev.slne.surf.odyssey.runtime.paper.hub.fishing.FishingListener
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.FishingListener
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.mining.MiningListener
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.mobhunting.MobHuntingListener
 import org.bukkit.plugin.java.JavaPlugin
 
 class HubPaperMain : OdysseyPaperMain() {
@@ -13,6 +15,8 @@ class HubPaperMain : OdysseyPaperMain() {
 
     override suspend fun onEnabled() {
         FishingListener.register()
+        MiningListener.register()
+        MobHuntingListener.register()
     }
 
     override suspend fun onDisabled() {

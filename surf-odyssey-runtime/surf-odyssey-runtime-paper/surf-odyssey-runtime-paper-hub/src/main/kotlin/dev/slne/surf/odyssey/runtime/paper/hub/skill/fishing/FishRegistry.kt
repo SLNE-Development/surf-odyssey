@@ -1,4 +1,4 @@
-package dev.slne.surf.odyssey.runtime.paper.hub.fishing
+package dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing
 
 import dev.slne.surf.api.core.util.freeze
 import dev.slne.surf.api.core.util.mutableObjectSetOf

@@ -1,10 +1,10 @@
-package dev.slne.surf.odyssey.runtime.paper.hub.fishing.fish
+package dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.fish
 
 import dev.slne.surf.api.core.messages.adventure.key
 import dev.slne.surf.api.core.util.random
 import dev.slne.surf.odyssey.core.common.utils.odysseyKey
 import dev.slne.surf.odyssey.runtime.paper.common.utils.WeatherType
-import dev.slne.surf.odyssey.runtime.paper.hub.fishing.FishableCondition
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.FishableCondition
 import org.bukkit.Location
 
 /**
@@ -33,8 +33,7 @@ enum class Fishes(
     }, {
 
     }, key("minecraft:cod")) {
-        // A thunderstorm is rain too, but is reported as THUNDER
-        weatherCondition = FishableCondition.WEATHER_SET(setOf(WeatherType.RAIN, WeatherType.THUNDER), null)
+        weatherCondition = FishableCondition.WEATHER(WeatherType.RAIN, null)
     }, weight = 20);
 
     companion object {

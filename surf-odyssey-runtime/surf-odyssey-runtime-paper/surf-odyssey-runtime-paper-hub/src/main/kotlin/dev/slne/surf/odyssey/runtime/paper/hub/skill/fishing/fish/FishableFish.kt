@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package dev.slne.surf.odyssey.runtime.paper.hub.fishing.fish
+package dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.fish
 
 import dev.slne.surf.api.core.messages.builder.SurfComponentBuilder
 import dev.slne.surf.api.core.rarity.Rarity
@@ -8,7 +8,7 @@ import dev.slne.surf.api.paper.builder.LoreBuilder
 import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
-import dev.slne.surf.odyssey.runtime.paper.hub.fishing.FishableCondition
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.FishableCondition
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.key.Key
 import org.bukkit.inventory.ItemStack

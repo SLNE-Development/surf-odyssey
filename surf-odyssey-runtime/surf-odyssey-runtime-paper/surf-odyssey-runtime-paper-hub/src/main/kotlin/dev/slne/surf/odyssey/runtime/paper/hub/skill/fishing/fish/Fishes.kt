@@ -33,8 +33,7 @@ enum class Fishes(
     }, {
 
     }, key("minecraft:cod")) {
-        // A thunderstorm is rain too, but is reported as THUNDER
-        weatherCondition = FishableCondition.WEATHER_SET(setOf(WeatherType.RAIN, WeatherType.THUNDER), null)
+        weatherCondition = FishableCondition.WEATHER(WeatherType.RAIN, null)
     }, weight = 20);
 
     companion object {

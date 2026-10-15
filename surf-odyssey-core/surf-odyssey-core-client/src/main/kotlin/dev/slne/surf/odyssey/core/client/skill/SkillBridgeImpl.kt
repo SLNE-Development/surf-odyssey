@@ -12,7 +12,6 @@ private val proxy by lazy {
     OdysseyClientInstance.INSTANCE.rabbitApi.createRpcService<SkillService>()
 }
 
-/** Forwards the skill calls of the servers to the [SkillService] of the microservice over RabbitMQ. */
 @AutoService(SkillBridge::class)
 class SkillBridgeImpl : SkillBridge {
     override suspend fun loadSkills(playerUuid: UUID): List<SkillProgress> {

@@ -1,4 +1,4 @@
-package dev.slne.surf.odyssey.runtime.paper.hub.fishing
+package dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing
 
 import dev.slne.surf.odyssey.runtime.paper.common.utils.WeatherType
 import it.unimi.dsi.fastutil.objects.ObjectSet

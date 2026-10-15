@@ -37,8 +37,11 @@ class OdysseyPlayer(
             return false
         }
 
-        val capped = amount.coerceAtMost(SkillCurve.MAX_XP)
-        skillXp.compute(skill) { _, old -> SkillCurve.clamp((old ?: 0L) + capped) }
+        // Experience keeps growing past the max level, only the Long range limits it
+        skillXp.compute(skill) { _, old ->
+            val current = old ?: 0L
+            if (current > Long.MAX_VALUE - amount) Long.MAX_VALUE else current + amount
+        }
         return true
     }
 

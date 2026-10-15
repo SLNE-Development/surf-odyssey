@@ -12,10 +12,6 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 
-/**
- * Decides when the experience of players is saved: [debounce] after the last gain, every [interval] for players
- * who never pause, and on demand when a player quits. A failed save keeps the skill dirty so the next flush retries it.
- */
 class SkillSaveScheduler(
     private val scope: CoroutineScope,
     private val debounce: Duration,
@@ -28,7 +24,6 @@ class SkillSaveScheduler(
     private val debounceJobs = ConcurrentHashMap<UUID, Job>()
     private var intervalJob: Job? = null
 
-    /** Starts the periodic flush of all dirty players. */
     fun start() {
         intervalJob = scope.launch {
             while (isActive) {
@@ -38,14 +33,12 @@ class SkillSaveScheduler(
         }
     }
 
-    /** Stops the periodic flush. Pending data is only saved by an explicit [flushAll]. */
     fun stop() {
         intervalJob?.cancel()
         debounceJobs.values.forEach { it.cancel() }
         debounceJobs.clear()
     }
 
-    /** Remembers that [skill] of [uuid] changed and restarts the debounce of that player. */
     fun markDirty(uuid: UUID, skill: SkillType) {
         dirty.computeIfAbsent(uuid) { ConcurrentHashMap.newKeySet() }.add(skill)
 
@@ -58,13 +51,11 @@ class SkillSaveScheduler(
         }
     }
 
-    /** Takes the dirty skills of [uuid] and captures their current experience, so it survives the player leaving. */
     fun snapshot(uuid: UUID): Map<SkillType, Long> {
         val skills = dirty.remove(uuid) ?: return emptyMap()
         return skills.associateWith { xpOf(uuid, it) }
     }
 
-    /** Saves a [snapshot]. Runs to the end even if the calling coroutine is cancelled. */
     suspend fun persist(uuid: UUID, snapshot: Map<SkillType, Long>) {
         withContext(NonCancellable) {
             snapshot.forEach { (skill, xp) ->
@@ -78,17 +69,14 @@ class SkillSaveScheduler(
         }
     }
 
-    /** Saves the dirty skills of [uuid] now. */
     suspend fun flush(uuid: UUID) {
         persist(uuid, snapshot(uuid))
     }
 
-    /** Saves the dirty skills of every player now. */
     suspend fun flushAll() {
         dirty.keys.toList().forEach { flush(it) }
     }
 
-    /** Drops the debounce of a player who left. */
     fun forget(uuid: UUID) {
         debounceJobs.remove(uuid)?.cancel()
     }

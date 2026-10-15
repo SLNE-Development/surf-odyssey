@@ -1,4 +1,4 @@
-package dev.slne.surf.odyssey.runtime.paper.hub.fishing
+package dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -6,8 +6,10 @@ import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.core.rarity.Rarity
 import dev.slne.surf.api.paper.builder.buildItem
-import dev.slne.surf.odyssey.runtime.paper.hub.fishing.fish.Fishes
+import dev.slne.surf.odyssey.core.common.skill.SkillType
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.fish.Fishes
 import dev.slne.surf.odyssey.runtime.paper.hub.plugin
+import dev.slne.surf.odyssey.runtime.paper.common.skill.awardSkillXp
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.*
@@ -61,7 +63,8 @@ object FishingListener : Listener {
         val hook = event.hook
 
         val randomFish = Fishes.randomFish(hook.location)
-        val item = randomFish.buildItemStack(Rarity.entries.random())
+        val rarity = Rarity.entries.random()
+        val item = randomFish.buildItemStack(rarity)
 
         val toDrop = player.inventory.addItem(item)
         if (toDrop.isNotEmpty()) {
@@ -82,6 +85,8 @@ object FishingListener : Listener {
                 volume(.5f)
             }
         }
+
+        player.awardSkillXp(SkillType.FISHING, FishingXp.forRarity(rarity))
     }
 
     @EventHandler(ignoreCancelled = true)

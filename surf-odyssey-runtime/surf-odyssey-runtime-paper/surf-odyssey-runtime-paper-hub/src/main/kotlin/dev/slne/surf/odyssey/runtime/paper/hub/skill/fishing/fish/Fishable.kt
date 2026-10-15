@@ -1,9 +1,9 @@
-package dev.slne.surf.odyssey.runtime.paper.hub.fishing.fish
+package dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.fish
 
 import dev.slne.surf.api.core.messages.builder.SurfComponentBuilder
 import dev.slne.surf.api.core.rarity.Rarity
 import dev.slne.surf.api.paper.builder.LoreBuilder
-import dev.slne.surf.odyssey.runtime.paper.hub.fishing.FishableCondition
+import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.FishableCondition
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.ComponentLike
 import org.bukkit.Location

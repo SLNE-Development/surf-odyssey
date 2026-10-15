@@ -44,13 +44,25 @@ class OdysseyPlayerSkillsTest {
     }
 
     @Test
-    fun `xp is capped at the max xp and never overflows`() {
+    fun `xp keeps growing past the max level`() {
+        val player = player().apply {
+            applySkills(listOf(SkillProgress(SkillType.MINING, SkillCurve.MAX_LEVEL_XP)))
+        }
+
+        assertTrue(player.addXp(SkillType.MINING, 100))
+
+        assertEquals(SkillCurve.MAX_LEVEL_XP + 100, player.xp(SkillType.MINING))
+        assertEquals(SkillCurve.MAX_LEVEL, player.level(SkillType.MINING))
+    }
+
+    @Test
+    fun `xp never overflows the long range`() {
         val player = player().apply { applySkills(emptyList()) }
 
         assertTrue(player.addXp(SkillType.MOB_HUNTING, Long.MAX_VALUE))
         assertTrue(player.addXp(SkillType.MOB_HUNTING, Long.MAX_VALUE))
 
-        assertEquals(SkillCurve.MAX_XP, player.xp(SkillType.MOB_HUNTING))
+        assertEquals(Long.MAX_VALUE, player.xp(SkillType.MOB_HUNTING))
         assertEquals(SkillCurve.MAX_LEVEL, player.level(SkillType.MOB_HUNTING))
     }
 

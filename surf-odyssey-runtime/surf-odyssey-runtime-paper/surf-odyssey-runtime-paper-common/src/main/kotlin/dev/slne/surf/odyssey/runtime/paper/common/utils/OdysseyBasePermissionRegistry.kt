@@ -21,13 +21,16 @@ object OdysseyBasePermissionRegistry : PermissionRegistry() {
     val HOME_LIST = create("$HOME_BASE.list")
     val HOME_EDIT = create("$HOME_BASE.edit")
 
-    //Skills
+    //Skill
     val SKILL_COMMAND = create("$SKILL_COMMAND_BASE.use")
     val SKILL_ADMIN = create("$SKILL_BASE.admin")
     val SKILL_COLLECT_MINING = create("$SKILL_COLLECT_BASE.mining")
     val SKILL_COLLECT_FISHING = create("$SKILL_COLLECT_BASE.fishing")
     val SKILL_COLLECT_MOB_HUNTING = create("$SKILL_COLLECT_BASE.mobhunting")
     val SKILL_WORLD_COMMAND = create("$COMMAND_PREFIX.skillworld")
+
+    // Hub
+    val HUB_DOUBLE_JUMP = create("$PREFIX.hub.doublejump")
 
     fun skillCollect(skill: SkillType) = when (skill) {
         SkillType.MINING -> SKILL_COLLECT_MINING

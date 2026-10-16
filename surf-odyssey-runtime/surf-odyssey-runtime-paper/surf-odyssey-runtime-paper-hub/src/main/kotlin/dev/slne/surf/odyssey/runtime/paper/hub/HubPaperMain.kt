@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
+import dev.slne.surf.odyssey.runtime.paper.hub.doublejump.DoubleJumpListener
 import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.FishingListener
 import dev.slne.surf.odyssey.runtime.paper.hub.skill.mining.MiningListener
 import dev.slne.surf.odyssey.runtime.paper.hub.skill.mobhunting.MobHuntingListener
@@ -22,6 +23,8 @@ class HubPaperMain : OdysseyPaperMain() {
         FishingListener.register()
         MiningListener.register()
         MobHuntingListener.register()
+
+        DoubleJumpListener.register()
 
         skillWorldCommand()
 

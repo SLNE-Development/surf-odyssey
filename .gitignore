@@ -42,3 +42,5 @@ bin/
 .DS_Store
 **/run/
 .env
+.superpowers/
+.claude/settings.local.json

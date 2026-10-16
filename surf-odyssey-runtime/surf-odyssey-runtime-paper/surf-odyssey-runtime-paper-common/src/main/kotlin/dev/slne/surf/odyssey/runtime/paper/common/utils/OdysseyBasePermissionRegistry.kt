@@ -27,6 +27,7 @@ object OdysseyBasePermissionRegistry : PermissionRegistry() {
     val SKILL_COLLECT_MINING = create("$SKILL_COLLECT_BASE.mining")
     val SKILL_COLLECT_FISHING = create("$SKILL_COLLECT_BASE.fishing")
     val SKILL_COLLECT_MOB_HUNTING = create("$SKILL_COLLECT_BASE.mobhunting")
+    val SKILL_WORLD_COMMAND = create("$COMMAND_PREFIX.skillworld")
 
     fun skillCollect(skill: SkillType) = when (skill) {
         SkillType.MINING -> SKILL_COLLECT_MINING

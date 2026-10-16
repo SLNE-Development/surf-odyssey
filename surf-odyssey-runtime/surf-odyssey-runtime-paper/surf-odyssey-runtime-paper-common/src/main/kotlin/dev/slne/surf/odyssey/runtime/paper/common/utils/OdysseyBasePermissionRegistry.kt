@@ -32,6 +32,10 @@ object OdysseyBasePermissionRegistry : PermissionRegistry() {
     // Hub
     val HUB_DOUBLE_JUMP = create("$PREFIX.hub.doublejump")
 
+    // Trade
+
+    val TRADE_COMMAND = create("$COMMAND_PREFIX.trade")
+
     fun skillCollect(skill: SkillType) = when (skill) {
         SkillType.MINING -> SKILL_COLLECT_MINING
         SkillType.FISHING -> SKILL_COLLECT_FISHING

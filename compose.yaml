@@ -144,12 +144,15 @@ services:
       CFG_SURF_SERVER_NAME: hub
       CFG_SURF_SERVER_DISPLAY_NAME: Hub
       CFG_SURF_SERVER_CATEGORY: hub
+      # docker/paper/hub/plugins holds the configs only the hub needs, e.g. surf-polar-paper
+      COPY_PLUGINS_SRC: /plugins,/plugins-hub
     volumes:
       # Server files, plugins and plugin configs all live in the run folder. docker/paper/config and
       # docker/paper/plugins are synced into its config and plugins folders on start.
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run:/data
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
 
   home:
     <<: *paper

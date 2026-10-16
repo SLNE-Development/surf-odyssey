@@ -38,7 +38,8 @@ developmentStack {
     server("hub") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub"
         directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run")
-        requiredPlugins = paperServerPlugins
+        // The skill world is loaded through the polar-paper microservice
+        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "Nexo")
     }
     server("home") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home"

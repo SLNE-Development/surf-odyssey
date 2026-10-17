@@ -43,18 +43,28 @@ object ReconnectService {
      * Computes the map hash from the folder named by [WORLD_SOURCE_VARIABLE], connects to Redis and starts recording
      * players who leave.
      *
-     * Without a readable source folder, a warning is logged and the server runs without map hash.
+     * Without a readable source folder, or if reading it fails, a warning is logged and the server runs without map
+     * hash.
      */
     fun start(hub: HubPlugin) {
         val configured = System.getenv(WORLD_SOURCE_VARIABLE)
         val source = WorldHash.source(configured)
-        worldHash = source?.let(WorldHash::compute)
+        worldHash = source?.let { folder ->
+            WorldHash.computeOrNull(folder) { exception ->
+                hub.logger.log(
+                    Level.WARNING,
+                    "Could not compute the map hash from $folder; " +
+                        "returning players spawn at the spawn point instead of their logout position",
+                    exception,
+                )
+            }
+        }
         if (source == null) {
             hub.logger.warning(
                 "$WORLD_SOURCE_VARIABLE does not name a readable world folder (\"$configured\"); " +
                     "returning players spawn at the spawn point instead of their logout position"
             )
-        } else {
+        } else if (worldHash != null) {
             hub.logger.info("Map hash $worldHash computed from $source")
         }
         ReconnectCache.connect(hub.name)

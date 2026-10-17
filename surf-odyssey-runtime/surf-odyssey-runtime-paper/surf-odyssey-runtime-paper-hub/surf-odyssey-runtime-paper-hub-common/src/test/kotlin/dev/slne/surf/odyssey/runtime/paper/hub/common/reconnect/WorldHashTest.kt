@@ -101,4 +101,17 @@ class WorldHashTest {
         )
         assertEquals(WorldHash.compute(world(files)), WorldHash.compute(world(other)))
     }
+
+    @Test
+    fun `an unreadable folder gives no hash and reports the error once`() {
+        val failures = mutableListOf<java.io.IOException>()
+        assertNull(WorldHash.computeOrNull(world(files).resolve("missing")) { failures.add(it) })
+        assertEquals(1, failures.size)
+    }
+
+    @Test
+    fun `a readable folder gives the same hash as compute`() {
+        val folder = world(files)
+        assertEquals(WorldHash.compute(folder), WorldHash.computeOrNull(folder) { error("unexpected $it") })
+    }
 }

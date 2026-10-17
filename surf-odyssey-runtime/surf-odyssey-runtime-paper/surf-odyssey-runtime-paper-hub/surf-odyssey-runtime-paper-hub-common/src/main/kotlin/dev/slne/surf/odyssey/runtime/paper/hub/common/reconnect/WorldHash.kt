@@ -1,5 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.reconnect
 
+import java.io.IOException
+import java.io.UncheckedIOException
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -45,6 +47,20 @@ object WorldHash {
             }
         }
         return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Returns the [compute] hash of [worldFolder], or `null` if reading the folder fails; the error is passed to
+     * [onFailure] once.
+     */
+    fun computeOrNull(worldFolder: Path, onFailure: (IOException) -> Unit): String? = try {
+        compute(worldFolder)
+    } catch (exception: IOException) {
+        onFailure(exception)
+        null
+    } catch (exception: UncheckedIOException) {
+        onFailure(exception.cause ?: IOException(exception))
+        null
     }
 
     /**

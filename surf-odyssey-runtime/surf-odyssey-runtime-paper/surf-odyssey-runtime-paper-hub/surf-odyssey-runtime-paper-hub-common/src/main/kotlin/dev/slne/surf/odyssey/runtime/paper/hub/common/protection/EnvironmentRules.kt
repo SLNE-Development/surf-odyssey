@@ -8,6 +8,9 @@ import org.bukkit.event.block.Action
 object EnvironmentRules {
     private val HANGING = setOf(EntityType.ITEM_FRAME, EntityType.GLOW_ITEM_FRAME, EntityType.PAINTING)
     private val BOOKS = setOf(Material.WRITABLE_BOOK, Material.WRITTEN_BOOK)
+    private val REDSTONE_ORES = setOf(Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE)
+    private val REDSTONE_CLICKED = setOf(Material.NOTE_BLOCK, Material.REPEATER, Material.COMPARATOR, Material.DAYLIGHT_DETECTOR) + REDSTONE_ORES
+    private val REDSTONE_STEPPED = setOf(Material.TRIPWIRE) + REDSTONE_ORES
     private val BLOCKS = Material.entries.filterNot { it.name.startsWith("LEGACY_") }
 
     private val DOORS = BLOCKS.filterTo(mutableSetOf()) {
@@ -37,19 +40,35 @@ object EnvironmentRules {
      * holding an item of type [item] (`null` for an empty hand), or `null` if the interaction does not
      * change the block.
      *
-     * Right-clicking doors, trapdoors, fence gates, buttons, levers and decoration blocks changes them;
-     * a lectern changes only when a book is put on it. Stepping on a pressure plate triggers it.
+     * Right-clicking doors, trapdoors, fence gates, buttons, levers, decoration blocks, note blocks,
+     * repeaters, comparators, daylight detectors and redstone ore changes them; a lectern changes only
+     * when a book is put on it. Stepping on a pressure plate, a tripwire or redstone ore triggers it.
+     * Left-clicks never count, so breaking a block is not affected.
      */
     fun blockUse(action: Action, material: Material, item: Material?): ProtectionCategory? = when (action) {
-        Action.PHYSICAL -> if (material in PRESSURE_PLATES) ProtectionCategory.PRESSURE_PLATES else null
-        Action.RIGHT_CLICK_BLOCK -> when {
-            material in DOORS -> ProtectionCategory.DOORS
-            material in BUTTONS -> ProtectionCategory.BUTTONS
-            material == Material.LEVER -> ProtectionCategory.LEVERS
-            material in DECO_BLOCKS -> ProtectionCategory.DECO_BLOCKS
-            material == Material.LECTERN && item in BOOKS -> ProtectionCategory.DECO_BLOCKS
-            else -> null
-        }
+        Action.PHYSICAL -> physicalUse(material)
+        Action.RIGHT_CLICK_BLOCK -> rightClickUse(material, item)
+        else -> null
+    }
+
+    /** Returns the category of stepping on a block of [material], or `null` if that changes nothing protected. */
+    private fun physicalUse(material: Material): ProtectionCategory? = when (material) {
+        in PRESSURE_PLATES -> ProtectionCategory.PRESSURE_PLATES
+        in REDSTONE_STEPPED -> ProtectionCategory.REDSTONE_COMPONENTS
+        else -> null
+    }
+
+    /**
+     * Returns the category of right-clicking a block of [material] while holding an item of type [item],
+     * or `null` if that changes nothing protected.
+     */
+    private fun rightClickUse(material: Material, item: Material?): ProtectionCategory? = when {
+        material in DOORS -> ProtectionCategory.DOORS
+        material in BUTTONS -> ProtectionCategory.BUTTONS
+        material == Material.LEVER -> ProtectionCategory.LEVERS
+        material in DECO_BLOCKS -> ProtectionCategory.DECO_BLOCKS
+        material == Material.LECTERN && item in BOOKS -> ProtectionCategory.DECO_BLOCKS
+        material in REDSTONE_CLICKED -> ProtectionCategory.REDSTONE_COMPONENTS
         else -> null
     }
 

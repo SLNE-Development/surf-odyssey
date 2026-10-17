@@ -87,6 +87,7 @@ class EnvironmentRulesTest {
             protectionSettings { buttons = true } to ProtectionCategory.BUTTONS,
             protectionSettings { levers = true } to ProtectionCategory.LEVERS,
             protectionSettings { pressurePlates = true } to ProtectionCategory.PRESSURE_PLATES,
+            protectionSettings { redstoneComponents = true } to ProtectionCategory.REDSTONE_COMPONENTS,
         )
         assertEquals(ProtectionCategory.entries.toSet(), settings.map { it.second }.toSet())
         for ((setting, own) in settings) {
@@ -168,6 +169,21 @@ class EnvironmentRulesTest {
         assertEquals(ProtectionCategory.DOORS, EnvironmentRules.interactionCategory(Action.RIGHT_CLICK_BLOCK, Material.OAK_DOOR, null))
         assertEquals(ProtectionCategory.PRESSURE_PLATES, EnvironmentRules.interactionCategory(Action.PHYSICAL, Material.OAK_PRESSURE_PLATE, null))
         assertNull(EnvironmentRules.interactionCategory(Action.LEFT_CLICK_BLOCK, Material.STONE, null))
+    }
+
+    @Test
+    fun `changing redstone components is a redstone use`() {
+        val rightClick = listOf(
+            Material.NOTE_BLOCK, Material.REPEATER, Material.COMPARATOR, Material.DAYLIGHT_DETECTOR,
+            Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE,
+        )
+        for (material in rightClick) {
+            assertEquals(ProtectionCategory.REDSTONE_COMPONENTS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
+        for (material in listOf(Material.TRIPWIRE, Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE)) {
+            assertEquals(ProtectionCategory.REDSTONE_COMPONENTS, EnvironmentRules.blockUse(Action.PHYSICAL, material, null), "$material")
+        }
+        assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.REDSTONE_ORE, null))
     }
 
     @Test

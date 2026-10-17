@@ -31,6 +31,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property doors players may open and close doors, trapdoors and fence gates
  * @property buttons players may press buttons
  * @property levers players may flip levers
+ * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it
  * @property pressurePlates players may trigger pressure plates by stepping on them
  */
 data class ProtectionSettings(
@@ -57,6 +58,7 @@ data class ProtectionSettings(
     val buttons: Boolean = false,
     val levers: Boolean = false,
     val pressurePlates: Boolean = false,
+    val redstoneComponents: Boolean = false,
 )
 
 /**
@@ -134,6 +136,9 @@ class ProtectionSettingsBuilder {
     /** Sets [ProtectionSettings.pressurePlates]. */
     var pressurePlates = false
 
+    /** Sets [ProtectionSettings.redstoneComponents]. */
+    var redstoneComponents = false
+
     /** Creates the settings from the collected values. */
     fun build() = ProtectionSettings(
         blockPlace = blockPlace, buckets = buckets, explosions = explosions, fire = fire, spread = spread,
@@ -141,6 +146,7 @@ class ProtectionSettingsBuilder {
         leafDecay = leafDecay, trample = trample, entityBlockChanges = entityBlockChanges,
         hangingEntities = hangingEntities, armorStands = armorStands, signs = signs, dispensers = dispensers,
         decoBlocks = decoBlocks, doors = doors, buttons = buttons, levers = levers, pressurePlates = pressurePlates,
+        redstoneComponents = redstoneComponents,
     )
 }
 
@@ -222,4 +228,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
 
     /** A player triggers a pressure plate by stepping on it. */
     PRESSURE_PLATES({ it.pressurePlates }),
+
+    /** A player changes a note block, repeater, comparator or daylight detector, triggers a tripwire or lights redstone ore by touching it. */
+    REDSTONE_COMPONENTS({ it.redstoneComponents }),
 }

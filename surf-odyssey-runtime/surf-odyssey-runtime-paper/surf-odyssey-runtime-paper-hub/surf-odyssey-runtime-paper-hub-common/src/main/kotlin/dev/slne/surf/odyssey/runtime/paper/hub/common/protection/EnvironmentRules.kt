@@ -25,6 +25,10 @@ object EnvironmentRules {
     }
     private val BUTTONS = BLOCKS.filterTo(mutableSetOf()) { it.name.endsWith("_BUTTON") }
     private val PRESSURE_PLATES = BLOCKS.filterTo(mutableSetOf()) { it.name.endsWith("_PRESSURE_PLATE") }
+    private val SIGNS = BLOCKS.filterTo(mutableSetOf()) { it.name.endsWith("_SIGN") }
+    private val SIGN_MARKERS = BLOCKS.filterTo(mutableSetOf()) {
+        it.name.endsWith("_DYE") || it == Material.INK_SAC || it == Material.GLOW_INK_SAC || it == Material.HONEYCOMB
+    }
     private val DECO_BLOCKS = BLOCKS.filterTo(mutableSetOf()) {
         it == Material.FLOWER_POT || it.name.startsWith("POTTED_") || it == Material.CAKE ||
             it == Material.CANDLE || it.name.endsWith("_CANDLE") || it.name.endsWith("CANDLE_CAKE") ||
@@ -50,7 +54,8 @@ object EnvironmentRules {
      * Right-clicking doors, trapdoors, fence gates, buttons, levers, decoration blocks, note blocks,
      * repeaters, comparators, daylight detectors, redstone ore and utility blocks such as jukeboxes,
      * bells, campfires, cauldrons or beehives changes or uses them, and right-clicking berry bushes or
-     * cave vines picks their berries; a lectern changes only when a book is put on it. Stepping on a
+     * cave vines picks their berries; a lectern changes only when a book is put on it and a sign only
+     * when it is dyed, made to glow or waxed. Stepping on a
      * pressure plate, a tripwire or redstone ore triggers it, stepping on a big dripleaf tilts it and
      * stepping on turtle eggs tramples them.
      * Left-clicks never count, so breaking a block is not affected.
@@ -82,6 +87,7 @@ object EnvironmentRules {
         material in REDSTONE_CLICKED -> ProtectionCategory.REDSTONE_COMPONENTS
         material in UTILITY_BLOCKS -> ProtectionCategory.UTILITY_BLOCKS
         material in BERRIES -> ProtectionCategory.PLANT_HARVEST
+        material in SIGNS && item in SIGN_MARKERS -> ProtectionCategory.SIGNS
         else -> null
     }
 

@@ -220,6 +220,17 @@ class EnvironmentRulesTest {
     }
 
     @Test
+    fun `dyeing, glowing or waxing a sign is a sign edit`() {
+        for (item in listOf(Material.RED_DYE, Material.INK_SAC, Material.GLOW_INK_SAC, Material.HONEYCOMB)) {
+            assertEquals(ProtectionCategory.SIGNS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.OAK_SIGN, item), "$item")
+        }
+        for (sign in listOf(Material.SPRUCE_WALL_SIGN, Material.OAK_HANGING_SIGN, Material.OAK_WALL_HANGING_SIGN)) {
+            assertEquals(ProtectionCategory.SIGNS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, sign, Material.HONEYCOMB), "$sign")
+        }
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.OAK_SIGN, Material.STICK))
+    }
+
+    @Test
     fun `left-clicks and ordinary blocks are no block use`() {
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.OAK_DOOR, null))
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.FLOWER_POT, null))

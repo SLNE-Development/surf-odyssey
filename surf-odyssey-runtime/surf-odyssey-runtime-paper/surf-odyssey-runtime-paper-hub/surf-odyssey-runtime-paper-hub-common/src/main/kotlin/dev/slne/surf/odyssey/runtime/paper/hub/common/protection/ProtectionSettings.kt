@@ -23,7 +23,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property hangingEntities item frames and paintings may be placed, broken, damaged and used, including
  *           rotating, inserting or taking their item
  * @property armorStands armor stands may be placed, damaged, used and have their equipment changed
- * @property signs players may open the sign editor and change the text of signs
+ * @property signs players may open the sign editor, change the text of signs and dye, glow or wax them
  * @property dispensers dispensers and droppers may dispense items
  * @property decoBlocks players may change flower pots, cakes, composters, candles, candle cakes,
  *           lecterns, chiseled bookshelves and decorated pots by right-clicking them, and take books
@@ -226,7 +226,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
     /** An armor stand is placed, damaged, used or has its equipment changed. */
     ARMOR_STANDS({ it.armorStands }),
 
-    /** A player opens the sign editor or changes the text of a sign. */
+    /** A player opens the sign editor, changes the text of a sign or dyes, glows or waxes it. */
     SIGNS({ it.signs }),
 
     /** A dispenser or dropper dispenses an item. */

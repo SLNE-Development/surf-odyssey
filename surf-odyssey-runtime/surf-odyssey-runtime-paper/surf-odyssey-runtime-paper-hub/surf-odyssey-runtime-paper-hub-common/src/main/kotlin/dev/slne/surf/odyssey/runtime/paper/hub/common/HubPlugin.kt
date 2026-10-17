@@ -14,6 +14,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationT
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionTicker
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalCache
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.PortalListener
 import net.kyori.adventure.text.Component
@@ -57,20 +59,23 @@ abstract class HubPlugin : OdysseyPaperMain() {
     protected open fun portals(): List<Portal> = emptyList()
 
     /**
-     * Builds the region index, collects the portals, turns off saving for every world, registers protection,
-     * world change handling, fishing, portals and the region editor with its wand, starts ticking and the editor preview, registers the
-     * placeholder tags, then calls [onHubEnabled].
+     * Builds the region index, collects the portals, connects the arrival cache, turns off saving for every
+     * world, registers protection, world change handling, fishing, portals, arrivals and the region editor
+     * with its wand, starts ticking and the editor preview, registers the placeholder tags, then calls
+     * [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */
     final override suspend fun onEnabled() {
         regionIndex = RegionIndex(RegionRegistry().apply { regions() }.build())
         portalList = portals()
+        ArrivalCache.connect(name)
         server.worlds.forEach { it.isAutoSave = false }
         HubProtectionListener.register()
         WorldChangeListener.register()
         FishingListener.register()
         PortalListener.register()
+        ArrivalListener.register()
         regionEditorCommand()
         RegionWandListener.register()
         EditorPreviewTask.start(this)
@@ -79,12 +84,16 @@ abstract class HubPlugin : OdysseyPaperMain() {
         onHubEnabled()
     }
 
-    /** Calls [onHubDisabled], restores every block waiting to regenerate, unregisters the placeholder tags, then stops ticking. */
+    /**
+     * Calls [onHubDisabled], restores every block waiting to regenerate, unregisters the placeholder tags, stops
+     * ticking, then disconnects the arrival cache.
+     */
     final override suspend fun onDisabled() {
         onHubDisabled()
         RegenerationTicker.restoreAll(hubWorld)
         HubPlaceholders.unregister()
         RegionTicker.stop()
+        ArrivalCache.disconnect()
     }
 
     /** Called after the hub systems are running. */

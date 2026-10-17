@@ -9,13 +9,23 @@ import kotlin.test.assertTrue
 class HubTravelTest {
     /** Records what [HubTravel.travel] asked of it and answers transfers with [transferWorks]. */
     private class RecordingGateway(private val transferWorks: Boolean = true) : TravelGateway {
-        /** Every call in order, e.g. `transfer:hub-north-01`. */
+        /** Every call in order, e.g. `announce:hub-north-01`. */
         val calls = mutableListOf<String>()
+
+        /** Records the announcement. */
+        override suspend fun announceArrival(targetServer: String) {
+            calls += "announce:$targetServer"
+        }
 
         /** Records the transfer and answers with [transferWorks]. */
         override suspend fun transfer(targetServer: String): Boolean {
             calls += "transfer:$targetServer"
             return transferWorks
+        }
+
+        /** Records the withdrawal. */
+        override suspend fun withdrawArrival() {
+            calls += "withdraw"
         }
 
         /** Records the message. */
@@ -43,21 +53,24 @@ class HubTravelTest {
     }
 
     @Test
-    fun `the player is sent to the least crowded running instance`() = runBlocking {
+    fun `the arrival is announced before the player is sent to the least crowded instance`() = runBlocking {
         val gateway = RecordingGateway()
         val sent = HubTravel.travel(
             listOf(ServerCandidate("hub-north-01", true, 5), ServerCandidate("hub-north-02", true, 1)),
             gateway,
         )
         assertTrue(sent)
-        assertEquals(listOf("transfer:hub-north-02"), gateway.calls)
+        assertEquals(listOf("announce:hub-north-02", "transfer:hub-north-02"), gateway.calls)
     }
 
     @Test
-    fun `a failed transfer tells the player`() = runBlocking {
+    fun `a failed transfer withdraws the arrival and tells the player`() = runBlocking {
         val gateway = RecordingGateway(transferWorks = false)
         val sent = HubTravel.travel(listOf(ServerCandidate("hub-north-01", true, 0)), gateway)
         assertFalse(sent)
-        assertEquals(listOf("transfer:hub-north-01", "tell:${HubTravel.FAILED}"), gateway.calls)
+        assertEquals(
+            listOf("announce:hub-north-01", "transfer:hub-north-01", "withdraw", "tell:${HubTravel.FAILED}"),
+            gateway.calls,
+        )
     }
 }

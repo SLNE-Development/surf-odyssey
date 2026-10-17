@@ -7,6 +7,7 @@ plugins {
 surfPaperPluginApi {
     mainClass("dev.slne.surf.odyssey.runtime.paper.hub.lobby.LobbyHubPlugin")
     withCorePaper()
+    withSurfRedis()
 
     serverDependencies {
         // The odyssey client talks to the microservice through RabbitMQ

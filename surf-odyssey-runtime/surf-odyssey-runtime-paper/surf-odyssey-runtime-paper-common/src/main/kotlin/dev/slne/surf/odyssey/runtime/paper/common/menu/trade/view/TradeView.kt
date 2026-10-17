@@ -272,7 +272,7 @@ private val readyItem = viewIcon(ViewIconType.CHECK, ViewIconColor.GREEN) {
     }
 }
 
-private val cancelItem = viewIcon(ViewIconType.CROSS, ViewIconColor.RED) {
+private val cancelItem = viewIcon(ViewIconType.ARROW_PREVIOUS, ViewIconColor.RED) {
     displayName { error("Handel abbrechen") }
 
     buildLore {

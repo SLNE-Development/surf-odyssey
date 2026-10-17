@@ -83,7 +83,9 @@ x-hub-environment: &hub-environment
 services:
   postgres:
     image: postgres:17.6-alpine
-    # One database for all microservices, each one uses its own schema
+    # One database for all microservices, each one uses its own schema. Every Paper server opens two
+    # connection pools (LuckPerms and HuskSync), which exceed the default limit of 100 connections.
+    command: [ "postgres", "-c", "max_connections=300" ]
     environment:
       POSTGRES_DB: ${POSTGRES_DATABASE:-surf}
       POSTGRES_USER: ${POSTGRES_USERNAME:-surf}

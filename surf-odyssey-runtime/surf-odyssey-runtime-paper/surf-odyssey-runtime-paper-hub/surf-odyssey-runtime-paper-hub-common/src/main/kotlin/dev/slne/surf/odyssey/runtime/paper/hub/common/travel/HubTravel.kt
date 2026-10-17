@@ -3,10 +3,16 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.travel
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.core.api.common.SurfCoreApi
 import dev.slne.surf.core.api.common.server.state.SurfServerState
+import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import kotlinx.coroutines.CancellationException
 import org.bukkit.entity.Player
+import java.util.logging.Level
 
 /** The steps of a journey that touch the network and the traveller. */
-interface TravelGateway {
+internal interface TravelGateway {
+    /** Returns the servers of the target category. */
+    suspend fun candidates(): Collection<ServerCandidate>
+
     /** Leaves word that the traveller is about to arrive on [targetServer]. */
     suspend fun announceArrival(targetServer: String)
 
@@ -18,6 +24,9 @@ interface TravelGateway {
 
     /** Shows the traveller the error [message]. */
     fun tell(message: String)
+
+    /** Records that the journey broke off with [exception]. */
+    fun logFailure(exception: Exception)
 }
 
 /** Sends players to the least crowded server of a world category. */
@@ -34,36 +43,56 @@ object HubTravel {
      * Before the transfer, the arrival is announced so that the target server places the player in front of
      * the portal leading back to this server's category.
      */
-    suspend fun send(player: Player, category: String): Boolean {
-        val candidates = SurfCoreApi.getServerByCategory(category)
-            .map { ServerCandidate(it.name, it.state == SurfServerState.RUNNING, it.getPlayerCount()) }
-        return travel(candidates, PlayerGateway(player))
-    }
+    suspend fun send(player: Player, category: String): Boolean = travel(PlayerGateway(player, category))
 
     /**
-     * Chooses a target among [candidates] and sends the traveller there through [gateway].
+     * Chooses a target among the gateway's candidates and sends the traveller there through [gateway].
      *
      * Without a running candidate the traveller is told so and nothing else happens. Otherwise the arrival is
      * announced, the traveller is transferred, and if the transfer fails the announcement is withdrawn and the
-     * traveller is told so.
+     * traveller is told so. If a step throws, an announcement already made is withdrawn as far as possible, the
+     * error is logged and the traveller is told that the journey failed.
      *
      * @return whether the traveller was transferred
      */
-    suspend fun travel(candidates: Collection<ServerCandidate>, gateway: TravelGateway): Boolean {
-        val target = ServerChooser.choose(candidates)
-        if (target == null) {
-            gateway.tell(UNREACHABLE)
+    internal suspend fun travel(gateway: TravelGateway): Boolean {
+        var announced = false
+        try {
+            val target = ServerChooser.choose(gateway.candidates())
+            if (target == null) {
+                gateway.tell(UNREACHABLE)
+                return false
+            }
+            announced = true
+            gateway.announceArrival(target.name)
+            if (gateway.transfer(target.name)) return true
+            announced = false
+            gateway.withdrawArrival()
+            gateway.tell(FAILED)
+            return false
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            if (announced) {
+                try {
+                    gateway.withdrawArrival()
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (_: Exception) {
+                }
+            }
+            gateway.logFailure(exception)
+            gateway.tell(FAILED)
             return false
         }
-        gateway.announceArrival(target.name)
-        if (gateway.transfer(target.name)) return true
-        gateway.withdrawArrival()
-        gateway.tell(FAILED)
-        return false
     }
 
-    /** Carries out a journey of [player] through surf-core and the arrival cache. */
-    private class PlayerGateway(private val player: Player) : TravelGateway {
+    /** Carries out a journey of [player] to [category] through surf-core and the arrival cache. */
+    private class PlayerGateway(private val player: Player, private val category: String) : TravelGateway {
+        /** Returns the servers of [category] as surf-core knows them. */
+        override suspend fun candidates(): Collection<ServerCandidate> = SurfCoreApi.getServerByCategory(category)
+            .map { ServerCandidate(it.name, it.state == SurfServerState.RUNNING, it.getPlayerCount()) }
+
         /** Stores an arrival ticket from this server's category to [targetServer]. */
         override suspend fun announceArrival(targetServer: String) =
             ArrivalCache.put(player.uniqueId, ArrivalTicket(SurfCoreApi.getCurrentServerCategory(), targetServer))
@@ -80,5 +109,9 @@ object HubTravel {
 
         /** Sends [message] to the player as an error. */
         override fun tell(message: String) = player.sendText { appendErrorPrefix(); error(message) }
+
+        /** Logs [exception] as a warning of the hub plugin. */
+        override fun logFailure(exception: Exception) =
+            HubPlugin.instance.logger.log(Level.WARNING, "Travel of ${player.name} to $category failed", exception)
     }
 }

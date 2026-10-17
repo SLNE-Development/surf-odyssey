@@ -8,6 +8,7 @@ import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.block.data.type.Lectern
+import org.bukkit.entity.Entity
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
@@ -36,12 +37,14 @@ import org.bukkit.event.entity.EntityInteractEvent
 import org.bukkit.event.entity.EntityPlaceEvent
 import org.bukkit.event.hanging.HangingBreakEvent
 import org.bukkit.event.hanging.HangingPlaceEvent
+import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent
 import org.bukkit.event.player.PlayerBucketEmptyEvent
 import org.bukkit.event.player.PlayerBucketFillEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerTakeLecternBookEvent
+import org.bukkit.event.vehicle.VehicleDestroyEvent
 import org.bukkit.event.world.StructureGrowEvent
 
 /**
@@ -169,12 +172,27 @@ object WorldChangeListener : Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onHangingBreak(event: HangingBreakEvent) = apply(ProtectionCategory.HANGING_ENTITIES, event.entity.location, event)
 
-    /** Cancels players using item frames, paintings and armor stands, e.g. rotating the item of an item frame. */
+    /** Cancels players using item frames, paintings and armor stands, and opening chest minecarts, hopper minecarts and chest boats. */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onInteractEntity(event: PlayerInteractEntityEvent) {
         val entity = event.rightClicked
-        val category = EnvironmentRules.decorationCategory(entity.type) ?: return
+        val category = EnvironmentRules.decorationCategory(entity.type) ?: EnvironmentRules.entityContainerCategory(entity.type) ?: return
         apply(category, entity.location, event)
+    }
+
+    /** Cancels opening the inventory of chest minecarts, hopper minecarts and chest boats. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onInventoryOpen(event: InventoryOpenEvent) {
+        val holder = event.inventory.holder as? Entity ?: return
+        val category = EnvironmentRules.entityContainerCategory(holder.type) ?: return
+        apply(category, holder.location, event)
+    }
+
+    /** Cancels destroying chest minecarts, hopper minecarts and chest boats, which would drop their contents. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onVehicleDestroy(event: VehicleDestroyEvent) {
+        val category = EnvironmentRules.entityContainerCategory(event.vehicle.type) ?: return
+        apply(category, event.vehicle.location, event)
     }
 
     /** Cancels players putting items into, rotating or taking items out of item frames. */

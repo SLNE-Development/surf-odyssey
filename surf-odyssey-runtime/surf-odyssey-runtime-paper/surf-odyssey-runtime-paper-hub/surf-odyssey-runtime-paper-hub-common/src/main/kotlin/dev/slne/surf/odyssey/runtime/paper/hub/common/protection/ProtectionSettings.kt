@@ -37,7 +37,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property plantHarvest players may pick sweet berries and glow berries, carve pumpkins with shears, tilt big dripleaves and trample turtle eggs; dripleaves and turtle eggs also cover other entities
  * @property vehicles players may place boats, minecarts and end crystals
  * @property containers players may open chests, trapped chests, ender chests, copper chests, barrels, shulker
- *           boxes, furnaces, smokers, blast furnaces, hoppers, droppers, dispensers, brewing stands and crafters
+ *           boxes, furnaces, smokers, blast furnaces, hoppers, droppers, dispensers, brewing stands, crafters, beacons, chest and hopper minecarts and chest boats, and destroy the latter
  */
 data class ProtectionSettings(
     val blockPlace: Boolean = false,
@@ -266,6 +266,6 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
     /** A player places a boat, minecart or end crystal. */
     VEHICLES({ it.vehicles }),
 
-    /** A player opens a container such as a chest, barrel, shulker box, furnace, hopper or brewing stand. */
+    /** A player opens a container such as a chest, barrel, shulker box, furnace, hopper, brewing stand, beacon, chest minecart or chest boat. */
     CONTAINERS({ it.containers }),
 }

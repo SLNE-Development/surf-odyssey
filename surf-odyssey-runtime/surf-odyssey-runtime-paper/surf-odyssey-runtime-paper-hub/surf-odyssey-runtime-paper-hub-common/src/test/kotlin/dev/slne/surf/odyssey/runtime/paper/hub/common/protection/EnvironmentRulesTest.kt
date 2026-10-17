@@ -247,12 +247,24 @@ class EnvironmentRulesTest {
         val containers = listOf(
             Material.CHEST, Material.TRAPPED_CHEST, Material.ENDER_CHEST, Material.COPPER_CHEST, Material.BARREL,
             Material.SHULKER_BOX, Material.RED_SHULKER_BOX, Material.FURNACE, Material.SMOKER, Material.BLAST_FURNACE,
-            Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND, Material.CRAFTER,
+            Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND, Material.CRAFTER, Material.BEACON,
         )
         for (material in containers) {
             assertEquals(ProtectionCategory.CONTAINERS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
         }
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.CHEST, null))
+    }
+
+    @Test
+    fun `entities that hold items count as containers`() {
+        val holders = listOf(
+            EntityType.CHEST_MINECART, EntityType.HOPPER_MINECART, EntityType.OAK_CHEST_BOAT,
+            EntityType.CHERRY_CHEST_BOAT, EntityType.BAMBOO_CHEST_RAFT,
+        )
+        for (type in holders) assertEquals(ProtectionCategory.CONTAINERS, EnvironmentRules.entityContainerCategory(type), "$type")
+        for (type in listOf(EntityType.MINECART, EntityType.OAK_BOAT, EntityType.BAMBOO_RAFT, EntityType.COW, EntityType.PLAYER)) {
+            assertNull(EnvironmentRules.entityContainerCategory(type), "$type")
+        }
     }
 
     @Test

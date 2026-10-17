@@ -33,7 +33,7 @@ object EnvironmentRules {
         it == Material.CHEST || it.name.endsWith("_CHEST") || it == Material.SHULKER_BOX || it.name.endsWith("_SHULKER_BOX")
     } + setOf(
         Material.BARREL, Material.FURNACE, Material.SMOKER, Material.BLAST_FURNACE, Material.HOPPER, Material.DROPPER,
-        Material.DISPENSER, Material.BREWING_STAND, Material.CRAFTER,
+        Material.DISPENSER, Material.BREWING_STAND, Material.CRAFTER, Material.BEACON,
     )
     private val DECO_BLOCKS = BLOCKS.filterTo(mutableSetOf()) {
         it == Material.FLOWER_POT || it.name.startsWith("POTTED_") || it == Material.CAKE ||
@@ -61,7 +61,7 @@ object EnvironmentRules {
      * repeaters, comparators, daylight detectors, redstone ore and utility blocks such as jukeboxes,
      * bells, campfires, cauldrons or beehives changes or uses them, and right-clicking berry bushes or
      * cave vines picks their berries. Right-clicking chests, barrels, shulker boxes, furnaces, hoppers,
-     * droppers, dispensers, brewing stands and crafters opens them as containers. A lectern changes only when a book is put on an empty one, so
+     * droppers, dispensers, brewing stands, crafters and beacons opens them as containers. A lectern changes only when a book is put on an empty one, so
      * reading a book on it stays possible; a sign changes only when it is dyed, made to glow or waxed.
      * Stepping on a pressure plate, a tripwire or redstone ore triggers it, stepping on a big dripleaf
      * tilts it and stepping on turtle eggs tramples them. Left-clicks never count, so breaking a block
@@ -120,6 +120,15 @@ object EnvironmentRules {
         EntityType.ARMOR_STAND -> ProtectionCategory.ARMOR_STANDS
         else -> null
     }
+
+    /**
+     * Returns [ProtectionCategory.CONTAINERS] for entities of [type] that hold items, namely chest and
+     * hopper minecarts and chest boats and rafts, or `null` for any other entity.
+     */
+    fun entityContainerCategory(type: EntityType): ProtectionCategory? =
+        if (type == EntityType.CHEST_MINECART || type == EntityType.HOPPER_MINECART ||
+            type.name.endsWith("_CHEST_BOAT") || type.name.endsWith("_CHEST_RAFT")
+        ) ProtectionCategory.CONTAINERS else null
 
     /**
      * Returns the category of a player shearing a block of [material]: utility blocks for beehives and

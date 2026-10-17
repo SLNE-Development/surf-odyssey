@@ -4,6 +4,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import org.bukkit.Material
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** Checks how [BlockRules] decide about breaking a block. */
 class BlockRulesTest {
@@ -24,4 +26,12 @@ class BlockRulesTest {
     @Test
     fun `a block waiting for regeneration cannot be broken again`() =
         assertEquals(BreakDecision.DENY, BlockRules.decide(mine, Material.IRON_ORE, pending = true))
+
+    @Test
+    fun `physics may destroy only blocks the region lets players break`() {
+        assertTrue(BlockRules.allowsDestroy(mine, Material.IRON_ORE, pending = false))
+        assertFalse(BlockRules.allowsDestroy(mine, Material.TORCH, pending = false))
+        assertFalse(BlockRules.allowsDestroy(null, Material.LADDER, pending = false))
+        assertFalse(BlockRules.allowsDestroy(mine, Material.IRON_ORE, pending = true))
+    }
 }

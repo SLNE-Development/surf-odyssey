@@ -27,4 +27,12 @@ object BlockRules {
         region is HarvestRegion -> BreakDecision.HARVEST
         else -> BreakDecision.ALLOW
     }
+
+    /**
+     * Returns whether physics, e.g. losing the block it is attached to, may destroy a block of
+     * [material] in [region] (`null` outside every region): only if a player could break it there.
+     * [pending] tells whether the block is waiting to regenerate.
+     */
+    fun allowsDestroy(region: Region?, material: Material, pending: Boolean): Boolean =
+        decide(region, material, pending) != BreakDecision.DENY
 }

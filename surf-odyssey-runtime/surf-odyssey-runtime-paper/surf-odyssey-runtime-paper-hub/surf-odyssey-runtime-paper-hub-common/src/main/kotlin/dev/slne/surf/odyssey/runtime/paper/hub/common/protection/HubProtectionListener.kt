@@ -7,6 +7,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.HarvestRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.PlayerRegionTracker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
+import com.destroystokyo.paper.event.block.BlockDestroyEvent
 import org.bukkit.Location
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -58,6 +59,20 @@ object HubProtectionListener : Listener {
         hub.server.scheduler.runTask(hub, Runnable {
             if (RegenerationTicker.queue.isPending(point)) block.setType(region.placeholder, false)
         })
+    }
+
+    /**
+     * Cancels physics destroying a block in the hub world, e.g. a torch, ladder, cocoa pod, flower or
+     * carpet losing the block it is attached to, unless [BlockRules.allowsDestroy] allow it. A cancelled
+     * block stays in place and drops nothing.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onDestroy(event: BlockDestroyEvent) {
+        val block = event.block
+        if (block.world != hub.hubWorld) return
+        val region = hub.regionIndex.regionAt(block.x, block.y, block.z)
+        val pending = RegenerationTicker.queue.isPending(BlockPoint(block.x, block.y, block.z))
+        if (!BlockRules.allowsDestroy(region, block.type, pending)) event.isCancelled = true
     }
 
     /** Records the region a player joins in. */

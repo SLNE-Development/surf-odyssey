@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/** Checks how [FishTable] picks a fish by conditions and weights. */
 class FishTableTest {
     private val dry = FishContext(raining = false, thundering = false, night = false, biome = "minecraft:plains", waterDepth = 3)
     private fun entry(id: String, weight: Int, vararg conditions: FishCondition) =

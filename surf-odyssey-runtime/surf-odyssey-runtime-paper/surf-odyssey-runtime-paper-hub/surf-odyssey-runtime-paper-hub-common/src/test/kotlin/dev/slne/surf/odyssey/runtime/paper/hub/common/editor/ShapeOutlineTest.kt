@@ -5,6 +5,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Point2
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/** Checks which edges [ShapeOutline] draws for finished and unfinished region parts. */
 class ShapeOutlineTest {
     @Test
     fun `a cuboid has twelve edges`() =

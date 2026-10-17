@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.mobs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/** Checks how many mobs [MobSpawnPlanner] spawns per interval. */
 class MobSpawnPlannerTest {
     @Test
     fun `nothing spawns before the interval has passed`() =

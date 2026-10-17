@@ -14,6 +14,11 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
+/**
+ * Lets players in survival or adventure mode with the double jump permission dash in their view direction by pressing
+ * jump a second time in the air within 350 ms of a jump from the ground. The dash plays a wind burst sound and leaves
+ * a short gust and cloud trail.
+ */
 object DoubleJumpListener : Listener {
     private const val DASH_SPEED = 5.0
     private const val DASH_LIFT = 0.15
@@ -23,6 +28,10 @@ object DoubleJumpListener : Listener {
     private val groundJumps = ConcurrentHashMap<UUID, Long>()
     private val jumpHeld: MutableSet<UUID> = ConcurrentHashMap.newKeySet()
 
+    /**
+     * Notes jumps from the ground and dashes when the jump key is pressed again in the air within the double tap
+     * window. Players who may not double jump are forgotten.
+     */
     @EventHandler(ignoreCancelled = true)
     fun onInput(event: PlayerInputEvent) {
         val player = event.player
@@ -51,11 +60,13 @@ object DoubleJumpListener : Listener {
         dash(player)
     }
 
+    /** Forgets the jump state of the leaving player. */
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
         forget(event.player.uniqueId)
     }
 
+    /** Pushes [player] in their view direction, slightly upwards, and shows the dash effects. */
     private fun dash(player: Player) {
         val boost = player.eyeLocation.direction.multiply(DASH_SPEED)
         player.velocity = boost.setY(maxOf(boost.y, DASH_LIFT))
@@ -75,11 +86,13 @@ object DoubleJumpListener : Listener {
         }, null, 1L, 1L)
     }
 
+    /** Forgets the noted ground jump and the held jump key of the player with [uuid]. */
     private fun forget(uuid: UUID) {
         groundJumps.remove(uuid)
         jumpHeld.remove(uuid)
     }
 
+    /** Returns whether [player] is in survival or adventure mode and has the double jump permission. */
     private fun canUse(player: Player) =
         (player.gameMode == GameMode.SURVIVAL || player.gameMode == GameMode.ADVENTURE) &&
                 player.hasPermission(OdysseyBasePermissionRegistry.HUB_DOUBLE_JUMP)

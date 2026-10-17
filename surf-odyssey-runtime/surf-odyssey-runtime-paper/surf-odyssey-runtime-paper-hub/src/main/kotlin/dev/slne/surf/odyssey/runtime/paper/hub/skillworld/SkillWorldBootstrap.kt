@@ -8,7 +8,6 @@ import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.listener.SkillWorldPla
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.listener.SkillWorldProtectionListener
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.mining.MiningReset
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.mobhunting.MobHuntingSpawner
-import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.PortalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.Portals
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.selection.SelectionWand
 import java.util.logging.Level
@@ -31,7 +30,6 @@ object SkillWorldBootstrap {
 
         SkillWorld.refreshRegions()
         Portals.refresh()
-        PortalListener.register()
         SkillWorld.register(MiningReset)
         SkillWorld.register(MobHuntingSpawner)
         MiningLockListener.register()

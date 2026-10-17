@@ -38,7 +38,7 @@ developmentStack {
     server("hub") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub"
         directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run")
-        requiredPlugins = paperServerPlugins + listOf("Nexo")
+        requiredPlugins = paperServerPlugins
     }
     server("home") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home"

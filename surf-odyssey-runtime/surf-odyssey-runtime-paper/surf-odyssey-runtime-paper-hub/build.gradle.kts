@@ -6,7 +6,6 @@ plugins {
 
 repositories {
     maven("https://reposilite.slne.dev/releases")
-    maven("https://repo.nexomc.com/releases")
 }
 
 surfPaperPluginApi {
@@ -15,8 +14,6 @@ surfPaperPluginApi {
     serverDependencies {
         // The odyssey client talks to the microservice through RabbitMQ
         registerRequired("surf-rabbitmq-paper")
-        // Portal blocks are placed Nexo blocks
-        registerRequired("Nexo")
         // The region HUD is shown through surf-hud
         registerRequired("surf-hud-paper")
         // Player data is synced between the servers by HuskSync
@@ -30,7 +27,6 @@ surfPaperPluginApi {
 
 dependencies {
     api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperCommon)
-    compileOnly("com.nexomc:nexo:1.29.1") { isTransitive = false }
     compileOnly("dev.slne.surf.hud:surf-hud-api:1.0.1")
 }
 

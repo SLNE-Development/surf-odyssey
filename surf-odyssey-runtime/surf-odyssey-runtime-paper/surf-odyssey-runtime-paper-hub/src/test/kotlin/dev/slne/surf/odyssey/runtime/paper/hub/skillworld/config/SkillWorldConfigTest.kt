@@ -16,7 +16,6 @@ class SkillWorldConfigTest {
         assertEquals(listOf(60L, 30L, 10L, 5L), config.mining.warningSeconds)
         assertEquals(listOf("BARRIER", "BEDROCK"), config.mining.unbreakableBlocks)
         assertEquals(setOf("STONE", "DEEPSLATE"), config.mining.ores.keys)
-        assertEquals("skill_portal", config.portalBlock.nexoBlockId)
     }
 
     @Test

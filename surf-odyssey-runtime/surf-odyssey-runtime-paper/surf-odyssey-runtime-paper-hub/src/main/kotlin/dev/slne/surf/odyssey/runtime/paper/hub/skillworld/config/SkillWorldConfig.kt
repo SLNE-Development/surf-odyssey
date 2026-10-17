@@ -14,7 +14,6 @@ data class SkillWorldConfig(
     val regions: Map<SkillType, BoxConfig> = emptyMap(),
     val mining: MiningConfig = MiningConfig(),
     val mobHunting: MobHuntingConfig = MobHuntingConfig(),
-    val portalBlock: PortalBlockConfig = PortalBlockConfig(),
 )
 
 enum class PortalKind { ENTRY, EXIT }
@@ -81,6 +80,3 @@ data class MobHuntingConfig(
     val respawnIntervalSeconds: Long = 10,
     val spawnPoints: List<LocationConfig> = emptyList(),
 )
-
-@ConfigSerializable
-data class PortalBlockConfig(val nexoBlockId: String = "skill_portal")

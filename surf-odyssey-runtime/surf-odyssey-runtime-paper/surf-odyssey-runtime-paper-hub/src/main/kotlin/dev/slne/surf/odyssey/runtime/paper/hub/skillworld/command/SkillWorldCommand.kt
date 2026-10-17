@@ -18,9 +18,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.config.LocationConfig
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.config.PortalConfig
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.config.PortalKind
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.config.SkillWorldSettings
-import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.geometry.BlockBox
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.mining.MiningReset
-import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.NexoPortalBlocks
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.PortalBlocks
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.PortalRouter
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.Portals
@@ -240,20 +238,6 @@ private fun createPortal(player: Player, id: String, kind: PortalKind, skill: Sk
         appendErrorPrefix()
         error("Setze zuerst beide Ecken mit /skillworld pos1 und pos2 in dieser Welt.")
     }
-    val box = BlockBox.of(a, b)
-    if (PortalBlocks.exceedsScanLimit(box)) return player.sendText {
-        appendErrorPrefix()
-        error("Der ausgewählte Bereich ist zu groß (maximal ${PortalBlocks.SCAN_LIMIT} Blöcke).")
-    }
-    val world = player.world
-    val scan = PortalBlocks.countPortalBlocks(box, { cx, cz -> world.isChunkLoaded(cx, cz) }) { x, y, z -> NexoPortalBlocks.isPortalBlock(world.getBlockAt(x, y, z)) }
-    val blocks = scan.blocks
-    val skippedHint = if (scan.skippedChunks > 0) " (${scan.skippedChunks} nicht geladene Chunks wurden übersprungen)" else ""
-    if (blocks == 0) return player.sendText {
-        appendErrorPrefix()
-        error("Im ausgewählten Bereich liegt kein Portalblock (${SkillWorldSettings.config.portalBlock.nexoBlockId})." + skippedHint)
-    }
-
     SkillWorldSettings.edit {
         it.copy(portals = it.portals + (id to PortalConfig(kind, skill, BlockPosConfig.of(a), BlockPosConfig.of(b))))
     }
@@ -263,9 +247,7 @@ private fun createPortal(player: Player, id: String, kind: PortalKind, skill: Sk
         appendSuccessPrefix()
         success("Portal ")
         variableValue(id)
-        success(" gespeichert (")
-        variableValue(blocks.toString())
-        success(" Portalblöcke)." + skippedHint)
+        success(" gespeichert.")
     }
 }
 

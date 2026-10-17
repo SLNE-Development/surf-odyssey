@@ -53,6 +53,14 @@ object EnvironmentRules {
         else -> null
     }
 
+    /**
+     * Returns the category of a player interacting with a block of [material] through an interaction
+     * of type [action] while holding an item of type [item]: [ProtectionCategory.TRAMPLE] for trampling
+     * farmland, otherwise the [blockUse] category, or `null` if the interaction changes nothing protected.
+     */
+    fun interactionCategory(action: Action, material: Material, item: Material?): ProtectionCategory? =
+        if (isTrample(action, material)) ProtectionCategory.TRAMPLE else blockUse(action, material, item)
+
     /** Returns the category of entities of [type]: hanging entities, armor stands, or `null` for any other entity. */
     fun decorationCategory(type: EntityType): ProtectionCategory? = when (type) {
         in HANGING -> ProtectionCategory.HANGING_ENTITIES

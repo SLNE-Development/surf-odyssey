@@ -42,7 +42,8 @@ import org.bukkit.event.world.StructureGrowEvent
 
 /**
  * Cancels every change of the hub world that is not a block break, unless the world's or the
- * affected block's region's protection settings allow it, as [EnvironmentRules] decide.
+ * affected block's region's protection settings allow it, as [EnvironmentRules] decide. Also passes
+ * block interactions to the region they happen in.
  *
  * Events in other worlds are left alone.
  */
@@ -131,19 +132,17 @@ object WorldChangeListener : Listener {
     fun onDecay(event: LeavesDecayEvent) = apply(ProtectionCategory.LEAF_DECAY, event.block, event)
 
     /**
-     * Cancels players trampling farmland and denies using doors, trapdoors, fence gates, buttons,
-     * levers, pressure plates and decoration blocks, as [EnvironmentRules.blockUse] classifies them.
-     * A denied block use still lets the player use the item in their hand.
+     * Denies trampling farmland and using doors, buttons, pressure plates and the other blocks
+     * [EnvironmentRules.interactionCategory] classifies, where their category is not allowed, then
+     * passes the interaction to the region of the clicked block in the hub world, also when the use
+     * was denied. A denied block use still lets the player use the item in their hand.
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onInteract(event: PlayerInteractEvent) {
         val block = event.clickedBlock ?: return
-        if (EnvironmentRules.isTrample(event.action, block.type)) {
-            apply(ProtectionCategory.TRAMPLE, block, event)
-            return
-        }
-        val category = EnvironmentRules.blockUse(event.action, block.type, event.item?.type) ?: return
-        if (!allows(category, block)) event.setUseInteractedBlock(Event.Result.DENY)
+        val category = EnvironmentRules.interactionCategory(event.action, block.type, event.item?.type)
+        if (category != null && !allows(category, block)) event.setUseInteractedBlock(Event.Result.DENY)
+        if (block.world == hub.hubWorld) hub.regionIndex.regionAt(block.x, block.y, block.z)?.onInteract(event)
     }
 
     /** Cancels entities changing blocks, e.g. endermen, falling blocks or mobs trampling farmland. */

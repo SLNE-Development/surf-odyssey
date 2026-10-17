@@ -163,6 +163,14 @@ class EnvironmentRulesTest {
     }
 
     @Test
+    fun `an interaction is a trample or a block use`() {
+        assertEquals(ProtectionCategory.TRAMPLE, EnvironmentRules.interactionCategory(Action.PHYSICAL, Material.FARMLAND, null))
+        assertEquals(ProtectionCategory.DOORS, EnvironmentRules.interactionCategory(Action.RIGHT_CLICK_BLOCK, Material.OAK_DOOR, null))
+        assertEquals(ProtectionCategory.PRESSURE_PLATES, EnvironmentRules.interactionCategory(Action.PHYSICAL, Material.OAK_PRESSURE_PLATE, null))
+        assertNull(EnvironmentRules.interactionCategory(Action.LEFT_CLICK_BLOCK, Material.STONE, null))
+    }
+
+    @Test
     fun `left-clicks and ordinary blocks are no block use`() {
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.OAK_DOOR, null))
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.FLOWER_POT, null))

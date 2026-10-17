@@ -44,7 +44,12 @@ abstract class Region(
      */
     open fun onBreak(event: BlockBreakEvent) {}
 
-    /** Called when a player interacts with a block inside this region. */
+    /**
+     * Called when a player interacts with a block inside this region, including uses the protection
+     * settings deny. [PlayerInteractEvent.useInteractedBlock] tells whether the block use is still
+     * going to happen; setting it to `ALLOW` permits a denied use and `DENY` forbids it. The hook must
+     * not assume the use succeeds, since later event handlers may still change the result.
+     */
     open fun onInteract(event: PlayerInteractEvent) {}
 
     /** Called once per second. */

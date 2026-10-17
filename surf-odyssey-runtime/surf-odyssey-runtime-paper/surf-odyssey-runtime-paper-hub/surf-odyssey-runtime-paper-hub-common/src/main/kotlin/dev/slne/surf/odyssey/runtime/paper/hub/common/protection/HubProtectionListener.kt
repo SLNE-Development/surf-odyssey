@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
-import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -20,8 +19,8 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 
 /**
- * Applies the region rules to block breaks in the hub world, forwards block interactions to their
- * region and keeps track of the region each player stands in.
+ * Applies the region rules to block breaks in the hub world and keeps track of the region each
+ * player stands in.
  */
 object HubProtectionListener : Listener {
     private val hub get() = HubPlugin.instance
@@ -59,14 +58,6 @@ object HubProtectionListener : Listener {
         hub.server.scheduler.runTask(hub, Runnable {
             if (RegenerationTicker.queue.isPending(point)) block.setType(region.placeholder, false)
         })
-    }
-
-    /** Forwards block interactions to the region they happen in. */
-    @EventHandler(ignoreCancelled = true)
-    fun onInteract(event: PlayerInteractEvent) {
-        val block = event.clickedBlock ?: return
-        if (block.world != hub.hubWorld) return
-        hub.regionIndex.regionAt(block.x, block.y, block.z)?.onInteract(event)
     }
 
     /** Records the region a player joins in. */

@@ -34,6 +34,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property pressurePlates players may trigger pressure plates by stepping on them
  * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it
  * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames
+ * @property plantHarvest players may pick sweet berries and glow berries, tilt big dripleaves and trample turtle eggs
  */
 data class ProtectionSettings(
     val blockPlace: Boolean = false,
@@ -61,6 +62,7 @@ data class ProtectionSettings(
     val pressurePlates: Boolean = false,
     val redstoneComponents: Boolean = false,
     val utilityBlocks: Boolean = false,
+    val plantHarvest: Boolean = false,
 )
 
 /**
@@ -144,6 +146,9 @@ class ProtectionSettingsBuilder {
     /** Sets [ProtectionSettings.utilityBlocks]. */
     var utilityBlocks = false
 
+    /** Sets [ProtectionSettings.plantHarvest]. */
+    var plantHarvest = false
+
     /** Creates the settings from the collected values. */
     fun build() = ProtectionSettings(
         blockPlace = blockPlace, buckets = buckets, explosions = explosions, fire = fire, spread = spread,
@@ -153,6 +158,7 @@ class ProtectionSettingsBuilder {
         decoBlocks = decoBlocks, doors = doors, buttons = buttons, levers = levers, pressurePlates = pressurePlates,
         redstoneComponents = redstoneComponents,
         utilityBlocks = utilityBlocks,
+        plantHarvest = plantHarvest,
     )
 }
 
@@ -240,4 +246,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
 
     /** A player uses a jukebox, bell, campfire, cauldron, beehive, bee nest, respawn anchor or end portal frame. */
     UTILITY_BLOCKS({ it.utilityBlocks }),
+
+    /** A player picks sweet berries or glow berries, tilts a big dripleaf or tramples turtle eggs. */
+    PLANT_HARVEST({ it.plantHarvest }),
 }

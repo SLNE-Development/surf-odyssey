@@ -11,6 +11,8 @@ object EnvironmentRules {
     private val REDSTONE_ORES = setOf(Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE)
     private val REDSTONE_CLICKED = setOf(Material.NOTE_BLOCK, Material.REPEATER, Material.COMPARATOR, Material.DAYLIGHT_DETECTOR) + REDSTONE_ORES
     private val REDSTONE_STEPPED = setOf(Material.TRIPWIRE) + REDSTONE_ORES
+    private val BERRIES = setOf(Material.SWEET_BERRY_BUSH, Material.CAVE_VINES, Material.CAVE_VINES_PLANT)
+    private val PLANTS_STEPPED = setOf(Material.BIG_DRIPLEAF, Material.TURTLE_EGG)
     private val UTILITY_BLOCKS = setOf(
         Material.JUKEBOX, Material.BELL, Material.CAMPFIRE, Material.SOUL_CAMPFIRE, Material.CAULDRON,
         Material.WATER_CAULDRON, Material.LAVA_CAULDRON, Material.POWDER_SNOW_CAULDRON, Material.BEEHIVE,
@@ -47,8 +49,10 @@ object EnvironmentRules {
      *
      * Right-clicking doors, trapdoors, fence gates, buttons, levers, decoration blocks, note blocks,
      * repeaters, comparators, daylight detectors, redstone ore and utility blocks such as jukeboxes,
-     * bells, campfires, cauldrons or beehives changes or uses them; a lectern changes only
-     * when a book is put on it. Stepping on a pressure plate, a tripwire or redstone ore triggers it.
+     * bells, campfires, cauldrons or beehives changes or uses them, and right-clicking berry bushes or
+     * cave vines picks their berries; a lectern changes only when a book is put on it. Stepping on a
+     * pressure plate, a tripwire or redstone ore triggers it, stepping on a big dripleaf tilts it and
+     * stepping on turtle eggs tramples them.
      * Left-clicks never count, so breaking a block is not affected.
      */
     fun blockUse(action: Action, material: Material, item: Material?): ProtectionCategory? = when (action) {
@@ -61,6 +65,7 @@ object EnvironmentRules {
     private fun physicalUse(material: Material): ProtectionCategory? = when (material) {
         in PRESSURE_PLATES -> ProtectionCategory.PRESSURE_PLATES
         in REDSTONE_STEPPED -> ProtectionCategory.REDSTONE_COMPONENTS
+        in PLANTS_STEPPED -> ProtectionCategory.PLANT_HARVEST
         else -> null
     }
 
@@ -76,6 +81,7 @@ object EnvironmentRules {
         material == Material.LECTERN && item in BOOKS -> ProtectionCategory.DECO_BLOCKS
         material in REDSTONE_CLICKED -> ProtectionCategory.REDSTONE_COMPONENTS
         material in UTILITY_BLOCKS -> ProtectionCategory.UTILITY_BLOCKS
+        material in BERRIES -> ProtectionCategory.PLANT_HARVEST
         else -> null
     }
 

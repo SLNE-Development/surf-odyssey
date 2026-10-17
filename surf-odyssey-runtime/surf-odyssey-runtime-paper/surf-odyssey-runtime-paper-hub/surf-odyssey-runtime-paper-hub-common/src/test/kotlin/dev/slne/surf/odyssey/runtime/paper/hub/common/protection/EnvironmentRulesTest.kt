@@ -89,6 +89,7 @@ class EnvironmentRulesTest {
             protectionSettings { pressurePlates = true } to ProtectionCategory.PRESSURE_PLATES,
             protectionSettings { redstoneComponents = true } to ProtectionCategory.REDSTONE_COMPONENTS,
             protectionSettings { utilityBlocks = true } to ProtectionCategory.UTILITY_BLOCKS,
+            protectionSettings { plantHarvest = true } to ProtectionCategory.PLANT_HARVEST,
         )
         assertEquals(ProtectionCategory.entries.toSet(), settings.map { it.second }.toSet())
         for ((setting, own) in settings) {
@@ -196,6 +197,16 @@ class EnvironmentRulesTest {
         )
         for (material in utility) {
             assertEquals(ProtectionCategory.UTILITY_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
+    }
+
+    @Test
+    fun `picking berries, tilting dripleaves and trampling eggs is a plant harvest`() {
+        for (material in listOf(Material.SWEET_BERRY_BUSH, Material.CAVE_VINES, Material.CAVE_VINES_PLANT)) {
+            assertEquals(ProtectionCategory.PLANT_HARVEST, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
+        for (material in listOf(Material.BIG_DRIPLEAF, Material.TURTLE_EGG)) {
+            assertEquals(ProtectionCategory.PLANT_HARVEST, EnvironmentRules.blockUse(Action.PHYSICAL, material, null), "$material")
         }
     }
 

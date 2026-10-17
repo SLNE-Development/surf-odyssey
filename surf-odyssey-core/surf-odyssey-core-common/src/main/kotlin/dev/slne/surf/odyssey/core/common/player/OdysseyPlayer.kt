@@ -5,10 +5,6 @@ import dev.slne.surf.api.core.util.toObjectSet
 import dev.slne.surf.odyssey.core.common.home.Home
 import dev.slne.surf.odyssey.core.common.home.HomeBridge
 import dev.slne.surf.odyssey.core.common.home.PlayerHomes
-import dev.slne.surf.odyssey.core.common.skill.PlayerSkills
-import dev.slne.surf.odyssey.core.common.skill.SkillCurve
-import dev.slne.surf.odyssey.core.common.skill.SkillProgress
-import dev.slne.surf.odyssey.core.common.skill.SkillType
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -20,39 +16,9 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class OdysseyPlayer(
     val uuid: UUID
-) : PlayerHomes, PlayerSkills {
+) : PlayerHomes {
     private val _homes = ConcurrentHashMap<UUID, Home>()
     override val homes get() = _homes.values.toObjectSet().freeze()
-
-    private val skillXp = ConcurrentHashMap<SkillType, Long>()
-
-    @Volatile
-    private var loadedSkills = false
-    override val skillsLoaded get() = loadedSkills
-
-    override fun xp(skill: SkillType): Long = skillXp[skill] ?: 0L
-
-    override fun addXp(skill: SkillType, amount: Long): Boolean {
-        if (!loadedSkills || amount <= 0) {
-            return false
-        }
-
-        // Experience keeps growing past the max level, only the Long range limits it
-        skillXp.compute(skill) { _, old ->
-            val current = old ?: 0L
-            if (current > Long.MAX_VALUE - amount) Long.MAX_VALUE else current + amount
-        }
-        return true
-    }
-
-    override fun setXp(skill: SkillType, amount: Long) {
-        skillXp[skill] = SkillCurve.clamp(amount)
-    }
-
-    override fun applySkills(progress: List<SkillProgress>) {
-        progress.forEach { skillXp[it.skill] = SkillCurve.clamp(it.xp) }
-        loadedSkills = true
-    }
 
     /** The cached home with [id], or null if this player has none. */
     fun home(id: UUID): Home? = _homes[id]

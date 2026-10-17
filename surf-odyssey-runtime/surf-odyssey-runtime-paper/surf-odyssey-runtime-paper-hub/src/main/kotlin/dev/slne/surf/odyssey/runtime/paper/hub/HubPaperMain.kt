@@ -5,9 +5,6 @@ import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
 import dev.slne.surf.odyssey.runtime.paper.hub.doublejump.DoubleJumpListener
-import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.FishingListener
-import dev.slne.surf.odyssey.runtime.paper.hub.skill.mining.MiningListener
-import dev.slne.surf.odyssey.runtime.paper.hub.skill.mobhunting.MobHuntingListener
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.SkillWorld
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.SkillWorldBootstrap
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.command.skillWorldCommand
@@ -20,10 +17,6 @@ class HubPaperMain : OdysseyPaperMain() {
     }
 
     override suspend fun onEnabled() {
-        FishingListener.register()
-        MiningListener.register()
-        MobHuntingListener.register()
-
         DoubleJumpListener.register()
 
         skillWorldCommand()

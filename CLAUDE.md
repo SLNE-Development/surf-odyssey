@@ -184,3 +184,5 @@ doc comments and commit messages stay in English.
 
 **Doc comments.** New files follow the doc-comment block above. The existing skill-system files
 (skill listeners, XP tables, skill runtime) stay without doc comments; changes to them add none.
+In tests, every test class gets a doc comment; individual test functions with a descriptive
+backtick name need none.

@@ -10,7 +10,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemStack
 
-/** Settings of a fishing region. */
+/** Collects the settings of the fishing region [id]: its name, shape, fish and protection settings. */
 @RegionDsl
 class FishingRegionBuilder(private val id: String) {
     init {
@@ -38,11 +38,14 @@ class FishingRegionBuilder(private val id: String) {
         fish += FishBuilder(id, weight).apply(block).build()
     }
 
-    /** Creates the fishing region from the collected settings. */
-    internal fun build() = FishingRegion(id, displayName, requireNotNull(shape) { "Region '$id' has no shape" }, FishTable(fish.toList()), settings)
+    /** Creates the fishing region from the collected settings, failing when it has no shape or no fish. */
+    internal fun build(): FishingRegion {
+        require(fish.isNotEmpty()) { "Fishing region '$id' needs at least one fish" }
+        return FishingRegion(id, displayName, requireNotNull(shape) { "Region '$id' has no shape" }, FishTable(fish.toList()), settings)
+    }
 }
 
-/** Conditions and item of one fish. */
+/** Collects the conditions and the item of the fish [id] with its relative [weight]. */
 @RegionDsl
 class FishBuilder(private val id: String, private val weight: Int) {
     private val conditions = mutableListOf<FishCondition>()
@@ -53,7 +56,7 @@ class FishBuilder(private val id: String, private val weight: Int) {
         conditions += condition
     }
 
-    /** Requires rain. */
+    /** Requires a storm in the world. */
     fun rain() = condition(FishCondition.rain())
 
     /** Requires a thunderstorm. */

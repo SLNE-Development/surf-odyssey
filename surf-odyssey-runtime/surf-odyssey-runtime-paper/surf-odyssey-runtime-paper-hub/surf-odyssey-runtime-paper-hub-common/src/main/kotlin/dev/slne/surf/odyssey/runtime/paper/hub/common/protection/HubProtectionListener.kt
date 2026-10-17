@@ -7,21 +7,10 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.PlayerRegionTracker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
 import org.bukkit.Location
-import org.bukkit.entity.Player
-import org.bukkit.event.Cancellable
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
-import org.bukkit.event.block.BlockBurnEvent
-import org.bukkit.event.block.BlockExplodeEvent
-import org.bukkit.event.block.BlockPlaceEvent
-import org.bukkit.event.block.BlockSpreadEvent
-import org.bukkit.event.block.LeavesDecayEvent
-import org.bukkit.event.entity.EntityChangeBlockEvent
-import org.bukkit.event.entity.EntityExplodeEvent
-import org.bukkit.event.player.PlayerBucketEmptyEvent
-import org.bukkit.event.player.PlayerBucketFillEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
@@ -30,8 +19,8 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 
 /**
- * Applies the region rules to every change of the hub world's blocks and keeps track of the
- * region each player stands in.
+ * Applies the region rules to block breaks in the hub world, forwards block interactions to their
+ * region and keeps track of the region each player stands in.
  */
 object HubProtectionListener : Listener {
     private val hub get() = HubPlugin.instance
@@ -64,46 +53,6 @@ object HubProtectionListener : Listener {
         RegenerationTicker.schedule(point, original, region.regenerateAfter.inWholeMilliseconds)
         hub.server.scheduler.runTask(hub, Runnable { block.setType(region.placeholder, false) })
     }
-
-    /** Cancels placing blocks unless [EnvironmentRules] allow it. */
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    fun onPlace(event: BlockPlaceEvent) = applyPlayerChange(WorldChange.PLACE, event.player, event)
-
-    /** Cancels emptying buckets unless [EnvironmentRules] allow it. */
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    fun onBucketEmpty(event: PlayerBucketEmptyEvent) = applyPlayerChange(WorldChange.BUCKET_EMPTY, event.player, event)
-
-    /** Cancels filling buckets unless [EnvironmentRules] allow it. */
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    fun onBucketFill(event: PlayerBucketFillEvent) = applyPlayerChange(WorldChange.BUCKET_FILL, event.player, event)
-
-    /** Cancels leaf decay unless [EnvironmentRules] allow it. */
-    @EventHandler(ignoreCancelled = true)
-    fun onDecay(event: LeavesDecayEvent) = applyChange(WorldChange.LEAF_DECAY, event)
-
-    /** Cancels fire burning blocks away unless [EnvironmentRules] allow it. */
-    @EventHandler(ignoreCancelled = true)
-    fun onBurn(event: BlockBurnEvent) = applyChange(WorldChange.BURN, event)
-
-    /** Cancels fire and other blocks spreading unless [EnvironmentRules] allow it. */
-    @EventHandler(ignoreCancelled = true)
-    fun onSpread(event: BlockSpreadEvent) = applyChange(WorldChange.SPREAD, event)
-
-    /** Keeps entity explosions from breaking blocks unless [EnvironmentRules] allow it. */
-    @EventHandler(ignoreCancelled = true)
-    fun onEntityExplode(event: EntityExplodeEvent) {
-        if (!EnvironmentRules.allows(WorldChange.EXPLOSION)) event.blockList().clear()
-    }
-
-    /** Keeps block explosions from breaking blocks unless [EnvironmentRules] allow it. */
-    @EventHandler(ignoreCancelled = true)
-    fun onBlockExplode(event: BlockExplodeEvent) {
-        if (!EnvironmentRules.allows(WorldChange.EXPLOSION)) event.blockList().clear()
-    }
-
-    /** Cancels entities changing blocks, e.g. endermen, unless [EnvironmentRules] allow it. */
-    @EventHandler(ignoreCancelled = true)
-    fun onEntityChange(event: EntityChangeBlockEvent) = applyChange(WorldChange.ENTITY_CHANGE, event)
 
     /** Forwards block interactions to the region they happen in. */
     @EventHandler(ignoreCancelled = true)
@@ -141,14 +90,4 @@ object HubProtectionListener : Listener {
     /** Returns the region covering [location], or `null` outside the hub world or every region. */
     private fun regionAt(location: Location): Region? =
         if (location.world == hub.hubWorld) hub.regionIndex.regionAt(location.blockX, location.blockY, location.blockZ) else null
-
-    /** Applies [change] by [player] to [event] when the player is in the hub world. */
-    private fun applyPlayerChange(change: WorldChange, player: Player, event: Cancellable) {
-        if (player.world == hub.hubWorld) applyChange(change, event)
-    }
-
-    /** Cancels [event] unless [EnvironmentRules] allow [change]. */
-    private fun applyChange(change: WorldChange, event: Cancellable) {
-        if (!EnvironmentRules.allows(change)) event.isCancelled = true
-    }
 }

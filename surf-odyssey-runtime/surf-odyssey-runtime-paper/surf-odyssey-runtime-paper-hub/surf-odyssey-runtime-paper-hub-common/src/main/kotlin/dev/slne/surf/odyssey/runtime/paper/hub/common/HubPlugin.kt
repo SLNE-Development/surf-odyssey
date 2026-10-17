@@ -4,6 +4,7 @@ import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.WorldChangeListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionTicker
@@ -47,6 +48,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         regionIndex = RegionIndex(RegionRegistry().apply { regions() }.build())
         server.worlds.forEach { it.isAutoSave = false }
         HubProtectionListener.register()
+        WorldChangeListener.register()
         RegionTicker.start(this)
         onHubEnabled()
     }

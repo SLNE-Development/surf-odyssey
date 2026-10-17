@@ -12,6 +12,10 @@ import org.bukkit.event.player.PlayerInteractEvent
  *
  * Outside every region nothing can be broken. Subclasses decide what may be broken inside and
  * react to players through the hooks, which are called on the main thread.
+ *
+ * @property id unique id of the region, matching [ID_PATTERN]
+ * @property displayName name of the region shown to players
+ * @property shape blocks the region covers
  */
 abstract class Region(val id: String, val displayName: Component, val shape: Shape) {
     init {

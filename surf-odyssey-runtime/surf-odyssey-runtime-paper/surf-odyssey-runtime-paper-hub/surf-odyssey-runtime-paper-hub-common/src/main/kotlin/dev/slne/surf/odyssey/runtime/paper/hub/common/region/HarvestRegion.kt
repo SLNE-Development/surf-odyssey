@@ -11,6 +11,12 @@ import kotlin.time.Duration
  * A region in which players break the [breakable] blocks. A broken block turns into [placeholder]
  * and returns to its original state after [regenerateAfter]. [drops], when set, replaces the
  * vanilla drops of a broken block.
+ *
+ * @property breakable blocks players may break in this region
+ * @property placeholder block a broken block turns into until it regenerates
+ * @property regenerateAfter time until a broken block returns to its original state
+ * @property drops returns the items a broken block drops instead of its vanilla drops, or `null`
+ *           to keep the vanilla drops
  */
 open class HarvestRegion(
     id: String,

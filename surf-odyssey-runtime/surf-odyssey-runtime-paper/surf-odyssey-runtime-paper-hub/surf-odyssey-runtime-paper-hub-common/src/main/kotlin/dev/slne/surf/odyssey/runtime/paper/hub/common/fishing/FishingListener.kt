@@ -9,13 +9,17 @@ import org.bukkit.event.player.PlayerFishEvent
 import kotlin.random.Random
 
 /**
- * Replaces the catch of a hook inside a fishing region with a fish from the region's table. The
- * region and the water depth are taken at the hook block if it is water, otherwise at the block below it.
+ * Replaces the catch of a hook inside a fishing region with a fish from the region's table and cancels
+ * every catch in the hub world outside fishing regions. The region and the water depth are taken at the
+ * hook block if it is water, otherwise at the block below it.
  */
 object FishingListener : Listener {
     private const val MAX_DEPTH_SCAN = 16
 
-    /** Rolls the region's table when a fish is caught; with no fitting fish the catch is cancelled. */
+    /**
+     * Rolls the region's table when a fish is caught; outside every fishing region or with no fitting
+     * fish the catch is cancelled.
+     */
     @EventHandler(ignoreCancelled = true)
     fun onFish(event: PlayerFishEvent) {
         if (event.state != PlayerFishEvent.State.CAUGHT_FISH) return
@@ -24,7 +28,11 @@ object FishingListener : Listener {
         if (hook.world != hub.hubWorld) return
         val isWaterAt = { offset: Int -> hook.block.getRelative(0, offset, 0).type == Material.WATER }
         val spot = hook.block.getRelative(0, WaterDepth.startOffset(isWaterAt), 0)
-        val region = hub.regionIndex.regionAt(spot.x, spot.y, spot.z) as? FishingRegion ?: return
+        val region = hub.regionIndex.regionAt(spot.x, spot.y, spot.z) as? FishingRegion
+        if (region == null) {
+            event.isCancelled = true
+            return
+        }
         val caught = event.caught as? Item ?: return
         val world = hook.world
         val context = FishContext(

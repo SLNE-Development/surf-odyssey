@@ -17,11 +17,11 @@ blocks:
     settings:
       hardness: -1
       resistance: 3600000
-      is_suffocating: true
+      is_suffocating: false
       replaceable: false
-      is_view_blocking: true
-      is_redstone_conductor: true
-      can_occlude: true
+      is_view_blocking: false
+      is_redstone_conductor: false
+      can_occlude: false
       sounds:
         break: minecraft:block.stone.break
         step: minecraft:block.stone.step
@@ -29,5 +29,5 @@ blocks:
         hit: minecraft:block.stone.hit
         fall: minecraft:block.stone.fall
     state:
-      auto_state: solid
+      auto_state: sapling
       texture: odyssey:block/portal

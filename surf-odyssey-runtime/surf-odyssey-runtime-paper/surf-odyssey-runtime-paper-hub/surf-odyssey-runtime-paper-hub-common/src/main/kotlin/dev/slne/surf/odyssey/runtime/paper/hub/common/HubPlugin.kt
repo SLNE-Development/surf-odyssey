@@ -92,14 +92,17 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Calls [onHubDisabled], restores every block waiting to regenerate, unregisters the placeholder tags, stops
-     * ticking, then disconnects the arrival cache.
+     * ticking, then disconnects the arrival cache. The arrival cache is disconnected even if an earlier step fails.
      */
     final override suspend fun onDisabled() {
-        onHubDisabled()
-        RegenerationTicker.restoreAll(hubWorld)
-        HubPlaceholders.unregister()
-        RegionTicker.stop()
-        ArrivalCache.disconnect()
+        try {
+            onHubDisabled()
+            RegenerationTicker.restoreAll(hubWorld)
+            HubPlaceholders.unregister()
+            RegionTicker.stop()
+        } finally {
+            ArrivalCache.disconnect()
+        }
     }
 
     /** Called after the hub systems are running. */

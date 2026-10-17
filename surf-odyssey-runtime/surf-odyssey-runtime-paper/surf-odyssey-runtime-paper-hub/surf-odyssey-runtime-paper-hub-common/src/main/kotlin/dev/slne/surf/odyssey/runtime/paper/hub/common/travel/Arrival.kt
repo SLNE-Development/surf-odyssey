@@ -28,9 +28,11 @@ object Arrival {
     }
 
     /**
-     * Returns where a joining player spawns: at [arrival] if there is one, otherwise at [spawnPoint].
+     * Returns where a joining player spawns: at [arrival] if there is one, otherwise at [logoutPosition] if there is
+     * one, otherwise at [spawnPoint].
      *
-     * @return the spawn position, or `null` if neither is set and the world's spawn applies
+     * @return the spawn position, or `null` if none is set and the world's spawn applies
      */
-    fun spawnPosition(arrival: WorldPosition?, spawnPoint: WorldPosition?): WorldPosition? = arrival ?: spawnPoint
+    fun spawnPosition(arrival: WorldPosition?, logoutPosition: WorldPosition?, spawnPoint: WorldPosition?): WorldPosition? =
+        arrival ?: logoutPosition ?: spawnPoint
 }

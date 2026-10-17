@@ -13,6 +13,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionLi
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.WorldChangeListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.reconnect.ReconnectService
 import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
@@ -76,9 +77,10 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Builds the region index and the world's protection settings, collects the portals, connects the
-     * arrival cache, turns off saving for every world, registers the protection, world change, fishing,
-     * portal, arrival and region wand listeners and the `/hubregion` command, starts the editor preview
-     * and the region ticker, registers the placeholder tags, then calls [onHubEnabled].
+     * arrival cache, starts the reconnect service, turns off saving for every world, registers the
+     * protection, world change, fishing, portal, arrival and region wand listeners and the `/hubregion`
+     * command, starts the editor preview and the region ticker, registers the placeholder tags, then calls
+     * [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */
@@ -87,6 +89,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         protectionSettings = ProtectionSettingsBuilder().apply { settings() }.build()
         portalList = portals()
         ArrivalCache.connect(name)
+        ReconnectService.start(this)
         server.worlds.forEach { it.isAutoSave = false }
         HubProtectionListener.register()
         WorldChangeListener.register()
@@ -103,9 +106,9 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Calls [onHubDisabled], then restores every block waiting to regenerate, unregisters the
-     * placeholder tags, stops ticking, removes the mobs of every mob spawn region and disconnects the
-     * arrival cache. Each step runs even if an earlier one throws; the first failure is thrown once all
-     * steps have run.
+     * placeholder tags, stops ticking, removes the mobs of every mob spawn region, stops the reconnect
+     * service and disconnects the arrival cache. Each step runs even if an earlier one throws; the first
+     * failure is thrown once all steps have run.
      */
     final override suspend fun onDisabled() {
         val steps = ShutdownSteps()
@@ -116,6 +119,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         steps.run {
             if (this::regionIndex.isInitialized) regionIndex.regions.filterIsInstance<MobSpawnRegion>().forEach { it.removeMobs() }
         }
+        steps.run { ReconnectService.stop(this) }
         steps.run { ArrivalCache.disconnect() }
         steps.rethrow()
     }

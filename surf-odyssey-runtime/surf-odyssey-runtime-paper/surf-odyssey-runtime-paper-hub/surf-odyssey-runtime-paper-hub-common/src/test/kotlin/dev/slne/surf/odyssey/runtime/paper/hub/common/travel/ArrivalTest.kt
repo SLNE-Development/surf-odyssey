@@ -33,16 +33,34 @@ class ArrivalTest {
     @Test
     fun `the arrival point wins over the spawn point`() = assertEquals(
         toLobby.arrival,
-        Arrival.spawnPosition(toLobby.arrival, WorldPosition(0.0, 64.0, 0.0, 0f, 0f)),
+        Arrival.spawnPosition(toLobby.arrival, null, WorldPosition(0.0, 64.0, 0.0, 0f, 0f)),
+    )
+
+    @Test
+    fun `the arrival point wins over the logout position`() = assertEquals(
+        toLobby.arrival,
+        Arrival.spawnPosition(toLobby.arrival, WorldPosition(5.0, 70.0, 5.0), WorldPosition(0.0, 64.0, 0.0)),
+    )
+
+    @Test
+    fun `without an arrival point the logout position wins over the spawn point`() = assertEquals(
+        WorldPosition(5.0, 70.0, 5.0),
+        Arrival.spawnPosition(null, WorldPosition(5.0, 70.0, 5.0), WorldPosition(0.0, 64.0, 0.0)),
+    )
+
+    @Test
+    fun `the logout position wins over the world spawn`() = assertEquals(
+        WorldPosition(5.0, 70.0, 5.0),
+        Arrival.spawnPosition(null, WorldPosition(5.0, 70.0, 5.0), null),
     )
 
     @Test
     fun `without an arrival point players spawn at the spawn point`() = assertEquals(
         WorldPosition(0.0, 64.0, 0.0, 0f, 0f),
-        Arrival.spawnPosition(null, WorldPosition(0.0, 64.0, 0.0, 0f, 0f)),
+        Arrival.spawnPosition(null, null, WorldPosition(0.0, 64.0, 0.0, 0f, 0f)),
     )
 
     @Test
-    fun `without arrival and spawn point players spawn at the world spawn`() =
-        assertNull(Arrival.spawnPosition(null, null))
+    fun `without arrival, logout and spawn point players spawn at the world spawn`() =
+        assertNull(Arrival.spawnPosition(null, null, null))
 }

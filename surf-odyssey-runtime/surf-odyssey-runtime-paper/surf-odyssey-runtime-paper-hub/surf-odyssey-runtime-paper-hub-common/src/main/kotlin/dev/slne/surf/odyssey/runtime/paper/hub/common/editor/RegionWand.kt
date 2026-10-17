@@ -7,10 +7,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
-/**
- * The region editor wand: a blaze rod marked in its persistent data, so renaming or a second
- * blaze rod never counts as the wand.
- */
+/** The region editor wand: a blaze rod marked as the wand in its persistent data. */
 object RegionWand {
     /** Persistent data key that marks an item as the wand. */
     private val key: NamespacedKey get() = NamespacedKey(HubPlugin.instance, "region_wand")

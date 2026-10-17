@@ -40,7 +40,10 @@ fun RegionRegistry.northRegions() {
     }
     forest("north_forest_oak") {
         displayName = Component.text("Eichenwald")
-        shape { prism(minY = 60, maxY = 110) { point(300, 100); point(360, 100); point(360, 160); point(300, 160) } }
+        shape {
+            prism(minY = 60, maxY = 110) { point(300, 100); point(370, 100); point(370, 160); point(300, 160) }
+            exclude { cuboid(362, 63, 127, 368, 67, 133) }
+        }
         breakable(Material.OAK_LOG, Material.OAK_LEAVES)
         regenerateAfter = 3.minutes
     }

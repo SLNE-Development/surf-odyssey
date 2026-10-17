@@ -7,14 +7,27 @@ items:
 blocks:
   odyssey:portal:
     loot:
-      template: default:loot_table/self
+      pools:
+        - rolls: 1
+          conditions:
+            - type: survives_explosion
+          entries:
+            - type: item
+              item: odyssey:portal
     settings:
-      template:
-        - default:sound/stone
-        - default:settings/solid_1x1x1
-      overrides:
-        hardness: -1
-        resistance: 3600000
+      hardness: -1
+      resistance: 3600000
+      is_suffocating: true
+      replaceable: false
+      is_view_blocking: true
+      is_redstone_conductor: true
+      can_occlude: true
+      sounds:
+        break: minecraft:block.stone.break
+        step: minecraft:block.stone.step
+        place: minecraft:block.stone.place
+        hit: minecraft:block.stone.hit
+        fall: minecraft:block.stone.fall
     state:
       auto_state: solid
       texture: odyssey:block/portal

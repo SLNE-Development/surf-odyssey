@@ -2,18 +2,18 @@ package dev.slne.surf.odyssey.runtime.paper.hub.skillworld.listener
 
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.SkillWorld
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.command.Selections
+import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 
 object SkillWorldPlayerListener : Listener {
     @EventHandler(priority = EventPriority.HIGH)
-    fun onJoin(event: PlayerJoinEvent) {
-        val player = event.player
-        if (SkillWorld.isSkillWorld(player.world)) player.teleportAsync(SkillWorld.hubSpawn())
+    fun onSpawnLocation(event: AsyncPlayerSpawnLocationEvent) {
+        val world = event.spawnLocation.world ?: return
+        if (SkillWorld.isEditWorld(world)) event.spawnLocation = SkillWorld.hubSpawn()
     }
 
     @EventHandler(priority = EventPriority.HIGH)

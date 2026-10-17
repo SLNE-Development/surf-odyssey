@@ -31,8 +31,9 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property doors players may open and close doors, trapdoors and fence gates
  * @property buttons players may press buttons
  * @property levers players may flip levers
- * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it
  * @property pressurePlates players may trigger pressure plates by stepping on them
+ * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it
+ * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames
  */
 data class ProtectionSettings(
     val blockPlace: Boolean = false,
@@ -59,6 +60,7 @@ data class ProtectionSettings(
     val levers: Boolean = false,
     val pressurePlates: Boolean = false,
     val redstoneComponents: Boolean = false,
+    val utilityBlocks: Boolean = false,
 )
 
 /**
@@ -139,6 +141,9 @@ class ProtectionSettingsBuilder {
     /** Sets [ProtectionSettings.redstoneComponents]. */
     var redstoneComponents = false
 
+    /** Sets [ProtectionSettings.utilityBlocks]. */
+    var utilityBlocks = false
+
     /** Creates the settings from the collected values. */
     fun build() = ProtectionSettings(
         blockPlace = blockPlace, buckets = buckets, explosions = explosions, fire = fire, spread = spread,
@@ -147,6 +152,7 @@ class ProtectionSettingsBuilder {
         hangingEntities = hangingEntities, armorStands = armorStands, signs = signs, dispensers = dispensers,
         decoBlocks = decoBlocks, doors = doors, buttons = buttons, levers = levers, pressurePlates = pressurePlates,
         redstoneComponents = redstoneComponents,
+        utilityBlocks = utilityBlocks,
     )
 }
 
@@ -231,4 +237,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
 
     /** A player changes a note block, repeater, comparator or daylight detector, triggers a tripwire or lights redstone ore by touching it. */
     REDSTONE_COMPONENTS({ it.redstoneComponents }),
+
+    /** A player uses a jukebox, bell, campfire, cauldron, beehive, bee nest, respawn anchor or end portal frame. */
+    UTILITY_BLOCKS({ it.utilityBlocks }),
 }

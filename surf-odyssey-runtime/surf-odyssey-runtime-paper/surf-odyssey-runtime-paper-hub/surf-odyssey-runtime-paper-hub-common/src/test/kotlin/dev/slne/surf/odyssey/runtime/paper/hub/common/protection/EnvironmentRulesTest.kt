@@ -88,6 +88,7 @@ class EnvironmentRulesTest {
             protectionSettings { levers = true } to ProtectionCategory.LEVERS,
             protectionSettings { pressurePlates = true } to ProtectionCategory.PRESSURE_PLATES,
             protectionSettings { redstoneComponents = true } to ProtectionCategory.REDSTONE_COMPONENTS,
+            protectionSettings { utilityBlocks = true } to ProtectionCategory.UTILITY_BLOCKS,
         )
         assertEquals(ProtectionCategory.entries.toSet(), settings.map { it.second }.toSet())
         for ((setting, own) in settings) {
@@ -184,6 +185,18 @@ class EnvironmentRulesTest {
             assertEquals(ProtectionCategory.REDSTONE_COMPONENTS, EnvironmentRules.blockUse(Action.PHYSICAL, material, null), "$material")
         }
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.REDSTONE_ORE, null))
+    }
+
+    @Test
+    fun `using utility blocks is a utility use`() {
+        val utility = listOf(
+            Material.JUKEBOX, Material.BELL, Material.CAMPFIRE, Material.SOUL_CAMPFIRE, Material.CAULDRON,
+            Material.WATER_CAULDRON, Material.LAVA_CAULDRON, Material.POWDER_SNOW_CAULDRON, Material.BEEHIVE,
+            Material.BEE_NEST, Material.RESPAWN_ANCHOR, Material.END_PORTAL_FRAME,
+        )
+        for (material in utility) {
+            assertEquals(ProtectionCategory.UTILITY_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
     }
 
     @Test

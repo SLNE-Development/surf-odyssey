@@ -11,6 +11,11 @@ object EnvironmentRules {
     private val REDSTONE_ORES = setOf(Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE)
     private val REDSTONE_CLICKED = setOf(Material.NOTE_BLOCK, Material.REPEATER, Material.COMPARATOR, Material.DAYLIGHT_DETECTOR) + REDSTONE_ORES
     private val REDSTONE_STEPPED = setOf(Material.TRIPWIRE) + REDSTONE_ORES
+    private val UTILITY_BLOCKS = setOf(
+        Material.JUKEBOX, Material.BELL, Material.CAMPFIRE, Material.SOUL_CAMPFIRE, Material.CAULDRON,
+        Material.WATER_CAULDRON, Material.LAVA_CAULDRON, Material.POWDER_SNOW_CAULDRON, Material.BEEHIVE,
+        Material.BEE_NEST, Material.RESPAWN_ANCHOR, Material.END_PORTAL_FRAME,
+    )
     private val BLOCKS = Material.entries.filterNot { it.name.startsWith("LEGACY_") }
 
     private val DOORS = BLOCKS.filterTo(mutableSetOf()) {
@@ -41,7 +46,8 @@ object EnvironmentRules {
      * change the block.
      *
      * Right-clicking doors, trapdoors, fence gates, buttons, levers, decoration blocks, note blocks,
-     * repeaters, comparators, daylight detectors and redstone ore changes them; a lectern changes only
+     * repeaters, comparators, daylight detectors, redstone ore and utility blocks such as jukeboxes,
+     * bells, campfires, cauldrons or beehives changes or uses them; a lectern changes only
      * when a book is put on it. Stepping on a pressure plate, a tripwire or redstone ore triggers it.
      * Left-clicks never count, so breaking a block is not affected.
      */
@@ -69,6 +75,7 @@ object EnvironmentRules {
         material in DECO_BLOCKS -> ProtectionCategory.DECO_BLOCKS
         material == Material.LECTERN && item in BOOKS -> ProtectionCategory.DECO_BLOCKS
         material in REDSTONE_CLICKED -> ProtectionCategory.REDSTONE_COMPONENTS
+        material in UTILITY_BLOCKS -> ProtectionCategory.UTILITY_BLOCKS
         else -> null
     }
 

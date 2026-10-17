@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+/** Checks the order and uniqueness of entries in a [RegenerationQueue]. */
 class RegenerationQueueTest {
     private val a = BlockPoint(1, 2, 3)
     private val b = BlockPoint(4, 5, 6)

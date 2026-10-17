@@ -5,6 +5,7 @@ import org.bukkit.Material
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/** Checks how [BlockRules] decide about breaking a block. */
 class BlockRulesTest {
     private val mine = RegionRegistry().apply {
         mine("m") { shape { cuboid(0, 0, 0, 1, 1, 1) }; breakable(Material.IRON_ORE) }

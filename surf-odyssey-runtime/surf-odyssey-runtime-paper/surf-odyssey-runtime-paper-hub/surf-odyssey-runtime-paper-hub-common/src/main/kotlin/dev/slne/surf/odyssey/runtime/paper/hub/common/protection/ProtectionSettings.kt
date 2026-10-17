@@ -36,6 +36,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames
  * @property plantHarvest players may pick sweet berries and glow berries, tilt big dripleaves and trample turtle eggs; dripleaves and turtle eggs also cover other entities
  * @property vehicles players may place boats, minecarts and end crystals
+ * @property containers players may open chests, trapped chests, ender chests, copper chests, barrels, shulker
+ *           boxes, furnaces, smokers, blast furnaces, hoppers, droppers, dispensers, brewing stands and crafters
  */
 data class ProtectionSettings(
     val blockPlace: Boolean = false,
@@ -65,6 +67,7 @@ data class ProtectionSettings(
     val utilityBlocks: Boolean = false,
     val plantHarvest: Boolean = false,
     val vehicles: Boolean = false,
+    val containers: Boolean = false,
 )
 
 /**
@@ -154,6 +157,9 @@ class ProtectionSettingsBuilder {
     /** Sets [ProtectionSettings.vehicles]. */
     var vehicles = false
 
+    /** Sets [ProtectionSettings.containers]. */
+    var containers = false
+
     /** Creates the settings from the collected values. */
     fun build() = ProtectionSettings(
         blockPlace = blockPlace, buckets = buckets, explosions = explosions, fire = fire, spread = spread,
@@ -165,6 +171,7 @@ class ProtectionSettingsBuilder {
         utilityBlocks = utilityBlocks,
         plantHarvest = plantHarvest,
         vehicles = vehicles,
+        containers = containers,
     )
 }
 
@@ -258,4 +265,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
 
     /** A player places a boat, minecart or end crystal. */
     VEHICLES({ it.vehicles }),
+
+    /** A player opens a container such as a chest, barrel, shulker box, furnace, hopper or brewing stand. */
+    CONTAINERS({ it.containers }),
 }

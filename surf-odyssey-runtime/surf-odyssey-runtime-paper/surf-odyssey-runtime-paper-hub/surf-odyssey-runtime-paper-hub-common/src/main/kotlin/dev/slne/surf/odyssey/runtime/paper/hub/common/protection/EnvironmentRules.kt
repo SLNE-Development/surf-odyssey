@@ -29,6 +29,12 @@ object EnvironmentRules {
     private val SIGN_MARKERS = BLOCKS.filterTo(mutableSetOf()) {
         it.name.endsWith("_DYE") || it == Material.INK_SAC || it == Material.GLOW_INK_SAC || it == Material.HONEYCOMB
     }
+    private val CONTAINERS = BLOCKS.filterTo(mutableSetOf()) {
+        it == Material.CHEST || it.name.endsWith("_CHEST") || it == Material.SHULKER_BOX || it.name.endsWith("_SHULKER_BOX")
+    } + setOf(
+        Material.BARREL, Material.FURNACE, Material.SMOKER, Material.BLAST_FURNACE, Material.HOPPER, Material.DROPPER,
+        Material.DISPENSER, Material.BREWING_STAND, Material.CRAFTER,
+    )
     private val DECO_BLOCKS = BLOCKS.filterTo(mutableSetOf()) {
         it == Material.FLOWER_POT || it.name.startsWith("POTTED_") || it == Material.CAKE ||
             it == Material.CANDLE || it.name.endsWith("_CANDLE") || it.name.endsWith("CANDLE_CAKE") ||
@@ -54,7 +60,8 @@ object EnvironmentRules {
      * Right-clicking doors, trapdoors, fence gates, buttons, levers, decoration blocks, note blocks,
      * repeaters, comparators, daylight detectors, redstone ore and utility blocks such as jukeboxes,
      * bells, campfires, cauldrons or beehives changes or uses them, and right-clicking berry bushes or
-     * cave vines picks their berries. A lectern changes only when a book is put on an empty one, so
+     * cave vines picks their berries. Right-clicking chests, barrels, shulker boxes, furnaces, hoppers,
+     * droppers, dispensers, brewing stands and crafters opens them as containers. A lectern changes only when a book is put on an empty one, so
      * reading a book on it stays possible; a sign changes only when it is dyed, made to glow or waxed.
      * Stepping on a pressure plate, a tripwire or redstone ore triggers it, stepping on a big dripleaf
      * tilts it and stepping on turtle eggs tramples them. Left-clicks never count, so breaking a block
@@ -93,6 +100,7 @@ object EnvironmentRules {
         material in REDSTONE_CLICKED -> ProtectionCategory.REDSTONE_COMPONENTS
         material in UTILITY_BLOCKS -> ProtectionCategory.UTILITY_BLOCKS
         material in BERRIES -> ProtectionCategory.PLANT_HARVEST
+        material in CONTAINERS -> ProtectionCategory.CONTAINERS
         material in SIGNS && item in SIGN_MARKERS -> ProtectionCategory.SIGNS
         else -> null
     }

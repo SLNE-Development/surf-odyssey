@@ -91,6 +91,7 @@ class EnvironmentRulesTest {
             protectionSettings { utilityBlocks = true } to ProtectionCategory.UTILITY_BLOCKS,
             protectionSettings { plantHarvest = true } to ProtectionCategory.PLANT_HARVEST,
             protectionSettings { vehicles = true } to ProtectionCategory.VEHICLES,
+            protectionSettings { containers = true } to ProtectionCategory.CONTAINERS,
         )
         assertEquals(ProtectionCategory.entries.toSet(), settings.map { it.second }.toSet())
         for ((setting, own) in settings) {
@@ -239,6 +240,25 @@ class EnvironmentRulesTest {
         assertEquals(ProtectionCategory.PLANT_HARVEST, EnvironmentRules.entityInteractionCategory(Material.TURTLE_EGG))
         assertNull(EnvironmentRules.entityInteractionCategory(Material.FARMLAND))
         assertNull(EnvironmentRules.entityInteractionCategory(Material.STONE))
+    }
+
+    @Test
+    fun `opening a container is a container use`() {
+        val containers = listOf(
+            Material.CHEST, Material.TRAPPED_CHEST, Material.ENDER_CHEST, Material.COPPER_CHEST, Material.BARREL,
+            Material.SHULKER_BOX, Material.RED_SHULKER_BOX, Material.FURNACE, Material.SMOKER, Material.BLAST_FURNACE,
+            Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND, Material.CRAFTER,
+        )
+        for (material in containers) {
+            assertEquals(ProtectionCategory.CONTAINERS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
+        assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.CHEST, null))
+    }
+
+    @Test
+    fun `decorated pots and chiseled bookshelves stay decoration blocks`() {
+        assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.DECORATED_POT, null))
+        assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.CHISELED_BOOKSHELF, null))
     }
 
     @Test

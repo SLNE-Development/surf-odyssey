@@ -223,7 +223,7 @@ resource-pack:
 
   # This section controls how to send the resource pack to players
   delivery:
-    prompt: "<yellow>To fully experience our server,<newline>please accept our custom resource pack.</yellow>"
+    prompt: "<yellow>Das Odyssey-Resourcepack ist Pflicht.<newline>Ohne Pack kannst du nicht spielen.</yellow>"
 
     # Send the resource pack on joining the server
     send-on-join: true

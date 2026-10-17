@@ -46,6 +46,11 @@ developmentStack {
         // Player worlds are stored through the polar-paper microservice
         requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper")
     }
+    server("pack-01") {
+        project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-pack"
+        directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-pack/run/pack-01")
+        requiredPlugins = listOf("surf-api-paper-server", "surf-rabbitmq-paper", "surf-redis-paper", "surf-core-paper", "CommandAPI", "LuckPerms", "packetevents", "craft-engine")
+    }
 
     microservice("odyssey") {
         buildContext = layout.projectDirectory

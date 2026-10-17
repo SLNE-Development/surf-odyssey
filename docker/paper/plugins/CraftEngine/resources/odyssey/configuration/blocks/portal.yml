@@ -1,0 +1,20 @@
+items:
+  odyssey:portal:
+    texture: odyssey:block/portal
+    behavior:
+      type: block_item
+      block: odyssey:portal
+blocks:
+  odyssey:portal:
+    loot:
+      template: default:loot_table/self
+    settings:
+      template:
+        - default:sound/stone
+        - default:settings/solid_1x1x1
+      overrides:
+        hardness: -1
+        resistance: 3600000
+    state:
+      auto_state: solid
+      texture: odyssey:block/portal

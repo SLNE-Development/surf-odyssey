@@ -1,0 +1,5 @@
+author: SLNE Development
+version: 1.0.0
+description: Odyssey content
+namespace: odyssey
+enable: true

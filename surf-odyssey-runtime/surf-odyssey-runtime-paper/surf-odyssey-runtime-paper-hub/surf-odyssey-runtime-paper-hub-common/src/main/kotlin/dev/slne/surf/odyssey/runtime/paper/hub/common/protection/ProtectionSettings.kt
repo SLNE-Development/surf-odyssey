@@ -22,7 +22,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property entityBlockChanges entities may change blocks, e.g. endermen, falling blocks or mobs trampling farmland
  * @property hangingEntities item frames and paintings may be placed, broken, damaged and used, including
  *           rotating, inserting or taking their item
- * @property armorStands armor stands may be damaged, used and have their equipment changed
+ * @property armorStands armor stands may be placed, damaged, used and have their equipment changed
  * @property signs players may open the sign editor and change the text of signs
  * @property dispensers dispensers and droppers may dispense items
  * @property decoBlocks players may change flower pots, cakes, composters, candles, candle cakes,
@@ -35,6 +35,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it
  * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames
  * @property plantHarvest players may pick sweet berries and glow berries, tilt big dripleaves and trample turtle eggs
+ * @property vehicles players may place boats, minecarts and end crystals
  */
 data class ProtectionSettings(
     val blockPlace: Boolean = false,
@@ -63,6 +64,7 @@ data class ProtectionSettings(
     val redstoneComponents: Boolean = false,
     val utilityBlocks: Boolean = false,
     val plantHarvest: Boolean = false,
+    val vehicles: Boolean = false,
 )
 
 /**
@@ -149,6 +151,9 @@ class ProtectionSettingsBuilder {
     /** Sets [ProtectionSettings.plantHarvest]. */
     var plantHarvest = false
 
+    /** Sets [ProtectionSettings.vehicles]. */
+    var vehicles = false
+
     /** Creates the settings from the collected values. */
     fun build() = ProtectionSettings(
         blockPlace = blockPlace, buckets = buckets, explosions = explosions, fire = fire, spread = spread,
@@ -159,6 +164,7 @@ class ProtectionSettingsBuilder {
         redstoneComponents = redstoneComponents,
         utilityBlocks = utilityBlocks,
         plantHarvest = plantHarvest,
+        vehicles = vehicles,
     )
 }
 
@@ -217,7 +223,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
     /** An item frame or painting is placed, broken, damaged or used. */
     HANGING_ENTITIES({ it.hangingEntities }),
 
-    /** An armor stand is damaged, used or has its equipment changed. */
+    /** An armor stand is placed, damaged, used or has its equipment changed. */
     ARMOR_STANDS({ it.armorStands }),
 
     /** A player opens the sign editor or changes the text of a sign. */
@@ -249,4 +255,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
 
     /** A player picks sweet berries or glow berries, tilts a big dripleaf or tramples turtle eggs. */
     PLANT_HARVEST({ it.plantHarvest }),
+
+    /** A player places a boat, minecart or end crystal. */
+    VEHICLES({ it.vehicles }),
 }

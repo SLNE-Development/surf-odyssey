@@ -100,6 +100,10 @@ object EnvironmentRules {
         else -> null
     }
 
+    /** Returns the category of a player placing an entity of [type]: armor stands for armor stands, vehicles otherwise. */
+    fun placeCategory(type: EntityType): ProtectionCategory =
+        if (type == EntityType.ARMOR_STAND) ProtectionCategory.ARMOR_STANDS else ProtectionCategory.VEHICLES
+
     /** Returns the category of a block spreading from a block of [source]: fire for fire, spread otherwise. */
     fun spreadCategory(source: Material): ProtectionCategory =
         if (source == Material.FIRE || source == Material.SOUL_FIRE) ProtectionCategory.FIRE else ProtectionCategory.SPREAD

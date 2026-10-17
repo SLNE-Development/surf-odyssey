@@ -90,6 +90,7 @@ class EnvironmentRulesTest {
             protectionSettings { redstoneComponents = true } to ProtectionCategory.REDSTONE_COMPONENTS,
             protectionSettings { utilityBlocks = true } to ProtectionCategory.UTILITY_BLOCKS,
             protectionSettings { plantHarvest = true } to ProtectionCategory.PLANT_HARVEST,
+            protectionSettings { vehicles = true } to ProtectionCategory.VEHICLES,
         )
         assertEquals(ProtectionCategory.entries.toSet(), settings.map { it.second }.toSet())
         for ((setting, own) in settings) {
@@ -207,6 +208,14 @@ class EnvironmentRulesTest {
         }
         for (material in listOf(Material.BIG_DRIPLEAF, Material.TURTLE_EGG)) {
             assertEquals(ProtectionCategory.PLANT_HARVEST, EnvironmentRules.blockUse(Action.PHYSICAL, material, null), "$material")
+        }
+    }
+
+    @Test
+    fun `placed armor stands count as armor stands, other placed entities as vehicles`() {
+        assertEquals(ProtectionCategory.ARMOR_STANDS, EnvironmentRules.placeCategory(EntityType.ARMOR_STAND))
+        for (type in listOf(EntityType.OAK_BOAT, EntityType.MINECART, EntityType.END_CRYSTAL)) {
+            assertEquals(ProtectionCategory.VEHICLES, EnvironmentRules.placeCategory(type), "$type")
         }
     }
 

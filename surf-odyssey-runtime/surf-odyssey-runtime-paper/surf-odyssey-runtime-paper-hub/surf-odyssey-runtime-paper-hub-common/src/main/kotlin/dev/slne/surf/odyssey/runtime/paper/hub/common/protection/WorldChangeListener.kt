@@ -30,6 +30,7 @@ import org.bukkit.event.block.SignChangeEvent
 import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityExplodeEvent
+import org.bukkit.event.entity.EntityPlaceEvent
 import org.bukkit.event.hanging.HangingBreakEvent
 import org.bukkit.event.hanging.HangingPlaceEvent
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent
@@ -169,6 +170,11 @@ object WorldChangeListener : Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onItemFrameChange(event: PlayerItemFrameChangeEvent) =
         apply(ProtectionCategory.HANGING_ENTITIES, event.itemFrame.location, event)
+
+    /** Cancels players placing boats, minecarts, end crystals and armor stands. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onEntityPlace(event: EntityPlaceEvent) =
+        apply(EnvironmentRules.placeCategory(event.entity.type), event.entity.location, event)
 
     /** Cancels players changing the equipment of armor stands. */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

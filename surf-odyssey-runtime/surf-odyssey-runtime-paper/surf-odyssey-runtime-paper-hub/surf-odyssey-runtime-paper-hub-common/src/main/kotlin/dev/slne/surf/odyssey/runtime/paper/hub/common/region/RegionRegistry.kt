@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingRegionBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
@@ -28,6 +29,11 @@ class RegionRegistry {
     /** Adds a forest configured in [block]. */
     fun forest(id: String, block: HarvestRegionBuilder.() -> Unit) {
         regions += HarvestRegionBuilder(id, Material.AIR).apply(block).buildForest()
+    }
+
+    /** Adds a fishing region configured in [block]. */
+    fun fishing(id: String, block: FishingRegionBuilder.() -> Unit) {
+        regions += FishingRegionBuilder(id).apply(block).build()
     }
 
     /** Returns all regions in declaration order. */

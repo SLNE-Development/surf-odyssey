@@ -103,22 +103,21 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Calls [onHubDisabled], then restores every block waiting to regenerate, unregisters the
-     * placeholder tags, stops ticking and removes the mobs of every mob spawn region, even if
-     * [onHubDisabled] throws, then disconnects the arrival cache, even if an earlier step fails.
+     * placeholder tags, stops ticking, removes the mobs of every mob spawn region and disconnects the
+     * arrival cache. Each step runs even if an earlier one throws; the first failure is thrown once all
+     * steps have run.
      */
     final override suspend fun onDisabled() {
-        try {
-            onHubDisabled()
-        } finally {
-            try {
-                RegenerationTicker.restoreAll(hubWorld)
-                HubPlaceholders.unregister()
-                RegionTicker.stop()
-                if (this::regionIndex.isInitialized) regionIndex.regions.filterIsInstance<MobSpawnRegion>().forEach { it.removeMobs() }
-            } finally {
-                ArrivalCache.disconnect()
-            }
+        val steps = ShutdownSteps()
+        steps.run { onHubDisabled() }
+        steps.run { RegenerationTicker.restoreAll(hubWorld) }
+        steps.run { HubPlaceholders.unregister() }
+        steps.run { RegionTicker.stop() }
+        steps.run {
+            if (this::regionIndex.isInitialized) regionIndex.regions.filterIsInstance<MobSpawnRegion>().forEach { it.removeMobs() }
         }
+        steps.run { ArrivalCache.disconnect() }
+        steps.rethrow()
     }
 
     /** Called after the hub systems are running. */

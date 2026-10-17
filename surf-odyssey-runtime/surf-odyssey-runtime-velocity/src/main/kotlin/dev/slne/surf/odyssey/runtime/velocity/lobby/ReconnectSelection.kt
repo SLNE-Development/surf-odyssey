@@ -14,6 +14,15 @@ import kotlin.time.Duration
 fun isHubCategory(category: String): Boolean = category.startsWith(ReconnectEntry.HUB_CATEGORY_PREFIX)
 
 /**
+ * Returns whether a player who leaves the network while on a server of [category] loses their reconnect entry, so
+ * that their next join leads to a lobby.
+ *
+ * @param category the category of the server the player was on, or `null` if it is unknown
+ * @return `true` if the category is known and does not belong to a hub world
+ */
+fun forgetsReconnectEntry(category: String?): Boolean = category != null && !isHubCategory(category)
+
+/**
  * Picks the initial server of a joining player who last left the hub server [lastServer].
  *
  * The last server wins while it is running. Otherwise the running server of the same category with the fewest

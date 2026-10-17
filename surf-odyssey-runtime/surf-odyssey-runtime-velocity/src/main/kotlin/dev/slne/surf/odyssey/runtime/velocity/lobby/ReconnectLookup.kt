@@ -6,7 +6,7 @@ import dev.slne.surf.redis.libs.redisson.client.codec.StringCodec
 import kotlinx.coroutines.future.await
 import java.util.UUID
 
-/** Reads the reconnect entries the hub servers store in Redis. */
+/** Reads and removes the reconnect entries the hub servers store in Redis. */
 object ReconnectLookup {
     private lateinit var redis: RedisApi
 
@@ -25,4 +25,9 @@ object ReconnectLookup {
     suspend fun get(player: UUID): ReconnectEntry? =
         redis.redisson.getBucket<String>(ReconnectEntry.redisKey(player), StringCodec.INSTANCE).getAsync().await()
             ?.let { redis.json.decodeFromString(ReconnectEntry.serializer(), it) }
+
+    /** Removes the entry of [player] if there is one. */
+    suspend fun delete(player: UUID) {
+        redis.redisson.getBucket<String>(ReconnectEntry.redisKey(player), StringCodec.INSTANCE).deleteAsync().await()
+    }
 }

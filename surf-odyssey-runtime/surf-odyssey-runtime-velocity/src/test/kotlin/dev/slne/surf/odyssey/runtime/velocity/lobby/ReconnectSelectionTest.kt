@@ -55,4 +55,17 @@ class ReconnectSelectionTest {
         assertFalse(isHubCategory("home"))
         assertFalse(isHubCategory("odyssey-pack"))
     }
+
+    @Test
+    fun `leaving from a non-hub server forgets the reconnect entry`() {
+        assertTrue(forgetsReconnectEntry("home"))
+        assertTrue(forgetsReconnectEntry("odyssey-pack"))
+    }
+
+    @Test
+    fun `leaving from a hub server or an unknown server keeps the reconnect entry`() {
+        assertFalse(forgetsReconnectEntry("odyssey-hub-lobby"))
+        assertFalse(forgetsReconnectEntry("odyssey-hub-north"))
+        assertFalse(forgetsReconnectEntry(null))
+    }
 }

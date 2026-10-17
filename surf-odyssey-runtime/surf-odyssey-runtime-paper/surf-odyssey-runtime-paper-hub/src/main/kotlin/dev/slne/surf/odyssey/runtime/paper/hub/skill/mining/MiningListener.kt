@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.skill.mining
 import dev.slne.surf.api.paper.pdc.block.pdc
 import dev.slne.surf.odyssey.core.common.skill.SkillType
 import dev.slne.surf.odyssey.runtime.paper.common.skill.awardSkillXp
+import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.SkillWorld
 import org.bukkit.NamespacedKey
 import org.bukkit.block.Block
 import org.bukkit.event.EventHandler
@@ -30,6 +31,8 @@ object MiningListener : Listener {
             block.pdc().remove(placedKey)
             return
         }
+
+        if (!SkillWorld.allowsXp(SkillType.MINING, block.location)) return
 
         val xp = MiningXp.forBlock(block.type) ?: return
         event.player.awardSkillXp(SkillType.MINING, xp)

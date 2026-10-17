@@ -1,0 +1,18 @@
+# Synced into the plugins folder of the hub dev server on start. The skill world is stored through the
+# polar-paper microservice, which also holds the world lock under the server name from surf-core.
+
+# The game mode the skill world is stored under.
+game-mode-identifier: skillworld
+storage:
+    # Where worlds are stored: DISK, DATABASE or S3. Only the matching section below is used.
+    storage-type: DATABASE
+
+    # Goes through RabbitMQ to the polar-paper microservice
+    database: {}
+    disk:
+        # The path to the directory where files will be stored relative to the plugin root.
+        path: worlds
+locking:
+    # Locks worlds so each is only loaded on one server at a time. Needs RabbitMQ and the microservice.
+    enabled: true
+_config_version: 1

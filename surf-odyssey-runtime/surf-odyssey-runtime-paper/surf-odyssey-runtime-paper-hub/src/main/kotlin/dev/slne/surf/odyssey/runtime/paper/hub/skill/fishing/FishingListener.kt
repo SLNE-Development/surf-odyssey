@@ -9,6 +9,7 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.odyssey.core.common.skill.SkillType
 import dev.slne.surf.odyssey.runtime.paper.hub.skill.fishing.fish.Fishes
 import dev.slne.surf.odyssey.runtime.paper.hub.plugin
+import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.SkillWorld
 import dev.slne.surf.odyssey.runtime.paper.common.skill.awardSkillXp
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -86,7 +87,9 @@ object FishingListener : Listener {
             }
         }
 
-        player.awardSkillXp(SkillType.FISHING, FishingXp.forRarity(rarity))
+        if (SkillWorld.allowsXp(SkillType.FISHING, hook.location)) {
+            player.awardSkillXp(SkillType.FISHING, FishingXp.forRarity(rarity))
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

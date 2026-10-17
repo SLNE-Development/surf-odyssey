@@ -3,7 +3,7 @@ package dev.slne.surf.odyssey.core.common.skill
 import kotlin.math.pow
 
 object SkillCurve {
-    const val MAX_LEVEL = 25
+    const val MAX_LEVEL = 50
 
     private const val BASE_XP = 1500.0
 

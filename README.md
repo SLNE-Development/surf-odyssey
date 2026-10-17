@@ -7,7 +7,12 @@ The development stack runs the whole network locally in Docker:
 | Service             | What it is                                                                                 |
 |---------------------|--------------------------------------------------------------------------------------------|
 | `proxy`             | Velocity proxy, the only server players connect to                                         |
-| `hub`, `home`       | Paper servers behind the proxy, running the odyssey hub and home plugins                   |
+| `hub-lobby-01`      | Paper server of the lobby hub world                                                        |
+| `hub-north-01`, `hub-north-02` | Paper servers of the north hub world                                            |
+| `hub-south-01`      | Paper server of the south hub world                                                        |
+| `home`              | Paper server of the player homes                                                           |
+| `pack-01`           | Paper server that builds the CraftEngine resource pack and uploads it to SeaweedFS         |
+| `seaweedfs`, `seaweedfs-admin` | S3 storage the resource pack is downloaded from, and its admin UI               |
 | `odyssey`           | This repository's microservice, built from its Dockerfile                                  |
 | `core`              | surf-core microservice, pulled from `ghcr.io/slne-development/surf-core-microservice`      |
 | `polar-paper`       | surf-polar-paper microservice, pulled from `ghcr.io/slne-development/surf-polar-paper-microservice` |
@@ -25,23 +30,32 @@ The development stack runs the whole network locally in Docker:
 1. **Put the server plugins into the run folders.** The stack deploys the odyssey plugins itself, everything else has to
    be put into the `plugins` folders below once. The folders are gitignored.
 
-   | Server  | Plugins folder                                                                                 |
-   |---------|------------------------------------------------------------------------------------------------|
-   | `proxy` | `surf-odyssey-runtime/surf-odyssey-runtime-velocity/run/plugins`                               |
-   | `hub`   | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run/plugins`   |
-   | `home`  | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run/plugins`  |
+   | Server         | Plugins folder                                                                                                     |
+   |----------------|--------------------------------------------------------------------------------------------------------------------|
+   | `proxy`        | `surf-odyssey-runtime/surf-odyssey-runtime-velocity/run/plugins`                                                   |
+   | `hub-lobby-01` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-01/plugins` |
+   | `hub-north-01` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-01/plugins` |
+   | `hub-north-02` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-02/plugins` |
+   | `hub-south-01` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-south/run/hub-south-01/plugins` |
+   | `home`         | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run/plugins`                      |
+   | `pack-01`      | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-pack/run/pack-01/plugins`              |
 
-   | Plugin                         | proxy | hub | home | Download                                                                      |
-   |--------------------------------|:-----:|:---:|:----:|-------------------------------------------------------------------------------|
-   | surf-api                       |   x   |  x  |  x   | `surf-api-velocity-server` / `surf-api-paper-server` from surf-api            |
-   | surf-rabbitmq                  |   x   |  x  |  x   | `surf-rabbitmq-velocity` / `surf-rabbitmq-paper` from surf-rabbitmq            |
-   | surf-redis                     |   x   |  x  |  x   | [releases](https://github.com/SLNE-Development/surf-redis/releases)           |
-   | surf-core                      |   x   |  x  |  x   | [releases](https://github.com/SLNE-Development/surf-core/releases)            |
-   | CommandAPI                     |   x   |  x  |  x   | [releases](https://github.com/CommandAPI/CommandAPI/releases), Velocity or Paper jar |
-   | LuckPerms                      |   x   |  x  |  x   | [luckperms.net](https://luckperms.net/download), Velocity or Bukkit jar        |
-   | packetevents                   |   x   |  x  |  x   | [modrinth](https://modrinth.com/plugin/packetevents), Velocity or Spigot jar   |
-   | polarpaper                     |       |     |  x   | [releases](https://github.com/MinehubMC/polarpaper/releases)                  |
-   | surf-polar-paper-runtime-paper |       |     |  x   | [releases](https://github.com/SLNE-Development/surf-polar-paper/releases)     |
+   The hub column stands for each of the four `hub-*` servers.
+
+   | Plugin                         | proxy | hub | home | pack-01 | Download                                                                      |
+   |--------------------------------|:-----:|:---:|:----:|:-------:|-------------------------------------------------------------------------------|
+   | surf-api                       |   x   |  x  |  x   |    x    | `surf-api-velocity-server` / `surf-api-paper-server` from surf-api            |
+   | surf-rabbitmq                  |   x   |  x  |  x   |    x    | `surf-rabbitmq-velocity` / `surf-rabbitmq-paper` from surf-rabbitmq            |
+   | surf-redis                     |   x   |  x  |  x   |    x    | [releases](https://github.com/SLNE-Development/surf-redis/releases)           |
+   | surf-core                      |   x   |  x  |  x   |    x    | [releases](https://github.com/SLNE-Development/surf-core/releases)            |
+   | CommandAPI                     |   x   |  x  |  x   |    x    | [releases](https://github.com/CommandAPI/CommandAPI/releases), Velocity or Paper jar |
+   | LuckPerms                      |   x   |  x  |  x   |    x    | [luckperms.net](https://luckperms.net/download), Velocity or Bukkit jar        |
+   | packetevents                   |   x   |  x  |  x   |    x    | [modrinth](https://modrinth.com/plugin/packetevents), Velocity or Spigot jar   |
+   | HuskSync                       |       |  x  |  x   |         | [modrinth](https://modrinth.com/plugin/husksync)                              |
+   | CraftEngine                    |       |  x  |  x   |    x    | `craft-engine-bukkit-plugin` jar                                              |
+   | MiniPlaceholders               |       |  x  |      |         | [modrinth](https://modrinth.com/plugin/miniplaceholders)                      |
+   | polarpaper                     |       |     |  x   |         | [releases](https://github.com/MinehubMC/polarpaper/releases)                  |
+   | surf-polar-paper-runtime-paper |       |     |  x   |         | [releases](https://github.com/SLNE-Development/surf-polar-paper/releases)     |
 
 2. **Start the stack.**
 
@@ -53,13 +67,13 @@ The development stack runs the whole network locally in Docker:
    missing ones), builds the odyssey microservice image, pulls the other microservices and starts everything. The
    first start takes a few minutes; Paper and Velocity are downloaded into the run folders.
 
-3. **Join** `localhost:25565`. You land on the hub.
+3. **Join** `localhost:25565`. You land on the lobby (`hub-lobby-01`).
 
 4. **Give yourself permissions.** LuckPerms of the proxy and both servers share their storage, so one command from
    any console applies everywhere:
 
    ```shell
-   docker compose exec -u 1000 hub mc-send-to-console lp user <name> permission set '*' true
+   docker compose exec -u 1000 hub-lobby-01 mc-send-to-console lp user <name> permission set '*' true
    ```
 
 ### Everyday use
@@ -71,7 +85,8 @@ The development stack runs the whole network locally in Docker:
 ./gradlew cleanDevelopmentStack    # stop the stack and delete the database, RabbitMQ and Valkey data
 ```
 
-Consoles are attached with `docker compose attach proxy` (or `hub`, `home`, `odyssey`, `core`, `polar-paper`) and
+Consoles are attached with `docker compose attach proxy` (or `hub-lobby-01`, `hub-north-01`, `hub-north-02`,
+`hub-south-01`, `home`, `pack-01`, `odyssey`, `core`, `polar-paper`) and
 detached with Ctrl+P, Ctrl+Q. Logs: `docker compose logs -f <service>`. For the microservices, run these through the
 Gradle tasks or set `COMPOSE_FILE` as described below, since they live in a generated compose file.
 
@@ -99,9 +114,13 @@ Velocity forwarding secret.
 - `docker/` holds config files synced into the run folders on every start, with `${CFG_...}` placeholders filled from
   the container environment:
     - `docker/velocity`: `velocity.toml`, the forwarding secret and the surf-core config of the proxy
-    - `docker/paper/config`: `paper-global.yml` of hub and home, enabling Velocity forwarding
-    - `docker/paper/plugins`: plugin configs of hub and home, e.g. the surf-core server name per server
+    - `docker/paper/config`: `paper-global.yml` of the Paper servers, enabling Velocity forwarding
+    - `docker/paper/plugins`: plugin configs of every Paper server, e.g. the surf-core server name per server and the
+      CraftEngine resources
+    - `docker/paper/hub/plugins`: the CraftEngine config of the hub servers and home, which only sends the pack
+    - `docker/paper/pack/plugins`: the CraftEngine config of `pack-01`, which builds and uploads the pack
     - `docker/paper/home/plugins`: plugin configs of home only, e.g. surf-polar-paper with DATABASE storage
+- `docker/worlds` holds the hub worlds; every hub server copies its world from there on each start.
 
   Change these files instead of the copies in the run folders; a copy is only replaced when its source is newer.
 - LuckPerms is configured through the `LUCKPERMS_*` variables in `compose.yaml`.

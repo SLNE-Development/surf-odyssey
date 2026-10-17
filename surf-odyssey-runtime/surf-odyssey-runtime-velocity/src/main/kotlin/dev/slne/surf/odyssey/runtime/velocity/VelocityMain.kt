@@ -9,6 +9,7 @@ import com.velocitypowered.api.plugin.PluginContainer
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.slne.surf.odyssey.runtime.velocity.lobby.InitialLobbyListener
+import dev.slne.surf.odyssey.runtime.velocity.lobby.ReconnectLookup
 import java.nio.file.Path
 
 class VelocityMain @Inject constructor(
@@ -22,14 +23,17 @@ class VelocityMain @Inject constructor(
         suspendingPluginContainer.initialize(this)
     }
 
+    /** Connects the reconnect lookup to Redis and registers the initial server choice. */
     @Subscribe
     fun onProxyInitialize(event: ProxyInitializeEvent) {
+        ReconnectLookup.connect(container.description.id)
         server.eventManager.register(this, InitialLobbyListener)
     }
 
+    /** Disconnects the reconnect lookup from Redis. */
     @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent) {
-
+        ReconnectLookup.disconnect()
     }
 
     companion object {

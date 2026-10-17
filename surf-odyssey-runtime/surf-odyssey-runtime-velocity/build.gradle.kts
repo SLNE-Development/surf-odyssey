@@ -4,6 +4,7 @@ plugins {
 
 surfVelocityApi {
     withCoreVelocity()
+    withSurfRedis()
 }
 
 velocityPluginFile {

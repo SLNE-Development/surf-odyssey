@@ -6,7 +6,7 @@ import kotlin.random.Random
 /**
  * What is known about the spot where a fish bites.
  *
- * @property raining whether it rains at the spot
+ * @property raining whether the world has a storm (rain or snowfall), whatever the biome at the spot
  * @property thundering whether a thunderstorm is going on
  * @property night whether it is night
  * @property biome biome key like `minecraft:river`
@@ -19,8 +19,9 @@ fun interface FishCondition {
     /** Returns whether the fish can bite in [context]. */
     fun test(context: FishContext): Boolean
 
+    /** Factories for the built-in conditions. */
     companion object {
-        /** Bites only while it rains. */
+        /** Bites only while the world has a storm. */
         fun rain() = FishCondition { it.raining }
 
         /** Bites only during a thunderstorm. */

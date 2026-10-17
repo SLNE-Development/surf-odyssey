@@ -74,10 +74,10 @@ abstract class HubPlugin : OdysseyPaperMain() {
     protected open fun ProtectionSettingsBuilder.settings() {}
 
     /**
-     * Builds the region index and the world's protection settings, collects the portals, connects the arrival
-     * cache, turns off saving for every world, registers protection, world change handling, fishing, portals,
-     * arrivals and the region editor with its wand, starts ticking and the editor preview, registers the
-     * placeholder tags, then calls [onHubEnabled].
+     * Builds the region index and the world's protection settings, collects the portals, connects the
+     * arrival cache, turns off saving for every world, registers the protection, world change, fishing,
+     * portal, arrival and region wand listeners and the `/hubregion` command, starts the editor preview
+     * and the region ticker, registers the placeholder tags, then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */

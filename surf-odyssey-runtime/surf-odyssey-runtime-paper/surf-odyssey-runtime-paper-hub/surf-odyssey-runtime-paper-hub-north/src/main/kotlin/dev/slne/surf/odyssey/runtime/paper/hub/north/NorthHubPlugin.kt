@@ -2,6 +2,9 @@ package dev.slne.surf.odyssey.runtime.paper.hub.north
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
+import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.shape
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.WorldPosition
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
@@ -16,6 +19,9 @@ class NorthHubPlugin : HubPlugin() {
 
     /** Declares North's regions. */
     override fun RegionRegistry.regions() = northRegions()
+
+    /** Declares North's portals. */
+    override fun portals() = northPortals()
 }
 
 /** Declares the regions of North: three forests, two mines, a lake, the ruins and a wolf area. Coordinates are placeholders until the map is in place. */
@@ -69,3 +75,8 @@ fun RegionRegistry.northRegions() {
         respawnInterval = 30.seconds
     }
 }
+
+/** The portals of North: one back to the lobby. Coordinates are placeholders until the map is in place. */
+fun northPortals() = listOf(
+    Portal("to_lobby", shape { cuboid(-2, 64, -2, 2, 67, -2) }, "odyssey-hub-lobby", WorldPosition(0.5, 64.0, 0.5, 0f, 0f)),
+)

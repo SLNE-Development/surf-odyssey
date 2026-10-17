@@ -14,6 +14,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationT
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionTicker
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.PortalListener
 import net.kyori.adventure.text.Component
 import org.bukkit.World
 
@@ -44,22 +46,31 @@ abstract class HubPlugin : OdysseyPaperMain() {
     /** The world the regions belong to: the server's main world. */
     val hubWorld: World get() = server.worlds.first()
 
+    /** Portals of this hub world. Available once the plugin is enabled. */
+    lateinit var portalList: List<Portal>
+        private set
+
     /** Declares the regions of this hub world. */
     protected open fun RegionRegistry.regions() {}
 
+    /** Declares the portals of this hub world. */
+    protected open fun portals(): List<Portal> = emptyList()
+
     /**
-     * Builds the region index, turns off saving for every world, registers protection, world change
-     * handling, fishing and the region editor with its wand, starts ticking and the editor preview, registers the
+     * Builds the region index, collects the portals, turns off saving for every world, registers protection,
+     * world change handling, fishing, portals and the region editor with its wand, starts ticking and the editor preview, registers the
      * placeholder tags, then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */
     final override suspend fun onEnabled() {
         regionIndex = RegionIndex(RegionRegistry().apply { regions() }.build())
+        portalList = portals()
         server.worlds.forEach { it.isAutoSave = false }
         HubProtectionListener.register()
         WorldChangeListener.register()
         FishingListener.register()
+        PortalListener.register()
         regionEditorCommand()
         RegionWandListener.register()
         EditorPreviewTask.start(this)

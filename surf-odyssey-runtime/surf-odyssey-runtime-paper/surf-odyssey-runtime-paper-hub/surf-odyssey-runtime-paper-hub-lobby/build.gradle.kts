@@ -15,6 +15,8 @@ surfPaperPluginApi {
         registerRequired("HuskSync")
         // The hub tags are registered as MiniPlaceholders expansion
         registerRequired("MiniPlaceholders")
+        // Portal surfaces are CraftEngine blocks
+        registerRequired("CraftEngine")
     }
 
     testing {

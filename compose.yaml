@@ -124,7 +124,7 @@ services:
     # Master, volume, filer and S3 gateway in one process; the S3 port is published for the Minecraft client.
     # The servers sign presigned URLs for seaweedfs:8333 and hand them to clients with the public host, so the
     # gateway checks signatures against seaweedfs:8333 first and against the requested host after that.
-    command: [ "server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json", "-s3.externalUrl=http://seaweedfs:8333" ]
+    command: [ "server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json", "-s3.externalUrl=http://seaweedfs:8333", "-master.telemetry=false" ]
     ports:
       - "${SEAWEEDFS_S3_PORT:-8333}:8333"
     volumes:

@@ -20,11 +20,9 @@ enum class BreakDecision {
 object BlockRules {
     /**
      * Returns the decision for breaking a block of [material] in [region] (`null` outside every
-     * region). [pending] tells whether the block is waiting to regenerate, [building] whether the
-     * player is in build mode.
+     * region). [pending] tells whether the block is waiting to regenerate.
      */
-    fun decide(region: Region?, material: Material, pending: Boolean, building: Boolean): BreakDecision = when {
-        building -> BreakDecision.ALLOW
+    fun decide(region: Region?, material: Material, pending: Boolean): BreakDecision = when {
         region == null || pending || !region.canBreak(material) -> BreakDecision.DENY
         region is HarvestRegion -> BreakDecision.HARVEST
         else -> BreakDecision.ALLOW

@@ -32,7 +32,7 @@ abstract class Region(val id: String, val displayName: Component, val shape: Sha
     open fun onLeave(player: Player) {}
 
     /**
-     * Called when a player outside build mode is allowed to break a block in this region, before
+     * Called when a player is allowed to break a block in this region, before
      * the block breaks or is scheduled to regenerate; cancelling [event] still prevents both.
      */
     open fun onBreak(event: BlockBreakEvent) {}

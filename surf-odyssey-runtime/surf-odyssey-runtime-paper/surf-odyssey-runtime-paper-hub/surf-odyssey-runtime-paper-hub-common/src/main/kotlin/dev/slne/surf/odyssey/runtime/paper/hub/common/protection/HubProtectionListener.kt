@@ -39,8 +39,7 @@ object HubProtectionListener : Listener {
     /**
      * Allows, harvests or cancels a block break according to [BlockRules].
      *
-     * Outside build mode an allowed break first calls the region's [Region.onBreak], which may
-     * still cancel it. A harvested block then turns into the region's placeholder and is scheduled
+     * An allowed break first calls the region's [Region.onBreak], which may still cancel it. A harvested block then turns into the region's placeholder and is scheduled
      * to regenerate.
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
@@ -49,13 +48,12 @@ object HubProtectionListener : Listener {
         if (block.world != hub.hubWorld) return
         val point = BlockPoint(block.x, block.y, block.z)
         val region = hub.regionIndex.regionAt(point.x, point.y, point.z)
-        val building = BuildMode.isActive(event.player)
-        val decision = BlockRules.decide(region, block.type, RegenerationTicker.queue.isPending(point), building)
+        val decision = BlockRules.decide(region, block.type, RegenerationTicker.queue.isPending(point))
         if (decision == BreakDecision.DENY) {
             event.isCancelled = true
             return
         }
-        if (building || region == null) return
+        if (region == null) return
         region.onBreak(event)
         if (event.isCancelled || decision != BreakDecision.HARVEST || region !is HarvestRegion) return
         val original = block.blockData.clone()
@@ -81,38 +79,31 @@ object HubProtectionListener : Listener {
 
     /** Cancels leaf decay unless [EnvironmentRules] allow it. */
     @EventHandler(ignoreCancelled = true)
-    fun onDecay(event: LeavesDecayEvent) = applyChange(WorldChange.LEAF_DECAY, building = false, event)
+    fun onDecay(event: LeavesDecayEvent) = applyChange(WorldChange.LEAF_DECAY, event)
 
     /** Cancels fire burning blocks away unless [EnvironmentRules] allow it. */
     @EventHandler(ignoreCancelled = true)
-    fun onBurn(event: BlockBurnEvent) = applyChange(WorldChange.BURN, building = false, event)
+    fun onBurn(event: BlockBurnEvent) = applyChange(WorldChange.BURN, event)
 
     /** Cancels fire and other blocks spreading unless [EnvironmentRules] allow it. */
     @EventHandler(ignoreCancelled = true)
-    fun onSpread(event: BlockSpreadEvent) = applyChange(WorldChange.SPREAD, building = false, event)
+    fun onSpread(event: BlockSpreadEvent) = applyChange(WorldChange.SPREAD, event)
 
     /** Keeps entity explosions from breaking blocks unless [EnvironmentRules] allow it. */
     @EventHandler(ignoreCancelled = true)
     fun onEntityExplode(event: EntityExplodeEvent) {
-        if (!EnvironmentRules.allows(WorldChange.EXPLOSION, building = false)) event.blockList().clear()
+        if (!EnvironmentRules.allows(WorldChange.EXPLOSION)) event.blockList().clear()
     }
 
     /** Keeps block explosions from breaking blocks unless [EnvironmentRules] allow it. */
     @EventHandler(ignoreCancelled = true)
     fun onBlockExplode(event: BlockExplodeEvent) {
-        if (!EnvironmentRules.allows(WorldChange.EXPLOSION, building = false)) event.blockList().clear()
+        if (!EnvironmentRules.allows(WorldChange.EXPLOSION)) event.blockList().clear()
     }
 
     /** Cancels entities changing blocks, e.g. endermen, unless [EnvironmentRules] allow it. */
     @EventHandler(ignoreCancelled = true)
-    fun onEntityChange(event: EntityChangeBlockEvent) {
-        val player = event.entity as? Player
-        if (player == null) {
-            applyChange(WorldChange.ENTITY_CHANGE, building = false, event)
-        } else {
-            applyChange(WorldChange.PLAYER_CHANGE, BuildMode.isActive(player), event)
-        }
-    }
+    fun onEntityChange(event: EntityChangeBlockEvent) = applyChange(WorldChange.ENTITY_CHANGE, event)
 
     /** Forwards block interactions to the region they happen in. */
     @EventHandler(ignoreCancelled = true)
@@ -145,7 +136,6 @@ object HubProtectionListener : Listener {
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
         PlayerRegionTracker.remove(event.player)
-        BuildMode.clear(event.player.uniqueId)
     }
 
     /** Returns the region covering [location], or `null` outside the hub world or every region. */
@@ -154,11 +144,11 @@ object HubProtectionListener : Listener {
 
     /** Applies [change] by [player] to [event] when the player is in the hub world. */
     private fun applyPlayerChange(change: WorldChange, player: Player, event: Cancellable) {
-        if (player.world == hub.hubWorld) applyChange(change, BuildMode.isActive(player), event)
+        if (player.world == hub.hubWorld) applyChange(change, event)
     }
 
-    /** Cancels [event] unless [EnvironmentRules] allow [change]; [building] tells whether a builder causes it. */
-    private fun applyChange(change: WorldChange, building: Boolean, event: Cancellable) {
-        if (!EnvironmentRules.allows(change, building)) event.isCancelled = true
+    /** Cancels [event] unless [EnvironmentRules] allow [change]. */
+    private fun applyChange(change: WorldChange, event: Cancellable) {
+        if (!EnvironmentRules.allows(change)) event.isCancelled = true
     }
 }

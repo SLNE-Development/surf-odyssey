@@ -4,7 +4,6 @@ import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
-import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.buildModeCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionTicker
@@ -39,8 +38,8 @@ abstract class HubPlugin : OdysseyPaperMain() {
     protected open fun RegionRegistry.regions() {}
 
     /**
-     * Builds the region index, turns off saving for every world, registers protection and the
-     * build mode command, starts ticking, then calls [onHubEnabled].
+     * Builds the region index, turns off saving for every world, registers protection, starts
+     * ticking, then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */
@@ -48,7 +47,6 @@ abstract class HubPlugin : OdysseyPaperMain() {
         regionIndex = RegionIndex(RegionRegistry().apply { regions() }.build())
         server.worlds.forEach { it.isAutoSave = false }
         HubProtectionListener.register()
-        buildModeCommand()
         RegionTicker.start(this)
         onHubEnabled()
     }

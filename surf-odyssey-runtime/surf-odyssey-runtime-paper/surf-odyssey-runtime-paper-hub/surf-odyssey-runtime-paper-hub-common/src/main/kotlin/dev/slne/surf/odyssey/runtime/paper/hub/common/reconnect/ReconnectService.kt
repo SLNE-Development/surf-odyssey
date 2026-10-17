@@ -33,6 +33,8 @@ object ReconnectService {
     private val LOOKUP_TIMEOUT = 2.seconds
     private val SHUTDOWN_TIMEOUT = 5.seconds
 
+    private val departures = PortalDepartures()
+
     /** Hash of the map this server runs, or `null` if it is unknown. Set by [start]. */
     var worldHash: String? = null
         private set
@@ -77,6 +79,12 @@ object ReconnectService {
         }
     }
 
+    /** Notes that [player] is leaving through the portal whose arrival point is [inFrontOfPortal]. */
+    fun departThroughPortal(player: UUID, inFrontOfPortal: WorldPosition) = departures.depart(player, inFrontOfPortal)
+
+    /** Forgets that [player] is leaving through a portal, because the transfer did not happen. */
+    fun cancelDeparture(player: UUID) = departures.cancel(player)
+
     /** Stores the entry of [player], who is leaving, in the background; errors are logged. */
     fun record(player: Player) {
         val hub = HubPlugin.instance
@@ -109,14 +117,21 @@ object ReconnectService {
         null
     }
 
-    /** Returns the entry for [player] at their current position, or `null` if they are not in the hub world. */
+    /**
+     * Returns the entry for [player], or `null` if they are not in the hub world.
+     *
+     * A player leaving through a portal is recorded at the arrival point in front of that portal, everyone else at
+     * their current position. Either way, the player's portal departure is forgotten.
+     */
     private fun entryOf(player: Player, hub: HubPlugin): ReconnectEntry? {
         val location = player.location
+        val current = WorldPosition(location.x, location.y, location.z, location.yaw, location.pitch)
+        val position = departures.quitPosition(player.uniqueId, current)
         if (location.world != hub.hubWorld) return null
         return Reconnect.entry(
             SurfCoreApi.getCurrentServerCategory(),
             SurfCoreApi.getCurrentServerName(),
-            WorldPosition(location.x, location.y, location.z, location.yaw, location.pitch),
+            position,
             worldHash,
         )
     }

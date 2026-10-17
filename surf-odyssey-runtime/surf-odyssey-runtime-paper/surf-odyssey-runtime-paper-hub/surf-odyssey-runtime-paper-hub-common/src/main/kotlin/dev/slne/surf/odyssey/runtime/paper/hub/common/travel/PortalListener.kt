@@ -2,6 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.travel
 
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import dev.slne.surf.odyssey.runtime.paper.hub.common.reconnect.ReconnectService
 import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks
 import net.momirealms.craftengine.core.util.Key
 import org.bukkit.block.Block
@@ -14,7 +15,8 @@ import org.bukkit.event.player.PlayerQuitEvent
 /**
  * Sends a player who steps onto a portal block inside a portal area to the portal's target.
  *
- * A player can use portals at most once every three seconds and never while a transfer is still running.
+ * A player can use portals at most once every three seconds and never while a transfer is still running. While the
+ * transfer runs, the player is noted as leaving through the portal, so that leaving records them in front of it.
  */
 object PortalListener : Listener {
     /** CraftEngine block that marks portal surfaces. */
@@ -40,9 +42,10 @@ object PortalListener : Listener {
         if (inFlight.isRunning(id)) return
         if (!cooldown.tryUse(id, System.currentTimeMillis())) return
         if (!inFlight.tryStart(id)) return
+        ReconnectService.departThroughPortal(id, portal.arrival)
         hub.launch {
             try {
-                HubTravel.send(player, portal.targetCategory)
+                if (!HubTravel.send(player, portal.targetCategory)) ReconnectService.cancelDeparture(id)
             } finally {
                 inFlight.finish(id)
             }

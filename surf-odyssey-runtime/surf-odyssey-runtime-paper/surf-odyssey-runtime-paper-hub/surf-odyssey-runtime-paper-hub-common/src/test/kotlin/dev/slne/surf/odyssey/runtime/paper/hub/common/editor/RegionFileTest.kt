@@ -1,13 +1,16 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.editor
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 
 /** Checks how [RegionFile] saves a session's shape block into the regions folder. */
@@ -38,6 +41,17 @@ class RegionFileTest {
         file.writeText("keep")
         assertIs<RegionFile.Result.Exists>(RegionFile.save(dir, session("north_lake")))
         assertEquals("keep", file.readText())
+    }
+
+    @Test
+    fun `a file whose write fails is deleted`() {
+        val dir = tempDir()
+        val result = RegionFile.save(dir, "north_lake") {
+            it.write("shape {")
+            throw IOException("disk full")
+        }
+        assertIs<RegionFile.Result.Failed>(result)
+        assertFalse(dir.resolve("regions").resolve("north_lake.kt").exists())
     }
 
     @Test

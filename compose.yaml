@@ -1,6 +1,8 @@
-# Local development stack: PostgreSQL, RabbitMQ, Valkey, SeaweedFS, a Velocity proxy and the hub and home Paper servers, which run
-# from the run folders of their runtime modules. The microservices of the developmentStack extension in
-# build.gradle.kts are added through a compose file generated into build/development-stack.
+# Local development stack: PostgreSQL, RabbitMQ, Valkey, SeaweedFS with its admin UI, a Velocity proxy and the hub, home
+# and pack Paper servers, which run from the run folders of their runtime modules. The pack server builds the resource
+# pack and uploads it to SeaweedFS, every other server sends it to players from there. The microservices of the
+# developmentStack extension in build.gradle.kts are added through a compose file generated into
+# build/development-stack.
 #
 # Use the Gradle tasks in the "developmentStack" group to build, start, stop and clean it.
 # Every value below can be overridden in a .env file next to this one (see .env.example).

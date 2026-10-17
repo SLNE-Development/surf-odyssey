@@ -69,7 +69,7 @@ The development stack runs the whole network locally in Docker:
 
 3. **Join** `localhost:25565`. You land on the lobby (`hub-lobby-01`).
 
-4. **Give yourself permissions.** LuckPerms of the proxy and both servers share their storage, so one command from
+4. **Give yourself permissions.** LuckPerms of the proxy and every Paper server share their storage, so one command from
    any console applies everywhere:
 
    ```shell

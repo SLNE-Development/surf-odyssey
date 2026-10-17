@@ -10,10 +10,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.bukkit.entity.Player
-import java.nio.file.Path
 import java.util.UUID
 import java.util.logging.Level
-import kotlin.io.path.isDirectory
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -27,23 +25,36 @@ object ReconnectService {
     /**
      * Environment variable naming the folder the world of this server is copied from.
      *
-     * If it names a directory, the hash is computed from that folder, which the server never writes to. Otherwise
-     * it is computed from the loaded world's folder.
+     * If it names a readable directory, the map hash is computed from that folder, which the server never writes to.
+     * Otherwise this server has no map hash and returning players never get their logout position back here.
      */
     const val WORLD_SOURCE_VARIABLE = "WORLD"
 
     private val LOOKUP_TIMEOUT = 2.seconds
     private val SHUTDOWN_TIMEOUT = 5.seconds
 
-    /** Hash of the map this server runs. Available once [start] has run. */
-    lateinit var worldHash: String
+    /** Hash of the map this server runs, or `null` if it is unknown. Set by [start]. */
+    var worldHash: String? = null
         private set
 
-    /** Computes the map hash of [hub], connects to Redis and starts recording players who leave. */
+    /**
+     * Computes the map hash from the folder named by [WORLD_SOURCE_VARIABLE], connects to Redis and starts recording
+     * players who leave.
+     *
+     * Without a readable source folder, a warning is logged and the server runs without map hash.
+     */
     fun start(hub: HubPlugin) {
-        val source = worldSource(hub)
-        worldHash = WorldHash.compute(source)
-        hub.logger.info("Map hash $worldHash computed from $source")
+        val configured = System.getenv(WORLD_SOURCE_VARIABLE)
+        val source = WorldHash.source(configured)
+        worldHash = source?.let(WorldHash::compute)
+        if (source == null) {
+            hub.logger.warning(
+                "$WORLD_SOURCE_VARIABLE does not name a readable world folder (\"$configured\"); " +
+                    "returning players spawn at the spawn point instead of their logout position"
+            )
+        } else {
+            hub.logger.info("Map hash $worldHash computed from $source")
+        }
         ReconnectCache.connect(hub.name)
         ReconnectListener.register()
     }
@@ -108,13 +119,5 @@ object ReconnectService {
             WorldPosition(location.x, location.y, location.z, location.yaw, location.pitch),
             worldHash,
         )
-    }
-
-    /** Returns the folder named by [WORLD_SOURCE_VARIABLE] if it is a directory, otherwise the hub world's folder. */
-    private fun worldSource(hub: HubPlugin): Path {
-        val configured = System.getenv(WORLD_SOURCE_VARIABLE)
-            ?.let { runCatching { Path.of(it) }.getOrNull() }
-            ?.takeIf { it.isDirectory() }
-        return configured ?: hub.hubWorld.worldFolder.toPath()
     }
 }

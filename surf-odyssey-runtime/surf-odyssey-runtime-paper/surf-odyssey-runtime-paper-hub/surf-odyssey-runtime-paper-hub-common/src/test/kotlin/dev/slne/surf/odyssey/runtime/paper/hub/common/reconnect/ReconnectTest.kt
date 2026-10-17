@@ -31,6 +31,18 @@ class ReconnectTest {
         assertNull(Reconnect.logoutPosition(entry, "odyssey-hub-south", "abc"))
 
     @Test
+    fun `a server without map hash gives no logout position`() =
+        assertNull(Reconnect.logoutPosition(entry, "odyssey-hub-north", null))
+
+    @Test
+    fun `an entry without map hash gives no logout position`() =
+        assertNull(Reconnect.logoutPosition(entry.copy(worldHash = null), "odyssey-hub-north", "abc"))
+
+    @Test
+    fun `entry and server both without map hash give no logout position`() =
+        assertNull(Reconnect.logoutPosition(entry.copy(worldHash = null), "odyssey-hub-north", null))
+
+    @Test
     fun `no entry gives no logout position`() =
         assertNull(Reconnect.logoutPosition(null, "odyssey-hub-north", "abc"))
 

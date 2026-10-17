@@ -8,6 +8,8 @@ import kotlin.io.path.extension
 import kotlin.io.path.fileSize
 import kotlin.io.path.inputStream
 import kotlin.io.path.invariantSeparatorsPathString
+import kotlin.io.path.isDirectory
+import kotlin.io.path.isReadable
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.relativeTo
@@ -43,6 +45,19 @@ object WorldHash {
             }
         }
         return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Returns the folder named by [configured] if it is a readable directory.
+     *
+     * @param configured a folder path, or `null` if none is configured
+     * @return the folder, or `null` if no path is configured, it is blank or invalid, or it does not name a readable
+     *         directory
+     */
+    fun source(configured: String?): Path? {
+        if (configured.isNullOrBlank()) return null
+        val folder = runCatching { Path.of(configured) }.getOrNull() ?: return null
+        return folder.takeIf { it.isDirectory() && it.isReadable() }
     }
 
     /** Returns the map files in [worldFolder] with their relative paths, sorted by relative path. */

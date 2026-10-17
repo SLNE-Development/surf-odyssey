@@ -16,7 +16,7 @@ import java.util.UUID
  * @property z the z coordinate of the logout position
  * @property yaw the horizontal view angle at logout in degrees
  * @property pitch the vertical view angle at logout in degrees
- * @property worldHash the hash of the map the hub server ran when the player left
+ * @property worldHash the hash of the map the hub server ran when the player left, or `null` if the server had none
  */
 @Serializable
 data class ReconnectEntry(
@@ -27,7 +27,7 @@ data class ReconnectEntry(
     val z: Double,
     val yaw: Float,
     val pitch: Float,
-    val worldHash: String,
+    val worldHash: String?,
 ) {
     companion object {
         /** Prefix of every server category that belongs to a hub world. */

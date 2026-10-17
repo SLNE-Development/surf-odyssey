@@ -7,6 +7,7 @@ import kotlin.io.path.writeBytes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 
 /** Tests the hash that identifies the map of a hub world. */
 class WorldHashTest {
@@ -70,6 +71,26 @@ class WorldHashTest {
         )
         assertNotEquals(WorldHash.compute(world(files)), WorldHash.compute(world(moved)))
     }
+
+    @Test
+    fun `a configured directory is the map source`() {
+        val folder = world(files)
+        assertEquals(folder, WorldHash.source(folder.toString()))
+    }
+
+    @Test
+    fun `without a configured folder there is no map source`() = assertNull(WorldHash.source(null))
+
+    @Test
+    fun `a blank configured folder is no map source`() = assertNull(WorldHash.source(" "))
+
+    @Test
+    fun `a missing configured folder is no map source`() =
+        assertNull(WorldHash.source(world(files).resolve("missing").toString()))
+
+    @Test
+    fun `a configured file is no map source`() =
+        assertNull(WorldHash.source(world(files).resolve("level.dat").toString()))
 
     @Test
     fun `files other than level dat and region files are ignored`() {

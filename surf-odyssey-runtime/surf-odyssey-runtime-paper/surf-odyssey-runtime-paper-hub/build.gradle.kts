@@ -19,6 +19,8 @@ surfPaperPluginApi {
         registerRequired("Nexo")
         // The region HUD is shown through surf-hud
         registerRequired("surf-hud-paper")
+        // Player data is synced between the servers by HuskSync
+        registerRequired("HuskSync")
     }
 
     testing {

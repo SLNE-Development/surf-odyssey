@@ -10,6 +10,8 @@ surfPaperPluginApi {
     serverDependencies {
         // The odyssey client talks to the microservice through RabbitMQ
         registerRequired("surf-rabbitmq-paper")
+        // Player data is synced between the servers by HuskSync
+        registerRequired("HuskSync")
     }
 
     testing {

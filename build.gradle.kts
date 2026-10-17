@@ -20,12 +20,12 @@ allprojects {
 
 val paperServerPlugins = listOf(
     "surf-api-paper-server", "surf-rabbitmq-paper", "surf-redis-paper", "surf-core-paper",
-    "CommandAPI", "LuckPerms", "packetevents"
+    "CommandAPI", "LuckPerms", "packetevents", "HuskSync"
 )
 
 developmentStack {
-    // LuckPerms of the proxy and the servers, see compose.yaml
-    schemas = listOf("luckperms")
+    // LuckPerms of the proxy and the servers and HuskSync of the servers, see compose.yaml
+    schemas = listOf("luckperms", "husksync")
 
     server("proxy") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-velocity"

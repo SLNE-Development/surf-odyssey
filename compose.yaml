@@ -28,6 +28,14 @@ x-luckperms-environment: &luckperms-environment
   LUCKPERMS_DATA_PASSWORD: ${POSTGRES_PASSWORD:-surf}
   LUCKPERMS_DATA_POOL_SETTINGS_PROPERTIES: currentSchema=luckperms
 
+# Credentials for docker/paper/plugins/HuskSync/config.yml, which keeps player data in the husksync schema and
+# syncs it between the servers through Valkey
+x-husksync-environment: &husksync-environment
+  CFG_POSTGRES_DATABASE: ${POSTGRES_DATABASE:-surf}
+  CFG_POSTGRES_USERNAME: ${POSTGRES_USERNAME:-surf}
+  CFG_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-surf}
+  CFG_VALKEY_PASSWORD: ${VALKEY_PASSWORD:-surf}
+
 # Docker's default seccomp profile blocks io_uring, which Netty would otherwise pick for the RabbitMQ client.
 # surf-rabbitmq and surf-redis shade Netty and read relocated property names.
 x-java-tool-options: &java-tool-options >-
@@ -38,7 +46,7 @@ x-java-tool-options: &java-tool-options >-
 x-paper: &paper
   image: itzg/minecraft-server:2026.9.2-java25
   environment: &paper-environment
-    <<: [ *rabbitmq-environment, *valkey-environment, *luckperms-environment ]
+    <<: [ *rabbitmq-environment, *valkey-environment, *luckperms-environment, *husksync-environment ]
     JVM_OPTS: *java-tool-options
     EULA: "TRUE"
     TYPE: PAPER

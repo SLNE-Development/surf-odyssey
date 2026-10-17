@@ -6,8 +6,8 @@ online-mode = true
 player-info-forwarding-mode = "modern"
 
 [servers]
-hub = "hub:25565"
+hub-lobby-01 = "hub-lobby-01:25565"
 home = "home:25565"
-try = ["hub"]
+try = ["hub-lobby-01"]
 
 [forced-hosts]

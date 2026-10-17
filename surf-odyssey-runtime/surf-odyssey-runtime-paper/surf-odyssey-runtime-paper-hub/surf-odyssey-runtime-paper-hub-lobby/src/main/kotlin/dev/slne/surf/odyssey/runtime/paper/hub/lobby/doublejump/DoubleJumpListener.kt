@@ -1,7 +1,7 @@
-package dev.slne.surf.odyssey.runtime.paper.hub.doublejump
+package dev.slne.surf.odyssey.runtime.paper.hub.lobby.doublejump
 
 import dev.slne.surf.odyssey.runtime.paper.common.utils.OdysseyBasePermissionRegistry
-import dev.slne.surf.odyssey.runtime.paper.hub.plugin
+import dev.slne.surf.odyssey.runtime.paper.hub.lobby.plugin
 import org.bukkit.GameMode
 import org.bukkit.Particle
 import org.bukkit.Sound

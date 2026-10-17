@@ -35,9 +35,9 @@ developmentStack {
             "CommandAPI", "LuckPerms", "packetevents"
         )
     }
-    server("hub") {
-        project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub"
-        directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run")
+    server("hub-lobby-01") {
+        project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-lobby"
+        directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-01")
         requiredPlugins = paperServerPlugins
     }
     server("home") {

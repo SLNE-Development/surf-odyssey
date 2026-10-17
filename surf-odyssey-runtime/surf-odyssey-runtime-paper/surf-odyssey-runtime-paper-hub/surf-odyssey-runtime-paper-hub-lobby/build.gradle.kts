@@ -4,12 +4,9 @@ plugins {
     id("dev.slne.surf.api.gradle.paper-plugin")
 }
 
-repositories {
-    maven("https://reposilite.slne.dev/releases")
-}
-
 surfPaperPluginApi {
-    mainClass("dev.slne.surf.odyssey.runtime.paper.hub.HubPaperMain")
+    mainClass("dev.slne.surf.odyssey.runtime.paper.hub.lobby.LobbyHubPlugin")
+    withCorePaper()
 
     serverDependencies {
         // The odyssey client talks to the microservice through RabbitMQ
@@ -24,5 +21,5 @@ surfPaperPluginApi {
 }
 
 dependencies {
-    api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperCommon)
+    api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperHub.surfOdysseyRuntimePaperHubCommon)
 }

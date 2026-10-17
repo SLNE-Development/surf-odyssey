@@ -1,4 +1,4 @@
-# Local development stack: PostgreSQL, RabbitMQ, Valkey, a Velocity proxy and the hub and home Paper servers, which run
+# Local development stack: PostgreSQL, RabbitMQ, Valkey, SeaweedFS, a Velocity proxy and the hub and home Paper servers, which run
 # from the run folders of their runtime modules. The microservices of the developmentStack extension in
 # build.gradle.kts are added through a compose file generated into build/development-stack.
 #
@@ -115,6 +115,29 @@ services:
     environment:
       VALKEY_PASSWORD: ${VALKEY_PASSWORD:-surf}
 
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    # Master, volume, filer and S3 gateway in one process; the S3 port is published for the Minecraft client.
+    # The servers sign presigned URLs for seaweedfs:8333 and hand them to clients with the public host, so the
+    # gateway checks signatures against seaweedfs:8333 first and against the requested host after that.
+    command: [ "server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json", "-s3.externalUrl=http://seaweedfs:8333" ]
+    ports:
+      - "${SEAWEEDFS_S3_PORT:-8333}:8333"
+    volumes:
+      - seaweedfs-data:/data
+      # SeaweedFS does not substitute environment variables, the keys in it are the defaults from .env.example
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+  seaweedfs-admin:
+    image: chrislusf/seaweedfs:4.48
+    # The admin UI only listens on all interfaces when a password is set; the user is "admin"
+    command: [ "admin", "-ip=0.0.0.0", "-port=23646", "-master=seaweedfs:9333" ]
+    environment:
+      WEED_ADMIN_PASSWORD: ${SEAWEEDFS_ADMIN_PASSWORD:-surf}
+    ports:
+      - "${SEAWEEDFS_ADMIN_PORT:-23646}:23646"
+    depends_on: [ seaweedfs ]
+
   proxy:
     image: itzg/mc-proxy:java25-2026.9.0
     environment:
@@ -179,3 +202,4 @@ volumes:
   postgres-data:
   rabbitmq-data:
   valkey-data:
+  seaweedfs-data:

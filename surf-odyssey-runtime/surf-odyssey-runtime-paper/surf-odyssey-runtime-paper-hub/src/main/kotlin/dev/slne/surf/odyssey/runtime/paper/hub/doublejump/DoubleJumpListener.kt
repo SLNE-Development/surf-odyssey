@@ -2,7 +2,6 @@ package dev.slne.surf.odyssey.runtime.paper.hub.doublejump
 
 import dev.slne.surf.odyssey.runtime.paper.common.utils.OdysseyBasePermissionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.plugin
-import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.SkillWorld
 import org.bukkit.GameMode
 import org.bukkit.Particle
 import org.bukkit.Sound
@@ -83,6 +82,5 @@ object DoubleJumpListener : Listener {
 
     private fun canUse(player: Player) =
         (player.gameMode == GameMode.SURVIVAL || player.gameMode == GameMode.ADVENTURE) &&
-                !SkillWorld.isSkillWorld(player.world) &&
                 player.hasPermission(OdysseyBasePermissionRegistry.HUB_DOUBLE_JUMP)
 }

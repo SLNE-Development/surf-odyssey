@@ -1,8 +1,10 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ShapeTest {
@@ -53,5 +55,66 @@ class ShapeTest {
         assertFailsWith<IllegalArgumentException> { Prism(listOf(Point2(0, 0), Point2(1, 1)), 0, 1) }
         assertFailsWith<IllegalArgumentException> { Prism(listOf(Point2(0, 0), Point2(1, 0), Point2(1, 1)), 5, 1) }
         assertFailsWith<IllegalArgumentException> { shape { } }
+    }
+
+    @Test
+    fun `a point on a horizontal edge that is not a vertex is inside`() {
+        assertTrue(lShape.contains(2, 65, 0))
+        assertTrue(lShape.contains(7, 65, 4))
+    }
+
+    @Test
+    fun `points on the reflex notch edges are inside and points in the notch are outside`() {
+        assertTrue(lShape.contains(4, 65, 7))
+        assertTrue(lShape.contains(7, 65, 4))
+        assertTrue(lShape.contains(4, 65, 4))
+        assertFalse(lShape.contains(5, 65, 5))
+        assertFalse(lShape.contains(5, 65, 7))
+        assertFalse(lShape.contains(7, 65, 5))
+    }
+
+    @Test
+    fun `a prism spanning negative coordinates contains its edges and vertices`() {
+        val square = Prism(listOf(Point2(-5, -5), Point2(5, -5), Point2(5, 5), Point2(-5, 5)), minY = -10, maxY = 10)
+        assertTrue(square.contains(-5, 0, -5))
+        assertTrue(square.contains(5, 0, 5))
+        assertTrue(square.contains(0, 0, -5))
+        assertTrue(square.contains(-5, 0, 3))
+        assertTrue(square.contains(0, 0, 0))
+        assertFalse(square.contains(-6, 0, 0))
+        assertFalse(square.contains(0, 0, 6))
+        assertFalse(square.contains(6, 0, -6))
+    }
+
+    @Test
+    fun `minY and maxY are inclusive and the blocks beyond them are outside`() {
+        assertTrue(lShape.contains(2, 60, 2))
+        assertTrue(lShape.contains(2, 70, 2))
+        assertFalse(lShape.contains(2, 59, 2))
+        assertFalse(lShape.contains(2, 71, 2))
+    }
+
+    @Test
+    fun `bounds report intersection, union and volume`() {
+        val a = Bounds(0, 0, 0, 4, 4, 4)
+        val b = Bounds(4, 4, 4, 8, 8, 8)
+        val c = Bounds(5, 0, 0, 8, 4, 4)
+        assertTrue(a.intersects(b))
+        assertEquals(Bounds(4, 4, 4, 4, 4, 4), a.intersection(b))
+        assertFalse(a.intersects(c))
+        assertNull(a.intersection(c))
+        assertEquals(Bounds(0, 0, 0, 8, 8, 8), a.union(b))
+        assertEquals(125L, a.volume)
+        assertEquals(1L, Bounds(3, 3, 3, 3, 3, 3).volume)
+    }
+
+    @Test
+    fun `nested exclusions are rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            shape {
+                cuboid(0, 0, 0, 9, 9, 9)
+                exclude { exclude { cuboid(1, 1, 1, 2, 2, 2) } }
+            }
+        }
     }
 }

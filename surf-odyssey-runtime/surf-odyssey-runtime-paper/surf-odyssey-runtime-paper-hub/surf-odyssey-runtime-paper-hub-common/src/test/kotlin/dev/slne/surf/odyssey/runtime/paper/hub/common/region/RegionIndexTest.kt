@@ -82,4 +82,27 @@ class RegionIndexTest {
             RegionRegistry().apply { mine("Bad Id") { shape { cuboid(0, 0, 0, 1, 1, 1) } } }.build()
         }
     }
+
+    @Test
+    fun `overlapping prisms are rejected with both ids`() {
+        val regions = RegionRegistry().apply {
+            mine("prism_a") { shape { prism(0, 10) { point(0, 0); point(10, 0); point(10, 10); point(0, 10) } } }
+            mine("prism_b") { shape { prism(5, 15) { point(8, 8); point(20, 8); point(20, 20); point(8, 20) } } }
+        }.build()
+        val error = assertFailsWith<IllegalStateException> { RegionIndex(regions) }
+        assertTrue("prism_a" in error.message!! && "prism_b" in error.message!!)
+    }
+
+    @Test
+    fun `only the overlapping pair of three regions is reported`() {
+        val regions = RegionRegistry().apply {
+            mine("alpha") { shape { cuboid(0, 0, 0, 5, 5, 5) } }
+            mine("beta") { shape { cuboid(5, 0, 0, 9, 5, 5) } }
+            mine("gamma") { shape { cuboid(50, 0, 50, 55, 5, 55) } }
+        }.build()
+        assertEquals(listOf("alpha" to "beta"), RegionIndex.overlaps(regions))
+        val error = assertFailsWith<IllegalStateException> { RegionIndex(regions) }
+        assertTrue("alpha" in error.message!! && "beta" in error.message!!)
+        assertFalse("gamma" in error.message!!)
+    }
 }

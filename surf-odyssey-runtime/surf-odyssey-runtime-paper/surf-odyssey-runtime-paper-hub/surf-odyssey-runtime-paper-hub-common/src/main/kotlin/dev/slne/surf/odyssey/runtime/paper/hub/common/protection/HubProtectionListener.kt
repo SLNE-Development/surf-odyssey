@@ -26,32 +26,38 @@ object HubProtectionListener : Listener {
     private val hub get() = HubPlugin.instance
 
     /**
-     * Allows, harvests or cancels a block break according to [BlockRules].
-     *
-     * An allowed break first calls the region's [Region.onBreak], which may still cancel it. A harvested block then turns into the region's placeholder and is scheduled
-     * to regenerate.
+     * Cancels a block break that [BlockRules] deny. An allowed break calls the region's
+     * [Region.onBreak], which may still cancel it.
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onBreak(event: BlockBreakEvent) {
-        val block = event.block
-        if (block.world != hub.hubWorld) return
-        val point = BlockPoint(block.x, block.y, block.z)
-        val region = hub.regionIndex.regionAt(point.x, point.y, point.z)
-        val decision = BlockRules.decide(region, block.type, RegenerationTicker.queue.isPending(point))
+        val (region, decision) = decide(event) ?: return
         if (decision == BreakDecision.DENY) {
             event.isCancelled = true
             return
         }
-        if (region == null) return
-        region.onBreak(event)
-        if (event.isCancelled || decision != BreakDecision.HARVEST || region !is HarvestRegion) return
-        val original = block.blockData.clone()
+        region?.onBreak(event)
+    }
+
+    /**
+     * Harvests a block whose break went through: replaces its drops if the region provides them,
+     * schedules it to regenerate and, on the next tick, turns it into the region's placeholder if
+     * it is still waiting to regenerate.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onBreakHarvest(event: BlockBreakEvent) {
+        val (region, decision) = decide(event) ?: return
+        if (decision != BreakDecision.HARVEST || region !is HarvestRegion) return
+        val block = event.block
+        val point = BlockPoint(block.x, block.y, block.z)
+        if (!RegenerationTicker.schedule(point, block.blockData.clone(), region.regenerateAfter.inWholeMilliseconds)) return
         region.drops?.let { provider ->
             event.isDropItems = false
             provider(block).forEach { block.world.dropItemNaturally(block.location.toCenterLocation(), it) }
         }
-        RegenerationTicker.schedule(point, original, region.regenerateAfter.inWholeMilliseconds)
-        hub.server.scheduler.runTask(hub, Runnable { block.setType(region.placeholder, false) })
+        hub.server.scheduler.runTask(hub, Runnable {
+            if (RegenerationTicker.queue.isPending(point)) block.setType(region.placeholder, false)
+        })
     }
 
     /** Forwards block interactions to the region they happen in. */
@@ -90,4 +96,16 @@ object HubProtectionListener : Listener {
     /** Returns the region covering [location], or `null` outside the hub world or every region. */
     private fun regionAt(location: Location): Region? =
         if (location.world == hub.hubWorld) hub.regionIndex.regionAt(location.blockX, location.blockY, location.blockZ) else null
+
+    /**
+     * Returns the region of the broken block and the [BlockRules] decision for it, or `null` if
+     * the block is outside the hub world.
+     */
+    private fun decide(event: BlockBreakEvent): Pair<Region?, BreakDecision>? {
+        val block = event.block
+        if (block.world != hub.hubWorld) return null
+        val region = hub.regionIndex.regionAt(block.x, block.y, block.z)
+        val pending = RegenerationTicker.queue.isPending(BlockPoint(block.x, block.y, block.z))
+        return region to BlockRules.decide(region, block.type, pending)
+    }
 }

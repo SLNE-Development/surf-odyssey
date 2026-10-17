@@ -4,6 +4,7 @@ import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.EditorPreviewTask
+import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.RegionWandListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.regionEditorCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
@@ -48,7 +49,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Builds the region index, turns off saving for every world, registers protection, world change
-     * handling, fishing and the region editor, starts ticking and the editor preview, registers the
+     * handling, fishing and the region editor with its wand, starts ticking and the editor preview, registers the
      * placeholder tags, then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
@@ -60,6 +61,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         WorldChangeListener.register()
         FishingListener.register()
         regionEditorCommand()
+        RegionWandListener.register()
         EditorPreviewTask.start(this)
         RegionTicker.start(this)
         HubPlaceholders.register(this)

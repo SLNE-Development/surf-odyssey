@@ -57,6 +57,18 @@ class EditorSession(val regionId: String) {
         null -> false
     }
 
+    /**
+     * Removes the newest point of the newest part; the part itself stays.
+     *
+     * @return `false` if there is no part or the newest part has no points
+     */
+    fun removeLastPoint(): Boolean {
+        val points = parts.lastOrNull()?.let(::pointsOf) ?: return false
+        if (points.isEmpty()) return false
+        points.removeLast()
+        return true
+    }
+
     /** Removes the newest point, or the newest part when it has no points; returns whether anything changed. */
     fun undo(): Boolean {
         val part = parts.lastOrNull() ?: return false

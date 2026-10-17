@@ -42,6 +42,24 @@ class EditorSessionTest {
     }
 
     @Test
+    fun `removing the last point keeps the part`() {
+        val session = EditorSession("test")
+        session.startPrism(minY = 0, maxY = 10, excluded = false)
+        session.addPoint(BlockPoint(1, 0, 1))
+        session.addPoint(BlockPoint(2, 0, 2))
+        assertTrue(session.removeLastPoint())
+        assertEquals(listOf(Point2(1, 1)), (session.parts.single() as PrismPart).points)
+        assertTrue(session.removeLastPoint())
+        assertFalse(session.removeLastPoint())
+        assertEquals(1, session.parts.size)
+    }
+
+    @Test
+    fun `removing a point needs a started part`() {
+        assertFalse(EditorSession("test").removeLastPoint())
+    }
+
+    @Test
     fun `undo removes the newest point and then the empty part`() {
         val session = EditorSession("test")
         session.startCuboid(excluded = false)

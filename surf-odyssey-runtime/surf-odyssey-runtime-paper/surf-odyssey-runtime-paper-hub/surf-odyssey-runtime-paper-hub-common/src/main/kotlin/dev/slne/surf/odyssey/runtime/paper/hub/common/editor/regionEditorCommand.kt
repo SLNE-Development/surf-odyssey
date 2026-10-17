@@ -16,8 +16,8 @@ import kotlin.io.path.writeText
 
 /**
  * Registers `/hubregion`, the in-game region editor: `create <id>`, `prism <minY> <maxY>`,
- * `cuboid`, `exclude prism|cuboid`, `point`, `undo`, `confirm` and `cancel`.
- * `point` adds the block the player stands on. `confirm` writes the shape block to
+ * `cuboid`, `exclude prism|cuboid`, `point`, `undo`, `confirm`, `cancel` and `wand`.
+ * `point` adds the block the player stands on; `wand` hands out the [RegionWand]. `confirm` writes the shape block to
  * `regions/<id>.kt` in the plugin's data folder.
  */
 fun regionEditorCommand() = commandTree("hubregion") {
@@ -80,6 +80,12 @@ fun regionEditorCommand() = commandTree("hubregion") {
     }
     literalArgument("undo") {
         playerExecutor { player, _ -> withSession(player) { if (it.undo()) ok(player, "Rückgängig gemacht.") else fail(player, "Nichts zum Rückgängigmachen.") } }
+    }
+    literalArgument("wand") {
+        playerExecutor { player, _ ->
+            player.inventory.addItem(RegionWand.create()).values.forEach { player.world.dropItem(player.location, it) }
+            ok(player, "Rechtsklick auf einen Block setzt einen Punkt, Linksklick entfernt den letzten.")
+        }
     }
     literalArgument("cancel") {
         playerExecutor { player, _ -> EditorSessions.close(player.uniqueId); ok(player, "Bearbeitung verworfen.") }

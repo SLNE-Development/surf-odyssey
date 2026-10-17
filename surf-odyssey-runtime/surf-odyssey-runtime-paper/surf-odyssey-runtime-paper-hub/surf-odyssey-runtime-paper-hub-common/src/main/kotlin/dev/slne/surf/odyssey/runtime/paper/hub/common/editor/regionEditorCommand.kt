@@ -11,14 +11,13 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
 import org.bukkit.entity.Player
-import kotlin.io.path.createDirectories
-import kotlin.io.path.writeText
 
 /**
  * Registers `/hubregion`, the in-game region editor: `create <id>`, `prism <minY> <maxY>`,
  * `cuboid`, `exclude prism|cuboid`, `point`, `undo`, `confirm`, `cancel` and `wand`.
  * `point` adds the block the player stands on; `wand` hands out the [RegionWand]. `confirm` writes the shape block to
- * `regions/<id>.kt` in the plugin's data folder.
+ * `regions/<id>.kt` in the plugin's data folder and refuses to overwrite an existing file; the session
+ * stays open when saving does not succeed.
  */
 fun regionEditorCommand() = commandTree("hubregion") {
     withPermission(HubPermissions.REGION_EDITOR)
@@ -95,10 +94,20 @@ fun regionEditorCommand() = commandTree("hubregion") {
             withSession(player) { session ->
                 val problems = session.problems()
                 if (problems.isNotEmpty()) return@withSession fail(player, problems.joinToString(" "))
-                val file = HubPlugin.instance.dataPath.resolve("regions").createDirectories().resolve("${session.regionId}.kt")
-                file.writeText(RegionCodeWriter.write(session))
-                EditorSessions.close(player.uniqueId)
-                ok(player, "Gespeichert in ${file.toAbsolutePath()}.")
+                when (val result = RegionFile.save(HubPlugin.instance.dataPath, session)) {
+                    is RegionFile.Result.Saved -> {
+                        EditorSessions.close(player.uniqueId)
+                        ok(player, "Gespeichert in ${result.file.toAbsolutePath()}.")
+                    }
+                    is RegionFile.Result.Exists -> fail(
+                        player,
+                        "${result.file.toAbsolutePath()} existiert bereits und wird nicht überschrieben. Lösche oder verschiebe die Datei zuerst.",
+                    )
+                    is RegionFile.Result.Failed -> fail(
+                        player,
+                        "Speichern in ${result.file.toAbsolutePath()} fehlgeschlagen: ${result.error.message ?: result.error.javaClass.simpleName}",
+                    )
+                }
             }
         }
     }

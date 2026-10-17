@@ -42,6 +42,8 @@ resource-pack:
       bucket: odyssey-resourcepack
       access-key-id: "${CFG_S3_ACCESS_KEY}"
       access-key-secret: "${CFG_S3_SECRET_KEY}"
+      # Seconds a presigned URL stays valid
+      validity: 300
       # Presigned URLs point at the endpoint above, the client downloads from the public host instead
       cdn:
         protocol: http

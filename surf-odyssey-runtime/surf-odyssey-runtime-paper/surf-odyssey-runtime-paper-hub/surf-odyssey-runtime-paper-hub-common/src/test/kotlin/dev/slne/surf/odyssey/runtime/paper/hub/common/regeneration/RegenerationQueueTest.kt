@@ -29,4 +29,13 @@ class RegenerationQueueTest {
         assertEquals("ore", queue.pollDue(now = 100).single().original)
         assertFalse(queue.isPending(a))
     }
+
+    @Test
+    fun `polling at the end of time drains every entry`() {
+        val queue = RegenerationQueue<String>()
+        queue.schedule(a, "ore", dueAt = 100)
+        queue.schedule(b, "log", dueAt = Long.MAX_VALUE)
+        assertEquals(listOf("ore", "log"), queue.pollDue(now = Long.MAX_VALUE).map { it.original })
+        assertEquals(0, queue.size)
+    }
 }

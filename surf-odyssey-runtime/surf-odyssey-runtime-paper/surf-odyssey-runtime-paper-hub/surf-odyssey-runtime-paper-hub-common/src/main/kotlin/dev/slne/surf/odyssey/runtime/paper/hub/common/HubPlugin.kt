@@ -5,6 +5,7 @@ import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.WorldChangeListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionTicker
@@ -15,8 +16,11 @@ import org.bukkit.World
  * Base plugin of a hub world server.
  *
  * A world plugin names its world and declares its regions, and gets protection and regeneration
- * from this class. The worlds are never saved, so every restart starts from the map shipped with
- * the server.
+ * from this class.
+ *
+ * The map stays intact because the server copies the world fresh on every start. In addition,
+ * automatic saving is turned off for every world and, when the plugin is disabled, every block
+ * still waiting to regenerate is restored before ticking stops.
  *
  * If two declared regions share an id or a block, enabling fails with an error naming both
  * regions and the server disables the plugin.
@@ -53,9 +57,10 @@ abstract class HubPlugin : OdysseyPaperMain() {
         onHubEnabled()
     }
 
-    /** Calls [onHubDisabled], then stops ticking. */
+    /** Calls [onHubDisabled], restores every block waiting to regenerate, then stops ticking. */
     final override suspend fun onDisabled() {
         onHubDisabled()
+        RegenerationTicker.restoreAll(hubWorld)
         RegionTicker.stop()
     }
 

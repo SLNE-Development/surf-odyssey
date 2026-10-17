@@ -7,6 +7,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.EditorPreviewTask
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.RegionWandListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.regionEditorCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
@@ -102,8 +103,8 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Calls [onHubDisabled], then restores every block waiting to regenerate, unregisters the
-     * placeholder tags and stops ticking, even if [onHubDisabled] throws, then disconnects the arrival
-     * cache, even if an earlier step fails.
+     * placeholder tags, stops ticking and removes the mobs of every mob spawn region, even if
+     * [onHubDisabled] throws, then disconnects the arrival cache, even if an earlier step fails.
      */
     final override suspend fun onDisabled() {
         try {
@@ -113,6 +114,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
                 RegenerationTicker.restoreAll(hubWorld)
                 HubPlaceholders.unregister()
                 RegionTicker.stop()
+                if (this::regionIndex.isInitialized) regionIndex.regions.filterIsInstance<MobSpawnRegion>().forEach { it.removeMobs() }
             } finally {
                 ArrivalCache.disconnect()
             }

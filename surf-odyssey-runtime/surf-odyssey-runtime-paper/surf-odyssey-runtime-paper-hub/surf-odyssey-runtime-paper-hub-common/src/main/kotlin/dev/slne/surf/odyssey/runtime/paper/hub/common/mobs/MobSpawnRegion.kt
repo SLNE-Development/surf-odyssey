@@ -14,7 +14,8 @@ import kotlin.time.Duration
 
 /**
  * A region that keeps up to [maxAlive] mobs of [types] alive, spawning one on top of a random
- * [spawnPoints] entry every [respawnInterval]. Spawned mobs do not persist across restarts.
+ * [spawnPoints] entry every [respawnInterval]. Spawned mobs do not persist across restarts and
+ * are removed when the hub plugin is disabled.
  *
  * @property types entity types to pick from, each a spawnable mob
  * @property spawnPoints blocks mobs spawn on, all inside the shape
@@ -62,5 +63,11 @@ class MobSpawnRegion(
         entity.isPersistent = false
         alive.add(entity.uniqueId)
         lastSpawnAt = now
+    }
+
+    /** Removes every mob this region spawned that is still in the world and stops counting them. */
+    internal fun removeMobs() {
+        val world = HubPlugin.instance.hubWorld
+        alive.removeAll { world.getEntity(it)?.remove() }
     }
 }

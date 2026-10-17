@@ -16,4 +16,10 @@ class AliveMobs<K> {
     fun prune(isAlive: (K) -> Boolean) {
         alive.removeIf { !isAlive(it) }
     }
+
+    /** Calls [remove] for every mob counted as alive, then stops counting all of them. */
+    fun removeAll(remove: (K) -> Unit) {
+        alive.forEach(remove)
+        alive.clear()
+    }
 }

@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.protection
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.EditorSessions
 import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.HarvestRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.PlayerRegionTracker
@@ -91,6 +92,7 @@ object HubProtectionListener : Listener {
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
         PlayerRegionTracker.remove(event.player)
+        EditorSessions.close(event.player.uniqueId)
     }
 
     /** Returns the region covering [location], or `null` outside the hub world or every region. */

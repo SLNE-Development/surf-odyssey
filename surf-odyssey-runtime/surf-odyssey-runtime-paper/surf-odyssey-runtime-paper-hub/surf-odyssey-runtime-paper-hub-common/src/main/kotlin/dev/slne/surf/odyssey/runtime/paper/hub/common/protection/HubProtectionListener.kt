@@ -45,7 +45,7 @@ object HubProtectionListener : Listener {
      * schedules it to regenerate and, on the next tick, turns it into the region's placeholder if
      * it is still waiting to regenerate.
      */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onBreakHarvest(event: BlockBreakEvent) {
         val (region, decision) = decide(event) ?: return
         if (decision != BreakDecision.HARVEST || region !is HarvestRegion) return

@@ -172,10 +172,10 @@ object SkillWorld {
     fun isSkillWorld(world: World): Boolean = world == this.world
 
     fun isEditWorld(world: World): Boolean =
-        isSkillWorld(world) || world.name == SkillWorldRules.BUILD_WORLD_NAME || world.name == SkillWorldSettings.config.worldName?.trim()
+        isSkillWorld(world) || world.name == SkillWorldRules.BUILD_WORLD_NAME || world.name == SkillWorldSettings.config.worldName.trim()
 
     fun openEditWorld(): World {
-        val name = SkillWorldSettings.config.worldName?.trim().orEmpty()
+        val name = SkillWorldSettings.config.worldName.trim()
         return if (name.isNotEmpty() && modeOf(name) == SkillWorldRules.WorldMode.Live) {
             Bukkit.getWorld(name) ?: voidWorld(name)
         } else {
@@ -218,7 +218,7 @@ object SkillWorld {
     private suspend fun loadLocked() {
         if (state is State.Loaded || shuttingDown) return
 
-        val name = SkillWorldSettings.config.worldName?.trim().orEmpty()
+        val name = SkillWorldSettings.config.worldName.trim()
         when (modeOf(name)) {
             SkillWorldRules.WorldMode.Invalid -> fail(IllegalStateException("world-name \"$name\" in skill-world.yml is not allowed"))
             SkillWorldRules.WorldMode.Build -> enterBuildMode(name)

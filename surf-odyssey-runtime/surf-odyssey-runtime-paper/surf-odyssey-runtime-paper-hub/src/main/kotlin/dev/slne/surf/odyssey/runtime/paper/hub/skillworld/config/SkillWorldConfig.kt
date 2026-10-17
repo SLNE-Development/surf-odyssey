@@ -8,7 +8,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
 @ConfigSerializable
 data class SkillWorldConfig(
-    val worldName: String? = null,
+    val worldName: String = "",
     val portals: @ThrowExceptions Map<String, PortalConfig> = emptyMap(),
     val arrivals: Map<SkillType, LocationConfig> = emptyMap(),
     val regions: Map<SkillType, BoxConfig> = emptyMap(),

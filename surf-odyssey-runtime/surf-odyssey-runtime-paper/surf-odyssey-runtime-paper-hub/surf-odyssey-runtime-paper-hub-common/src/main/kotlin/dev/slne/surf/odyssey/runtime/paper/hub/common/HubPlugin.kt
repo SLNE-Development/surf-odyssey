@@ -18,6 +18,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalCache
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.PortalListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.WorldPosition
 import net.kyori.adventure.text.Component
 import org.bukkit.World
 
@@ -44,6 +45,11 @@ abstract class HubPlugin : OdysseyPaperMain() {
     /** Regions of this hub world. Available once the plugin is enabled. */
     lateinit var regionIndex: RegionIndex
         private set
+
+    /**
+     * Where players spawn when they do not arrive through a portal, or `null` for the world's spawn.
+     */
+    open val spawnPoint: WorldPosition? = null
 
     /** The world the regions belong to: the server's main world. */
     val hubWorld: World get() = server.worlds.first()

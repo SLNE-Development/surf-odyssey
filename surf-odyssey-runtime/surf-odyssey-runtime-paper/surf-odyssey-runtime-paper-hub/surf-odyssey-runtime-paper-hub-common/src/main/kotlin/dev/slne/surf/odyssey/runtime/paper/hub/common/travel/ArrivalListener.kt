@@ -11,23 +11,28 @@ import java.util.UUID
 import java.util.logging.Level
 import kotlin.time.Duration.Companion.seconds
 
-/** Places players who came through a portal in front of the portal leading back to where they came from. */
+/**
+ * Chooses where joining players spawn.
+ *
+ * Players who came through a portal appear in front of the portal leading back to where they came from;
+ * everyone else appears at the hub's spawn point, or at the world's spawn if the hub has none.
+ */
 object ArrivalListener : Listener {
     private val LOOKUP_TIMEOUT = 2.seconds
 
     /**
-     * Looks up the joining player's arrival ticket and, if it is meant for this server and a portal leads back
-     * to its category, spawns the player at that portal's arrival point.
+     * Sets the spawn location to the arrival point of the joining player's ticket, or to the spawn point.
      *
-     * The lookup blocks the async spawn thread for at most two seconds; on timeout or error the spawn location
-     * is left unchanged.
+     * A ticket counts only if it is meant for this server and a portal leads back to its category. The lookup
+     * blocks the async spawn thread for at most two seconds; on timeout or error the player is treated as
+     * having no ticket.
      */
     @EventHandler
     fun onSpawnLocation(event: AsyncPlayerSpawnLocationEvent) {
-        val player = event.connection.profile.id ?: return
         val hub = HubPlugin.instance
-        val arrival = lookUp(player, hub) ?: return
-        event.spawnLocation = arrival.toLocation(hub.hubWorld)
+        val arrival = event.connection.profile.id?.let { lookUp(it, hub) }
+        val position = Arrival.spawnPosition(arrival, hub.spawnPoint)
+        event.spawnLocation = position?.toLocation(hub.hubWorld) ?: hub.hubWorld.spawnLocation
     }
 
     /** Returns the arrival point for [player] and consumes the ticket, or `null` if there is none for this server. */

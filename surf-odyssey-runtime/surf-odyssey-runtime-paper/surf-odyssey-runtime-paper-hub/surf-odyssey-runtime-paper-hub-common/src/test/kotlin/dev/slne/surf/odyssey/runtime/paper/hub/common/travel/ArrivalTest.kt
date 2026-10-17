@@ -28,4 +28,20 @@ class ArrivalTest {
     @Test
     fun `a ticket from a category without a portal back is ignored`() =
         assertNull(Arrival.resolve(ArrivalTicket("hub-west", "hub-north-01"), "hub-north-01", portals))
+
+    @Test
+    fun `the arrival point wins over the spawn point`() = assertEquals(
+        toLobby.arrival,
+        Arrival.spawnPosition(toLobby.arrival, WorldPosition(0.0, 64.0, 0.0, 0f, 0f)),
+    )
+
+    @Test
+    fun `without an arrival point players spawn at the spawn point`() = assertEquals(
+        WorldPosition(0.0, 64.0, 0.0, 0f, 0f),
+        Arrival.spawnPosition(null, WorldPosition(0.0, 64.0, 0.0, 0f, 0f)),
+    )
+
+    @Test
+    fun `without arrival and spawn point players spawn at the world spawn`() =
+        assertNull(Arrival.spawnPosition(null, null))
 }

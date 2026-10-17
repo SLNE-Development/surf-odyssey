@@ -26,4 +26,11 @@ object Arrival {
         if (ticket == null || ticket.targetServerName != serverName) return null
         return portals.firstOrNull { it.targetCategory == ticket.sourceCategory }?.arrival
     }
+
+    /**
+     * Returns where a joining player spawns: at [arrival] if there is one, otherwise at [spawnPoint].
+     *
+     * @return the spawn position, or `null` if neither is set and the world's spawn applies
+     */
+    fun spawnPosition(arrival: WorldPosition?, spawnPoint: WorldPosition?): WorldPosition? = arrival ?: spawnPoint
 }

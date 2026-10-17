@@ -7,6 +7,9 @@ player-info-forwarding-mode = "modern"
 
 [servers]
 hub-lobby-01 = "hub-lobby-01:25565"
+hub-north-01 = "hub-north-01:25565"
+hub-north-02 = "hub-north-02:25565"
+hub-south-01 = "hub-south-01:25565"
 home = "home:25565"
 try = ["hub-lobby-01"]
 

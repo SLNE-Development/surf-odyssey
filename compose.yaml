@@ -72,6 +72,14 @@ x-paper: &paper
     valkey:
       condition: service_healthy
 
+# Every hub server copies its world from docker/worlds on each start, so the map always matches the repository.
+# FORCE_WORLD_COPY deletes the world folder of the run folder before the copy, so nothing built or changed on a hub
+# survives a restart. docker/paper/hub/plugins holds the CraftEngine config that only sends the pack to players.
+x-hub-environment: &hub-environment
+  <<: *paper-environment
+  FORCE_WORLD_COPY: "TRUE"
+  COPY_PLUGINS_SRC: /plugins,/plugins-hub
+
 services:
   postgres:
     image: postgres:17.6-alpine
@@ -170,23 +178,80 @@ services:
         condition: service_healthy
       hub-lobby-01:
         condition: service_started
+      hub-north-01:
+        condition: service_started
+      hub-north-02:
+        condition: service_started
+      hub-south-01:
+        condition: service_started
       home:
         condition: service_started
 
   hub-lobby-01:
     <<: *paper
     environment:
-      <<: *paper-environment
+      <<: *hub-environment
       LUCKPERMS_SERVER: hub-lobby-01
       CFG_SURF_SERVER_NAME: hub-lobby-01
       CFG_SURF_SERVER_DISPLAY_NAME: Lobby
       CFG_SURF_SERVER_CATEGORY: odyssey-hub-lobby
+      WORLD: /worlds/lobby
     volumes:
-      # Server files, plugins and plugin configs all live in the run folder. docker/paper/config and
-      # docker/paper/plugins are synced into its config and plugins folders on start.
+      # Server files, plugins and plugin configs all live in the run folder. docker/paper/config, docker/paper/plugins
+      # and docker/paper/hub/plugins are synced into its config and plugins folders on start.
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-01:/data
+      - ./docker/worlds/lobby:/worlds/lobby:ro
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
+
+  hub-north-01:
+    <<: *paper
+    environment:
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-north-01
+      CFG_SURF_SERVER_NAME: hub-north-01
+      CFG_SURF_SERVER_DISPLAY_NAME: Norden
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-north
+      WORLD: /worlds/north
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-01:/data
+      - ./docker/worlds/north:/worlds/north:ro
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
+
+  hub-north-02:
+    <<: *paper
+    environment:
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-north-02
+      CFG_SURF_SERVER_NAME: hub-north-02
+      CFG_SURF_SERVER_DISPLAY_NAME: Norden
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-north
+      WORLD: /worlds/north
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-02:/data
+      - ./docker/worlds/north:/worlds/north:ro
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
+
+  hub-south-01:
+    <<: *paper
+    environment:
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-south-01
+      CFG_SURF_SERVER_NAME: hub-south-01
+      CFG_SURF_SERVER_DISPLAY_NAME: Süden
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-south
+      WORLD: /worlds/south
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-south/run/hub-south-01:/data
+      - ./docker/worlds/south:/worlds/south:ro
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
 
   home:
     <<: *paper
@@ -196,13 +261,15 @@ services:
       CFG_SURF_SERVER_NAME: home
       CFG_SURF_SERVER_DISPLAY_NAME: Home
       CFG_SURF_SERVER_CATEGORY: home
-      # docker/paper/home/plugins holds the configs only the home server needs, e.g. surf-polar-paper
-      COPY_PLUGINS_SRC: /plugins,/plugins-home
+      # docker/paper/home/plugins holds the configs only the home server needs, e.g. surf-polar-paper, and
+      # docker/paper/hub/plugins the CraftEngine config that only sends the pack to players
+      COPY_PLUGINS_SRC: /plugins,/plugins-home,/plugins-home-ce
     volumes:
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run:/data
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
       - ./docker/paper/home/plugins:/plugins-home:ro
+      - ./docker/paper/hub/plugins:/plugins-home-ce:ro
 
   pack-01:
     <<: *paper

@@ -8,6 +8,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import net.kyori.adventure.text.Component
 import org.bukkit.Location
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.Mob
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -15,10 +16,10 @@ import kotlin.time.Duration
  * A region that keeps up to [maxAlive] mobs of [types] alive, spawning one on top of a random
  * [spawnPoints] entry every [respawnInterval]. Spawned mobs do not persist across restarts.
  *
- * @property types entity types to pick from
+ * @property types entity types to pick from, each a spawnable mob
  * @property spawnPoints blocks mobs spawn on, all inside the shape
- * @property respawnInterval time between two spawns
- * @property maxAlive most mobs alive at once
+ * @property respawnInterval time between two spawns, positive
+ * @property maxAlive most mobs alive at once, at least 1
  */
 class MobSpawnRegion(
     id: String,
@@ -34,6 +35,12 @@ class MobSpawnRegion(
         require(types.isNotEmpty()) { "Mob region '$id' needs at least one mob type" }
         require(spawnPoints.isNotEmpty()) { "Mob region '$id' needs at least one spawn point" }
         require(maxAlive > 0) { "Mob region '$id' needs a positive maximum" }
+        require(respawnInterval.isPositive()) { "Mob region '$id' needs a positive respawn interval" }
+        types.forEach {
+            require(it.isSpawnable && it.entityClass?.let(Mob::class.java::isAssignableFrom) == true) {
+                "Mob region '$id' can only spawn mobs, $it is none"
+            }
+        }
         spawnPoints.forEach {
             require(shape.contains(it.x, it.y, it.z)) { "Spawn point $it of mob region '$id' lies outside its shape" }
         }

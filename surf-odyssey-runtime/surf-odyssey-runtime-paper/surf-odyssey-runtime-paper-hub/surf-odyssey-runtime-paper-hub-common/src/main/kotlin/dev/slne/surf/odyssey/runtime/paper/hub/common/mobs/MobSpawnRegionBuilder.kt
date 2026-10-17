@@ -23,10 +23,10 @@ class MobSpawnRegionBuilder(private val id: String) {
     /** Name shown to players, defaults to the id. */
     var displayName: Component = Component.text(id)
 
-    /** Time between two spawns. */
+    /** Time between two spawns, positive. */
     var respawnInterval: Duration = 30.seconds
 
-    /** Most mobs alive at once. */
+    /** Most mobs alive at once, at least 1. */
     var maxAlive: Int = 5
 
     private var shape: Shape? = null
@@ -44,7 +44,7 @@ class MobSpawnRegionBuilder(private val id: String) {
         shape = ShapeBuilder().apply(block).build()
     }
 
-    /** Adds mob types to pick from. */
+    /** Adds mob types to pick from; each must be a spawnable mob. */
     fun mobs(vararg types: EntityType) {
         this.types += types
     }
@@ -54,7 +54,11 @@ class MobSpawnRegionBuilder(private val id: String) {
         points += BlockPoint(x, y, z)
     }
 
-    /** Creates the region from the collected settings, failing when a spawn point lies outside the shape. */
+    /**
+     * Creates the region from the collected settings, failing when the shape, a mob type or a spawn
+     * point is missing, a type is no spawnable mob, a spawn point lies outside the shape, or the
+     * interval or maximum is not positive.
+     */
     internal fun build() = MobSpawnRegion(
         id, displayName, requireNotNull(shape) { "Region '$id' has no shape" },
         types.toList(), points.toList(), respawnInterval, maxAlive, settings,

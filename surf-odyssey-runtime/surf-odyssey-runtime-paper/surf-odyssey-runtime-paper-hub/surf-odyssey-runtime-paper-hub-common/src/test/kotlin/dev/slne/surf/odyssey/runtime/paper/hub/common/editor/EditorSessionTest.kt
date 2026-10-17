@@ -7,7 +7,41 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+/** Checks how an [EditorSession] collects parts and points and which problems it reports. */
 class EditorSessionTest {
+    @Test
+    fun `an empty session needs an included part`() =
+        assertEquals(listOf("Die Region hat noch keinen eingeschlossenen Teil."), EditorSession("test").problems())
+
+    @Test
+    fun `a session with only excluded parts needs an included part`() {
+        val session = EditorSession("test")
+        session.startCuboid(excluded = true)
+        session.addPoint(BlockPoint(0, 0, 0))
+        session.addPoint(BlockPoint(1, 1, 1))
+        assertEquals(listOf("Die Region hat noch keinen eingeschlossenen Teil."), session.problems())
+    }
+
+    @Test
+    fun `incomplete parts are reported by their number`() {
+        val session = EditorSession("test")
+        session.startPrism(minY = 0, maxY = 10, excluded = false)
+        session.addPoint(BlockPoint(0, 0, 0))
+        session.addPoint(BlockPoint(1, 0, 0))
+        session.startCuboid(excluded = true)
+        session.addPoint(BlockPoint(0, 0, 0))
+        assertEquals(listOf("Teil 1 braucht mindestens drei Punkte.", "Teil 2 braucht zwei Ecken."), session.problems())
+    }
+
+    @Test
+    fun `a complete session has no problems`() {
+        val session = EditorSession("test")
+        session.startCuboid(excluded = false)
+        session.addPoint(BlockPoint(0, 0, 0))
+        session.addPoint(BlockPoint(1, 1, 1))
+        assertEquals(emptyList(), session.problems())
+    }
+
     @Test
     fun `a point added to a prism keeps only x and z`() {
         val session = EditorSession("test")

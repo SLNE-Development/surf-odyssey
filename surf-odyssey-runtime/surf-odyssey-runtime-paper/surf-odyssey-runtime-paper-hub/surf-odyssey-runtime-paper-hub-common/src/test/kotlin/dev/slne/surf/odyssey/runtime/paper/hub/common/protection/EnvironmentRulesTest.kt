@@ -256,6 +256,13 @@ class EnvironmentRulesTest {
     }
 
     @Test
+    fun `shearing pumpkins is a plant harvest, shearing beehives a utility use`() {
+        assertEquals(ProtectionCategory.PLANT_HARVEST, EnvironmentRules.shearCategory(Material.PUMPKIN))
+        assertEquals(ProtectionCategory.UTILITY_BLOCKS, EnvironmentRules.shearCategory(Material.BEEHIVE))
+        assertEquals(ProtectionCategory.UTILITY_BLOCKS, EnvironmentRules.shearCategory(Material.BEE_NEST))
+    }
+
+    @Test
     fun `decorated pots and chiseled bookshelves stay decoration blocks`() {
         assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.DECORATED_POT, null))
         assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.CHISELED_BOOKSHELF, null))

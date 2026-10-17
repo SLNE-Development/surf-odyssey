@@ -2,6 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.protection
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent
+import io.papermc.paper.event.block.PlayerShearBlockEvent
 import io.papermc.paper.event.player.PlayerOpenSignEvent
 import org.bukkit.Location
 import org.bukkit.World
@@ -210,6 +211,10 @@ object WorldChangeListener : Listener {
     /** Cancels dispensers and droppers dispensing items. */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onDispense(event: BlockDispenseEvent) = apply(ProtectionCategory.DISPENSERS, event.block, event)
+
+    /** Cancels players shearing blocks, e.g. carving pumpkins or harvesting honeycomb from beehives. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onShear(event: PlayerShearBlockEvent) = apply(EnvironmentRules.shearCategory(event.block.type), event.block, event)
 
     /** Cancels players taking the book from a lectern. */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)

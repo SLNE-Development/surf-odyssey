@@ -121,6 +121,13 @@ object EnvironmentRules {
         else -> null
     }
 
+    /**
+     * Returns the category of a player shearing a block of [material]: utility blocks for beehives and
+     * bee nests, plant harvest otherwise, e.g. for carving a pumpkin.
+     */
+    fun shearCategory(material: Material): ProtectionCategory =
+        if (material in UTILITY_BLOCKS) ProtectionCategory.UTILITY_BLOCKS else ProtectionCategory.PLANT_HARVEST
+
     /** Returns the category of a player placing an entity of [type]: armor stands for armor stands, vehicles otherwise. */
     fun placeCategory(type: EntityType): ProtectionCategory =
         if (type == EntityType.ARMOR_STAND) ProtectionCategory.ARMOR_STANDS else ProtectionCategory.VEHICLES

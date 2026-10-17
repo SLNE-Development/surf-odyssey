@@ -33,8 +33,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property levers players may flip levers
  * @property pressurePlates players and other entities may trigger pressure plates by stepping on them
  * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it; tripwires and redstone ore also cover other entities
- * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames
- * @property plantHarvest players may pick sweet berries and glow berries, tilt big dripleaves and trample turtle eggs; dripleaves and turtle eggs also cover other entities
+ * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames, including shearing beehives and bee nests
+ * @property plantHarvest players may pick sweet berries and glow berries, carve pumpkins with shears, tilt big dripleaves and trample turtle eggs; dripleaves and turtle eggs also cover other entities
  * @property vehicles players may place boats, minecarts and end crystals
  * @property containers players may open chests, trapped chests, ender chests, copper chests, barrels, shulker
  *           boxes, furnaces, smokers, blast furnaces, hoppers, droppers, dispensers, brewing stands and crafters
@@ -260,7 +260,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
     /** A player uses a jukebox, bell, campfire, cauldron, beehive, bee nest, respawn anchor or end portal frame. */
     UTILITY_BLOCKS({ it.utilityBlocks }),
 
-    /** A player picks sweet berries or glow berries, tilts a big dripleaf or tramples turtle eggs. */
+    /** A player picks sweet berries or glow berries, carves a pumpkin, tilts a big dripleaf or tramples turtle eggs. */
     PLANT_HARVEST({ it.plantHarvest }),
 
     /** A player places a boat, minecart or end crystal. */

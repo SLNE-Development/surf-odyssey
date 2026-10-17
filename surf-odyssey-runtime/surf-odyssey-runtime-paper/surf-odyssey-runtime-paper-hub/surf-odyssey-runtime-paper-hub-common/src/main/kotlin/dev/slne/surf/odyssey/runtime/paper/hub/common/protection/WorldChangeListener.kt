@@ -228,11 +228,11 @@ object WorldChangeListener : Listener {
     /**
      * Returns whether [category] is allowed at the block [x], [y], [z] of [world]: always outside the
      * hub world, otherwise when the world's settings or the settings of the region covering the block allow it.
+     * The region is looked up only when the world's settings do not allow [category].
      */
     private fun allows(category: ProtectionCategory, world: World?, x: Int, y: Int, z: Int): Boolean {
         val hub = hub
-        val inHubWorld = world == hub.hubWorld
-        val region = if (inHubWorld) hub.regionIndex.regionAt(x, y, z)?.settings else null
-        return EnvironmentRules.allows(category, inHubWorld, hub.protectionSettings, region)
+        if (world != hub.hubWorld || category.allowedIn(hub.protectionSettings)) return true
+        return EnvironmentRules.allows(category, true, hub.protectionSettings, hub.regionIndex.regionAt(x, y, z)?.settings)
     }
 }

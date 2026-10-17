@@ -9,6 +9,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.regionEditorCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.WorldChangeListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
@@ -51,6 +53,10 @@ abstract class HubPlugin : OdysseyPaperMain() {
      */
     open val spawnPoint: WorldPosition? = null
 
+    /** Changes allowed everywhere in this hub world. Available once the plugin is enabled. */
+    lateinit var protectionSettings: ProtectionSettings
+        private set
+
     /** The world the regions belong to: the server's main world. */
     val hubWorld: World get() = server.worlds.first()
 
@@ -64,16 +70,20 @@ abstract class HubPlugin : OdysseyPaperMain() {
     /** Declares the portals of this hub world. */
     protected open fun portals(): List<Portal> = emptyList()
 
+    /** Declares the changes allowed everywhere in this hub world; by default every change is blocked. */
+    protected open fun ProtectionSettingsBuilder.settings() {}
+
     /**
-     * Builds the region index, collects the portals, connects the arrival cache, turns off saving for every
-     * world, registers protection, world change handling, fishing, portals, arrivals and the region editor
-     * with its wand, starts ticking and the editor preview, registers the placeholder tags, then calls
-     * [onHubEnabled].
+     * Builds the region index and the world's protection settings, collects the portals, connects the arrival
+     * cache, turns off saving for every world, registers protection, world change handling, fishing, portals,
+     * arrivals and the region editor with its wand, starts ticking and the editor preview, registers the
+     * placeholder tags, then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */
     final override suspend fun onEnabled() {
         regionIndex = RegionIndex(RegionRegistry().apply { regions() }.build())
+        protectionSettings = ProtectionSettingsBuilder().apply { settings() }.build()
         portalList = portals()
         ArrivalCache.connect(name)
         server.worlds.forEach { it.isAutoSave = false }

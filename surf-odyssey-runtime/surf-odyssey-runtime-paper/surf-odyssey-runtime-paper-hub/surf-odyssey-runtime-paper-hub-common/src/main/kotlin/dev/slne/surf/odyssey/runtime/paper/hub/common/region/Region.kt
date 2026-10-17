@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
@@ -16,8 +17,14 @@ import org.bukkit.event.player.PlayerInteractEvent
  * @property id unique id of the region, matching [ID_PATTERN]
  * @property displayName name of the region shown to players
  * @property shape blocks the region covers
+ * @property settings changes allowed inside the region in addition to those the world allows
  */
-abstract class Region(val id: String, val displayName: Component, val shape: Shape) {
+abstract class Region(
+    val id: String,
+    val displayName: Component,
+    val shape: Shape,
+    val settings: ProtectionSettings = ProtectionSettings(),
+) {
     init {
         require(ID_PATTERN.matches(id)) { "Invalid region id '$id', use lowercase letters, digits and underscores" }
     }

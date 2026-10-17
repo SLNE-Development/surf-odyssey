@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
@@ -28,7 +29,8 @@ open class HarvestRegion(
     val placeholder: Material,
     val regenerateAfter: Duration,
     val drops: ((Block) -> Collection<ItemStack>)?,
-) : Region(id, displayName, shape) {
+    settings: ProtectionSettings = ProtectionSettings(),
+) : Region(id, displayName, shape, settings) {
     init {
         require(regenerateAfter >= MIN_REGENERATE_AFTER) {
             "Region '$id' regenerates after $regenerateAfter, at least $MIN_REGENERATE_AFTER is required"
@@ -48,10 +50,12 @@ open class HarvestRegion(
 class MineRegion(
     id: String, displayName: Component, shape: Shape, breakable: Set<Material>,
     placeholder: Material, regenerateAfter: Duration, drops: ((Block) -> Collection<ItemStack>)?,
-) : HarvestRegion(id, displayName, shape, breakable, placeholder, regenerateAfter, drops)
+    settings: ProtectionSettings = ProtectionSettings(),
+) : HarvestRegion(id, displayName, shape, breakable, placeholder, regenerateAfter, drops, settings)
 
 /** A forest: logs and leaves are broken and grow back after the delay. */
 class ForestRegion(
     id: String, displayName: Component, shape: Shape, breakable: Set<Material>,
     regenerateAfter: Duration, drops: ((Block) -> Collection<ItemStack>)?,
-) : HarvestRegion(id, displayName, shape, breakable, Material.AIR, regenerateAfter, drops)
+    settings: ProtectionSettings = ProtectionSettings(),
+) : HarvestRegion(id, displayName, shape, breakable, Material.AIR, regenerateAfter, drops, settings)

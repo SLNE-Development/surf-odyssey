@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.mobs
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
@@ -27,7 +28,8 @@ class MobSpawnRegion(
     val spawnPoints: List<BlockPoint>,
     val respawnInterval: Duration,
     val maxAlive: Int,
-) : Region(id, displayName, shape) {
+    settings: ProtectionSettings = ProtectionSettings(),
+) : Region(id, displayName, shape, settings) {
     init {
         require(types.isNotEmpty()) { "Mob region '$id' needs at least one mob type" }
         require(spawnPoints.isNotEmpty()) { "Mob region '$id' needs at least one spawn point" }

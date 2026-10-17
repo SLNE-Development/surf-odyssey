@@ -2,6 +2,9 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingRegionBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegionBuilder
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.protectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
@@ -65,6 +68,12 @@ class HarvestRegionBuilder(private val id: String, defaultPlaceholder: Material)
     private var shape: Shape? = null
     private val breakable = mutableSetOf<Material>()
     private var drops: ((Block) -> Collection<ItemStack>)? = null
+    private var settings = ProtectionSettings()
+
+    /** Sets the changes allowed inside the region in addition to those the world allows. */
+    fun settings(block: ProtectionSettingsBuilder.() -> Unit) {
+        settings = protectionSettings(block)
+    }
 
     /** Sets the shape of the region. */
     fun shape(block: ShapeBuilder.() -> Unit) {
@@ -82,10 +91,10 @@ class HarvestRegionBuilder(private val id: String, defaultPlaceholder: Material)
     }
 
     /** Creates the mine from the collected settings. */
-    internal fun buildMine() = MineRegion(id, displayName, requireShape(), breakable.toSet(), placeholder, regenerateAfter, drops)
+    internal fun buildMine() = MineRegion(id, displayName, requireShape(), breakable.toSet(), placeholder, regenerateAfter, drops, settings)
 
     /** Creates the forest from the collected settings. */
-    internal fun buildForest() = ForestRegion(id, displayName, requireShape(), breakable.toSet(), regenerateAfter, drops)
+    internal fun buildForest() = ForestRegion(id, displayName, requireShape(), breakable.toSet(), regenerateAfter, drops, settings)
 
     /** Returns the configured shape or fails when none was set. */
     private fun requireShape(): Shape = requireNotNull(shape) { "Region '$id' has no shape" }

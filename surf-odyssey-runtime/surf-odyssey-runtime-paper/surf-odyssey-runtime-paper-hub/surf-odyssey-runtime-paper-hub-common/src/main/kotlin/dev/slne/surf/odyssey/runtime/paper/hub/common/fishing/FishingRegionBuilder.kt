@@ -1,5 +1,8 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.fishing
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
+import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.protectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
@@ -18,6 +21,12 @@ class FishingRegionBuilder(private val id: String) {
     var displayName: Component = Component.text(id)
     private var shape: Shape? = null
     private val fish = mutableListOf<FishEntry>()
+    private var settings = ProtectionSettings()
+
+    /** Sets the changes allowed inside the region in addition to those the world allows. */
+    fun settings(block: ProtectionSettingsBuilder.() -> Unit) {
+        settings = protectionSettings(block)
+    }
 
     /** Sets the shape of the region; the hook position decides whether a catch counts. */
     fun shape(block: ShapeBuilder.() -> Unit) {
@@ -30,7 +39,7 @@ class FishingRegionBuilder(private val id: String) {
     }
 
     /** Creates the fishing region from the collected settings. */
-    internal fun build() = FishingRegion(id, displayName, requireNotNull(shape) { "Region '$id' has no shape" }, FishTable(fish.toList()))
+    internal fun build() = FishingRegion(id, displayName, requireNotNull(shape) { "Region '$id' has no shape" }, FishTable(fish.toList()), settings)
 }
 
 /** Conditions and item of one fish. */

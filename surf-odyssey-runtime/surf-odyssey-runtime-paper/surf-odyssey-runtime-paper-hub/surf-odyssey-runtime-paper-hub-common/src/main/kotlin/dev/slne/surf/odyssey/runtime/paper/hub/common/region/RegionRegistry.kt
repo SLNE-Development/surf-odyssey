@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingRegionBuilder
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegionBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
@@ -34,6 +35,11 @@ class RegionRegistry {
     /** Adds a fishing region configured in [block]. */
     fun fishing(id: String, block: FishingRegionBuilder.() -> Unit) {
         regions += FishingRegionBuilder(id).apply(block).build()
+    }
+
+    /** Adds a mob spawn region configured in [block]. */
+    fun mobSpawn(id: String, block: MobSpawnRegionBuilder.() -> Unit) {
+        regions += MobSpawnRegionBuilder(id).apply(block).build()
     }
 
     /** Returns all regions in declaration order. */

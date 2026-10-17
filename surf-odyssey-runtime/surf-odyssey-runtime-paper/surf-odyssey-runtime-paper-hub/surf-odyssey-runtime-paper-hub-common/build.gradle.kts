@@ -11,5 +11,6 @@ surfRawPaperApi {
 }
 
 dependencies {
+    compileOnly("io.github.miniplaceholders:miniplaceholders-api:3.2.0")
     api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperCommon)
 }

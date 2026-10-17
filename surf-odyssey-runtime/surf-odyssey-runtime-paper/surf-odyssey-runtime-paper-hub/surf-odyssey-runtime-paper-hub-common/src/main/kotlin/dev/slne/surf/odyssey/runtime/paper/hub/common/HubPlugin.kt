@@ -4,6 +4,7 @@ import dev.slne.surf.api.paper.event.register
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
 import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.WorldChangeListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
@@ -45,7 +46,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Builds the region index, turns off saving for every world, registers protection, world change
-     * handling and fishing, starts ticking,
+     * handling and fishing, starts ticking, registers the placeholder tags,
      * then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
@@ -57,13 +58,15 @@ abstract class HubPlugin : OdysseyPaperMain() {
         WorldChangeListener.register()
         FishingListener.register()
         RegionTicker.start(this)
+        HubPlaceholders.register(this)
         onHubEnabled()
     }
 
-    /** Calls [onHubDisabled], restores every block waiting to regenerate, then stops ticking. */
+    /** Calls [onHubDisabled], restores every block waiting to regenerate, unregisters the placeholder tags, then stops ticking. */
     final override suspend fun onDisabled() {
         onHubDisabled()
         RegenerationTicker.restoreAll(hubWorld)
+        HubPlaceholders.unregister()
         RegionTicker.stop()
     }
 

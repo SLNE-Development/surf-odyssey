@@ -13,6 +13,8 @@ surfPaperPluginApi {
         registerRequired("surf-rabbitmq-paper")
         // Player data is synced between the servers by HuskSync
         registerRequired("HuskSync")
+        // The hub tags are registered as MiniPlaceholders expansion
+        registerRequired("MiniPlaceholders")
     }
 
     testing {

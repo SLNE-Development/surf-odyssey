@@ -11,12 +11,17 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 
-/** Sends a player who steps onto a portal block inside a portal area to the portal's target. */
+/**
+ * Sends a player who steps onto a portal block inside a portal area to the portal's target.
+ *
+ * A player can use portals at most once every three seconds and never while a transfer is still running.
+ */
 object PortalListener : Listener {
     /** CraftEngine block that marks portal surfaces. */
     val PORTAL_BLOCK: Key = Key.of("odyssey:portal")
 
     private val cooldown = PortalCooldown(3_000)
+    private val inFlight = TransfersInFlight()
 
     /** Checks the blocks at the player's feet and head against the portals of this world. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -31,13 +36,25 @@ object PortalListener : Listener {
             listOf(feet, head).any { portal.shape.contains(it.x, it.y, it.z) && isPortalBlock(it) }
         } ?: return
         val player = event.player
-        if (!cooldown.tryUse(player.uniqueId, System.currentTimeMillis())) return
-        hub.launch { HubTravel.send(player, portal.targetCategory) }
+        val id = player.uniqueId
+        if (inFlight.isRunning(id)) return
+        if (!cooldown.tryUse(id, System.currentTimeMillis())) return
+        if (!inFlight.tryStart(id)) return
+        hub.launch {
+            try {
+                HubTravel.send(player, portal.targetCategory)
+            } finally {
+                inFlight.finish(id)
+            }
+        }
     }
 
-    /** Forgets the player's cooldown. */
+    /** Forgets the player's cooldown and running transfer. */
     @EventHandler
-    fun onQuit(event: PlayerQuitEvent) = cooldown.clear(event.player.uniqueId)
+    fun onQuit(event: PlayerQuitEvent) {
+        cooldown.clear(event.player.uniqueId)
+        inFlight.finish(event.player.uniqueId)
+    }
 
     /** Returns whether [block] is a CraftEngine [PORTAL_BLOCK]. */
     private fun isPortalBlock(block: Block): Boolean {

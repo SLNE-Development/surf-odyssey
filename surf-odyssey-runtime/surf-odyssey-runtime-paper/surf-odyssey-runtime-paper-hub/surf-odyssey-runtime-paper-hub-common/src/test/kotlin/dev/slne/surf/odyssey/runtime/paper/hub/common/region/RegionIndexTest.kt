@@ -47,11 +47,13 @@ class RegionIndexTest {
     @Test
     fun `overlapping regions are rejected with both ids`() {
         val regions = RegionRegistry().apply {
-            mine("a") { shape { cuboid(0, 0, 0, 5, 5, 5) } }
-            mine("b") { shape { cuboid(5, 5, 5, 8, 8, 8) } }
+            mine("upper_mine") { shape { cuboid(0, 0, 0, 5, 5, 5) } }
+            mine("lower_mine") { shape { cuboid(5, 5, 5, 8, 8, 8) } }
         }.build()
         val error = assertFailsWith<IllegalStateException> { RegionIndex(regions) }
-        assertTrue("a" in error.message!! && "b" in error.message!!)
+        val message = error.message.orEmpty()
+        assertTrue("upper_mine" in message, message)
+        assertTrue("lower_mine" in message, message)
     }
 
     @Test

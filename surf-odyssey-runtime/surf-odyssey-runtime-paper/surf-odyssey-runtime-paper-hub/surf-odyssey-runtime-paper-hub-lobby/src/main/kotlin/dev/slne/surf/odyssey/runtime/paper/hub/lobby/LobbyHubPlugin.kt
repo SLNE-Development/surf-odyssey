@@ -1,17 +1,18 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.lobby
 
 import dev.slne.surf.api.paper.event.register
-import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperMain
-import dev.slne.surf.odyssey.runtime.paper.common.OdysseyPaperServerType
+import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.lobby.doublejump.DoubleJumpListener
+import net.kyori.adventure.text.Component
 import org.bukkit.plugin.java.JavaPlugin
 
 /** Plugin of the lobby hub server: the network's entry point with the double jump. */
-class LobbyHubPlugin : OdysseyPaperMain() {
-    override val serverType = OdysseyPaperServerType.HUB
+class LobbyHubPlugin : HubPlugin() {
+    /** Shown to players as "Lobby". */
+    override val worldDisplayName = Component.text("Lobby")
 
     /** Registers the lobby's listeners. */
-    override suspend fun onEnabled() {
+    override suspend fun onHubEnabled() {
         DoubleJumpListener.register()
     }
 }

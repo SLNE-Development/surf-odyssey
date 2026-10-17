@@ -31,7 +31,10 @@ abstract class Region(val id: String, val displayName: Component, val shape: Sha
     /** Called when [player] walks out of this region or leaves the server inside it. */
     open fun onLeave(player: Player) {}
 
-    /** Called after a break in this region was allowed; cancelling [event] still prevents it. */
+    /**
+     * Called when a player outside build mode is allowed to break a block in this region, before
+     * the block breaks or is scheduled to regenerate; cancelling [event] still prevents both.
+     */
     open fun onBreak(event: BlockBreakEvent) {}
 
     /** Called when a player interacts with a block inside this region. */

@@ -8,28 +8,24 @@ import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.config.effectiveOres
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.config.parseNames
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.Portals
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.region.SkillRegions
-import dev.slne.surf.polarpaper.api.SurfPolarPaperApi
-import dev.slne.surf.polarpaper.api.world.SurfWorld
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.bukkit.Bukkit
 import org.bukkit.GameRules
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
-import java.util.UUID
+import org.bukkit.WorldCreator
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.logging.Level
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.seconds
 
 object SkillWorld {
-    private val LOAD_TIMEOUT = 30.seconds
-    private val UNLOAD_TIMEOUT = 10.seconds
     private val lifecycles = mutableListOf<SkillWorldLifecycle>()
     private val LOCK_WAIT = 2.seconds
     private val mutex = Mutex()
@@ -42,9 +38,11 @@ object SkillWorld {
 
         data object Loading : State
 
-        data class Loaded(val surfWorld: SurfWorld, val world: World) : State
+        data object BuildMode : State
 
-        data class Unloading(val surfWorld: SurfWorld, val world: World) : State
+        data class Loaded(val world: World) : State
+
+        data class Unloading(val world: World) : State
 
         data class Failed(val cause: Throwable) : State
     }
@@ -131,6 +129,8 @@ object SkillWorld {
     enum class ReloadResult {
         Reloaded,
 
+        BuildMode,
+
         ConfigInvalid,
 
         UnloadFailed,
@@ -158,7 +158,11 @@ object SkillWorld {
         }
 
         loadLocked()
-        return if (state is State.Loaded) ReloadResult.Reloaded else ReloadResult.LoadFailed
+        return when (state) {
+            is State.Loaded -> ReloadResult.Reloaded
+            State.BuildMode -> ReloadResult.BuildMode
+            else -> ReloadResult.LoadFailed
+        }
     }
 
     fun hubWorld(): World = Bukkit.getWorlds().first()
@@ -167,6 +171,29 @@ object SkillWorld {
 
     fun isSkillWorld(world: World): Boolean = world == this.world
 
+    fun isEditWorld(world: World): Boolean =
+        isSkillWorld(world) || world.name == SkillWorldRules.BUILD_WORLD_NAME || world.name == SkillWorldSettings.config.worldName?.trim()
+
+    fun openEditWorld(): World {
+        val name = SkillWorldSettings.config.worldName?.trim().orEmpty()
+        return if (name.isNotEmpty() && modeOf(name) == SkillWorldRules.WorldMode.Live) {
+            Bukkit.getWorld(name) ?: voidWorld(name)
+        } else {
+            openBuildWorld()
+        }
+    }
+
+    fun openBuildWorld(): World {
+        Bukkit.getWorld(SkillWorldRules.BUILD_WORLD_NAME)?.let { return it }
+
+        val fresh = !WorldFolders.isWorld(worldFolder(SkillWorldRules.BUILD_WORLD_NAME))
+        val world = voidWorld(SkillWorldRules.BUILD_WORLD_NAME)
+        if (fresh) {
+            for (x in -2..2) for (z in -2..2) world.getBlockAt(x, 63, z).type = Material.STONE
+        }
+        return world
+    }
+
     fun allowsXp(skill: SkillType, location: Location): Boolean {
         val world = world ?: return false
         if (location.world != world) return false
@@ -174,31 +201,58 @@ object SkillWorld {
         return regions.allows(skill, location.blockX, location.blockY, location.blockZ)
     }
 
+    private fun worldContainer(): Path = Bukkit.getWorldContainer().toPath()
+
+    private fun worldFolder(name: String): Path {
+        val dimensions = worldContainer().resolve(hubWorld().name).resolve("dimensions").resolve("minecraft")
+        return if (Files.isDirectory(dimensions)) dimensions.resolve(name) else worldContainer().resolve(name)
+    }
+
+    private fun modeOf(name: String): SkillWorldRules.WorldMode =
+        SkillWorldRules.worldMode(name, name.isNotEmpty() && WorldFolders.isWorld(worldFolder(name)), setOf(hubWorld().name))
+
+    private fun voidWorld(name: String): World =
+        WorldCreator(name).generator(VoidChunkGenerator()).generateStructures(false).createWorld()
+            ?: error("Bukkit could not load the world $name")
+
     private suspend fun loadLocked() {
         if (state is State.Loaded || shuttingDown) return
 
-        val config = SkillWorldSettings.config
-        val uuid = config.worldUuid?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-        if (uuid == null) {
-            fail(IllegalStateException("world-uuid in skill-world.yml is missing or invalid"))
+        val name = SkillWorldSettings.config.worldName?.trim().orEmpty()
+        when (modeOf(name)) {
+            SkillWorldRules.WorldMode.Invalid -> fail(IllegalStateException("world-name \"$name\" in skill-world.yml is not allowed"))
+            SkillWorldRules.WorldMode.Build -> enterBuildMode(name)
+            SkillWorldRules.WorldMode.Live -> loadLive(name)
+        }
+    }
+
+    private fun enterBuildMode(configuredName: String) {
+        try {
+            openBuildWorld()
+        } catch (e: Exception) {
+            fail(e)
             return
         }
 
+        state = State.BuildMode
+        if (configuredName.isEmpty()) {
+            plugin.logger.info("No world-name in skill-world.yml, the build world ${SkillWorldRules.BUILD_WORLD_NAME} is active and portals stay disabled")
+        } else {
+            plugin.logger.warning("The world folder $configuredName from skill-world.yml does not exist, the build world is active and portals stay disabled")
+        }
+    }
+
+    private suspend fun loadLive(name: String) {
+        val runtimeName = SkillWorldRules.runtimeName(name)
         state = State.Loading
-        var surfWorld: SurfWorld? = null
-        val loaded = try {
-            val polarWorld = withTimeout(LOAD_TIMEOUT) { SurfPolarPaperApi.loadWorld(uuid, config.gameModeIdentifier) }
-            surfWorld = polarWorld
-            if (shuttingDown) {
-                withContext(NonCancellable) { unloadWithoutSaving(polarWorld) }
-                state = State.NotLoaded
-                return
-            }
-            val world = polarWorld.platformWorld<World>() ?: error("The loaded skill world has no platform world")
-            State.Loaded(polarWorld, world)
+
+        val runtimeWorld = try {
+            check(Bukkit.getWorld(runtimeName) == null) { "The world $runtimeName is still loaded" }
+            Bukkit.getWorld(name)?.save()
+            withContext(Dispatchers.IO) { WorldFolders.replace(worldFolder(name), worldFolder(runtimeName)) }
+            voidWorld(runtimeName)
         } catch (e: Throwable) {
-            withContext(NonCancellable) { discardUntracked(surfWorld, uuid, config.gameModeIdentifier) }
-            if (e.isRealCancellation()) {
+            if (e is CancellationException) {
                 state = State.NotLoaded
                 throw e
             }
@@ -206,11 +260,18 @@ object SkillWorld {
             return
         }
 
-        runCatching { loaded.world.setGameRule(GameRules.SPAWN_MOBS, false) }
+        if (shuttingDown) {
+            Bukkit.unloadWorld(runtimeWorld, false)
+            state = State.NotLoaded
+            return
+        }
+
+        runtimeWorld.isAutoSave = false
+        runCatching { runtimeWorld.setGameRule(GameRules.SPAWN_MOBS, false) }
             .onFailure { plugin.logger.log(Level.SEVERE, "Failed to disable natural mob spawning in the skill world", it) }
-        state = loaded
-        plugin.logger.info("Loaded skill world ${loaded.world.name}")
-        notifyLoaded(loaded.world)
+        state = State.Loaded(runtimeWorld)
+        plugin.logger.info("Loaded skill world ${runtimeWorld.name} as a copy of $name")
+        notifyLoaded(runtimeWorld)
     }
 
     private fun notifyLoaded(world: World) {
@@ -222,24 +283,23 @@ object SkillWorld {
 
     private suspend fun unloadLocked(): Boolean {
         val tracked = when (val current = state) {
-            is State.Loaded -> current.surfWorld to current.world
-            is State.Unloading -> (current.surfWorld to current.world).takeIf { Bukkit.getWorld(current.world.uid) != null }
+            is State.Loaded -> current.world
+            is State.Unloading -> current.world.takeIf { Bukkit.getWorld(it.uid) != null }
             else -> null
         }
         if (tracked == null) {
             state = State.NotLoaded
             return true
         }
-        val (surfWorld, bukkitWorld) = tracked
-        state = State.Unloading(surfWorld, bukkitWorld)
+        state = State.Unloading(tracked)
 
         lifecycles.forEach { lifecycle ->
-            runCatching { lifecycle.onUnloading(bukkitWorld) }
+            runCatching { lifecycle.onUnloading(tracked) }
                 .onFailure { plugin.logger.log(Level.SEVERE, "A skill world lifecycle failed on unload", it) }
         }
 
         val spawn = hubSpawn()
-        bukkitWorld.players.forEach { player ->
+        tracked.players.forEach { player ->
             runCatching {
                 if (!player.teleport(spawn)) {
                     plugin.logger.warning("Could not teleport ${player.name} out of the skill world")
@@ -247,47 +307,33 @@ object SkillWorld {
             }.onFailure { plugin.logger.log(Level.SEVERE, "Failed to teleport ${player.name} out of the skill world", it) }
         }
 
-        val polarUnloaded = try {
-            unloadWithoutSaving(surfWorld)
-        } catch (e: Throwable) {
-            settleUnload(surfWorld, bukkitWorld, false)
-            throw e
+        val requested = runCatching { Bukkit.unloadWorld(tracked, false) }
+            .onFailure { plugin.logger.log(Level.SEVERE, "Failed to unload the skill world, it stays tracked and protected", it) }
+            .getOrDefault(false)
+        val unloaded = settleUnload(tracked, requested)
+        if (unloaded) {
+            withContext(Dispatchers.IO) {
+                runCatching { WorldFolders.delete(worldFolder(tracked.name)) }
+                    .onFailure { plugin.logger.log(Level.WARNING, "Could not delete the folder of the skill world copy ${tracked.name}", it) }
+            }
         }
-        return settleUnload(surfWorld, bukkitWorld, polarUnloaded)
+        return unloaded
     }
 
-    private fun settleUnload(surfWorld: SurfWorld, bukkitWorld: World, polarUnloaded: Boolean): Boolean {
+    private fun settleUnload(bukkitWorld: World, requested: Boolean): Boolean {
         return when (SkillWorldRules.unloadOutcome(Bukkit.getWorld(bukkitWorld.uid) != null)) {
             SkillWorldRules.UnloadOutcome.Gone -> {
-                if (!polarUnloaded) plugin.logger.severe("Polar reported a failed unload of the skill world, but the world is gone")
+                if (!requested) plugin.logger.severe("Bukkit reported a failed unload of the skill world, but the world is gone")
                 state = State.NotLoaded
                 true
             }
 
             SkillWorldRules.UnloadOutcome.StillPresent -> {
-                state = State.Loaded(surfWorld, bukkitWorld)
+                state = State.Loaded(bukkitWorld)
                 false
             }
         }
     }
-
-    private suspend fun discardUntracked(known: SurfWorld?, uuid: UUID, gameModeIdentifier: String) {
-        val leaked = known ?: runCatching { SurfPolarPaperApi.findWorld(uuid, gameModeIdentifier) }.getOrNull() ?: return
-        unloadWithoutSaving(leaked)
-    }
-
-    private suspend fun unloadWithoutSaving(surfWorld: SurfWorld): Boolean {
-        try {
-            withTimeout(UNLOAD_TIMEOUT) { SurfPolarPaperApi.unloadWorld(surfWorld, false) }
-            return true
-        } catch (e: Throwable) {
-            if (e.isRealCancellation()) throw e
-            plugin.logger.log(Level.SEVERE, "Failed to unload the skill world, it stays tracked and protected", e)
-            return false
-        }
-    }
-
-    private fun Throwable.isRealCancellation() = this is CancellationException && this !is TimeoutCancellationException
 
     private fun fail(cause: Throwable) {
         state = State.Failed(cause)

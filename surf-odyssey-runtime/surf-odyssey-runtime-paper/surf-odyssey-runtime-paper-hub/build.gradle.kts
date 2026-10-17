@@ -15,8 +15,6 @@ surfPaperPluginApi {
     serverDependencies {
         // The odyssey client talks to the microservice through RabbitMQ
         registerRequired("surf-rabbitmq-paper")
-        // The skill world is loaded from the polar-paper microservice
-        registerRequired("surf-polar-paper-runtime-paper")
         // Portal blocks are placed Nexo blocks
         registerRequired("Nexo")
         // The region HUD is shown through surf-hud
@@ -30,7 +28,6 @@ surfPaperPluginApi {
 
 dependencies {
     api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperCommon)
-    compileOnly("dev.slne.surf.polarpaper:surf-polar-paper-api:1.0.1")
     compileOnly("com.nexomc:nexo:1.29.1") { isTransitive = false }
     compileOnly("dev.slne.surf.hud:surf-hud-api:1.0.1")
 }

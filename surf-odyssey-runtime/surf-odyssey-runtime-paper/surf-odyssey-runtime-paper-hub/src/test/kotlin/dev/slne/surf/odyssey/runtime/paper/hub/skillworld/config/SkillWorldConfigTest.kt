@@ -11,8 +11,7 @@ class SkillWorldConfigTest {
     fun `defaults match the documented skill world settings`() {
         val config = SkillWorldConfig()
 
-        assertEquals("skillworld", config.gameModeIdentifier)
-        assertNull(config.worldUuid)
+        assertNull(config.worldName)
         assertEquals(60L, config.mining.resetIntervalMinutes)
         assertEquals(0.05, config.mining.oreChance)
         assertEquals(listOf(60L, 30L, 10L, 5L), config.mining.warningSeconds)

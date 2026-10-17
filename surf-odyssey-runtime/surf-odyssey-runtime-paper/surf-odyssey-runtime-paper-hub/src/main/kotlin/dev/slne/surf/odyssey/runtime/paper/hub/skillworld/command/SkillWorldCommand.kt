@@ -27,6 +27,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.portal.Portals
 import dev.slne.surf.odyssey.runtime.paper.hub.skillworld.selection.SelectionWand
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import java.util.logging.Level
 
 fun skillWorldCommand() = commandTree("skillworld") {
     withPermission(OdysseyBasePermissionRegistry.SKILL_WORLD_COMMAND)
@@ -117,6 +118,28 @@ fun skillWorldCommand() = commandTree("skillworld") {
         }
     }
 
+    literalArgument("build") {
+        playerExecutor { player, _ ->
+            val world = try {
+                SkillWorld.openEditWorld()
+            } catch (e: Exception) {
+                plugin.logger.log(Level.SEVERE, "Failed to open the build world", e)
+                return@playerExecutor player.sendText {
+                    appendErrorPrefix()
+                    error("Die Bauwelt konnte nicht geladen werden. Details stehen im Log.")
+                }
+            }
+
+            player.teleportAsync(world.spawnLocation)
+            player.sendText {
+                appendSuccessPrefix()
+                success("Du bist in der Bauwelt ")
+                variableValue(world.name)
+                success(".")
+            }
+        }
+    }
+
     literalArgument("reload") {
         anyExecutor { sender, _ ->
             plugin.launch {
@@ -160,6 +183,11 @@ private fun CommandSender.sendReloadResult(result: SkillWorld.ReloadResult) {
             appendErrorPrefix()
             error("Die alte Skill-Welt konnte nicht entladen werden und bleibt aktiv. Details stehen im Log.")
         }
+    } else if (result == SkillWorld.ReloadResult.BuildMode) {
+        sendText {
+            appendSuccessPrefix()
+            success("Kein gültiger Weltname gesetzt, die Bauwelt ist aktiv. Die Portale bleiben deaktiviert.")
+        }
     } else if (result == SkillWorld.ReloadResult.Reloaded) {
         sendText {
             appendSuccessPrefix()
@@ -178,9 +206,9 @@ private fun setRegion(player: Player, skillName: String) {
         appendErrorPrefix()
         error("Unbekannter Skill.")
     }
-    if (!SkillWorld.isSkillWorld(player.world)) return player.sendText {
+    if (!SkillWorld.isEditWorld(player.world)) return player.sendText {
         appendErrorPrefix()
-        error("Regionen können nur in der Skill-Welt gesetzt werden.")
+        error("Regionen können nur in der Skill-Welt oder der Bauwelt gesetzt werden.")
     }
     val (a, b) = Selections.corners(player) ?: return player.sendText {
         appendErrorPrefix()
@@ -203,7 +231,7 @@ private fun setRegion(player: Player, skillName: String) {
 
 private fun createPortal(player: Player, id: String, kind: PortalKind, skill: SkillType?) {
     val expectedHub = PortalRouter.expectedWorldIsHub(kind)
-    val inExpectedWorld = if (expectedHub) player.world == SkillWorld.hubWorld() else SkillWorld.isSkillWorld(player.world)
+    val inExpectedWorld = if (expectedHub) player.world == SkillWorld.hubWorld() else SkillWorld.isEditWorld(player.world)
     if (!inExpectedWorld) return player.sendText {
         appendErrorPrefix()
         error(if (expectedHub) "Eingangsportale gehören in die Hub-Welt." else "Rückportale gehören in die Skill-Welt.")
@@ -263,9 +291,9 @@ private fun setArrival(player: Player, skillName: String) {
         appendErrorPrefix()
         error("Unbekannter Skill.")
     }
-    if (!SkillWorld.isSkillWorld(player.world)) return player.sendText {
+    if (!SkillWorld.isEditWorld(player.world)) return player.sendText {
         appendErrorPrefix()
-        error("Ankunftspunkte können nur in der Skill-Welt gesetzt werden.")
+        error("Ankunftspunkte können nur in der Skill-Welt oder der Bauwelt gesetzt werden.")
     }
 
     val location = player.location

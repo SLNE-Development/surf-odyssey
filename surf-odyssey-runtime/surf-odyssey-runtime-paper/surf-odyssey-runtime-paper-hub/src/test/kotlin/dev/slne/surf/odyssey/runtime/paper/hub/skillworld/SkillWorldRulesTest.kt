@@ -34,8 +34,34 @@ class SkillWorldRulesTest {
     }
 
     @Test
-    fun `an unload is judged by the world being present, not by what polar reported`() {
+    fun `an unload is judged by the world being present in Bukkit`() {
         assertEquals(SkillWorldRules.UnloadOutcome.Gone, SkillWorldRules.unloadOutcome(worldStillInBukkit = false))
         assertEquals(SkillWorldRules.UnloadOutcome.StillPresent, SkillWorldRules.unloadOutcome(worldStillInBukkit = true))
+    }
+
+    @Test
+    fun `no name or an empty name selects the build world`() {
+        assertEquals(SkillWorldRules.WorldMode.Build, SkillWorldRules.worldMode(null, sourceExists = true, reservedNames = emptySet()))
+        assertEquals(SkillWorldRules.WorldMode.Build, SkillWorldRules.worldMode("  ", sourceExists = true, reservedNames = emptySet()))
+    }
+
+    @Test
+    fun `an existing source selects live mode and a missing one the build world`() {
+        assertEquals(SkillWorldRules.WorldMode.Live, SkillWorldRules.worldMode("odyssey_skills", sourceExists = true, reservedNames = emptySet()))
+        assertEquals(SkillWorldRules.WorldMode.Build, SkillWorldRules.worldMode("odyssey_skills", sourceExists = false, reservedNames = emptySet()))
+        assertEquals(SkillWorldRules.WorldMode.Live, SkillWorldRules.worldMode(SkillWorldRules.BUILD_WORLD_NAME, sourceExists = true, reservedNames = emptySet()))
+    }
+
+    @Test
+    fun `names that could leave the world folder or hit reserved worlds are invalid`() {
+        val reserved = setOf("world")
+        listOf("../world", "a/b", "a\\b", "a b", "x".repeat(33), "skills_runtime", "world").forEach { name ->
+            assertEquals(SkillWorldRules.WorldMode.Invalid, SkillWorldRules.worldMode(name, sourceExists = true, reservedNames = reserved), name)
+        }
+    }
+
+    @Test
+    fun `the runtime world is named after the source`() {
+        assertEquals("skill_world_runtime", SkillWorldRules.runtimeName(SkillWorldRules.BUILD_WORLD_NAME))
     }
 }

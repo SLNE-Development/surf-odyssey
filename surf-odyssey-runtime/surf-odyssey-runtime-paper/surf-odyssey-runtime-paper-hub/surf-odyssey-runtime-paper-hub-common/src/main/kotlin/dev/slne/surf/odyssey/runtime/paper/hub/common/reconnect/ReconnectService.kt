@@ -40,8 +40,8 @@ object ReconnectService {
         private set
 
     /**
-     * Computes the map hash from the folder named by [WORLD_SOURCE_VARIABLE], connects to Redis and starts recording
-     * players who leave.
+     * Computes the map hash from the folder named by [WORLD_SOURCE_VARIABLE] and starts recording players who leave.
+     * The [ReconnectCache] must be attached to Redis before.
      *
      * Without a readable source folder, or if reading it fails, a warning is logged and the server runs without map
      * hash.
@@ -67,12 +67,11 @@ object ReconnectService {
         } else if (worldHash != null) {
             hub.logger.info("Map hash $worldHash computed from $source")
         }
-        ReconnectCache.connect(hub.name)
         ReconnectListener.register()
     }
 
     /**
-     * Stores an entry for every player still online, then disconnects from Redis.
+     * Stores an entry for every player still online.
      *
      * Storing gives up after five seconds. Errors are logged and never thrown.
      */
@@ -84,8 +83,6 @@ object ReconnectService {
             throw exception
         } catch (exception: Exception) {
             hub.logger.log(Level.WARNING, "Could not store the logout positions on shutdown", exception)
-        } finally {
-            ReconnectCache.disconnect()
         }
     }
 

@@ -11,19 +11,11 @@ import kotlin.time.Duration.Companion.seconds
  * A ticket lives for five seconds, long enough for the transfer to finish.
  */
 object ArrivalCache {
-    private lateinit var redis: RedisApi
     private lateinit var tickets: SimpleRedisCache<UUID, ArrivalTicket>
 
-    /** Creates the cache for the plugin named [pluginName] and connects it to Redis. */
-    fun connect(pluginName: String) {
-        redis = RedisApi.create(pluginName)
+    /** Creates the cache on [redis], which must not be connected yet. */
+    fun attach(redis: RedisApi) {
         tickets = redis.createSimpleCache("odyssey:hub-arrival", 5.seconds)
-        redis.freezeAndConnect()
-    }
-
-    /** Disconnects from Redis if [connect] was called. */
-    fun disconnect() {
-        if (::redis.isInitialized) redis.disconnect()
     }
 
     /** Stores [ticket] for [player], replacing an earlier one. */

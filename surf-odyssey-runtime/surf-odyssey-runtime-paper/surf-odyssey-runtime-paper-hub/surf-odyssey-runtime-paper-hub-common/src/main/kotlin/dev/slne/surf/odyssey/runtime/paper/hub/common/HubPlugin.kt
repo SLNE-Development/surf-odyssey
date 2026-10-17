@@ -14,11 +14,11 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSetti
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.WorldChangeListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.reconnect.ReconnectService
+import dev.slne.surf.odyssey.runtime.paper.hub.common.redis.HubRedis
 import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionIndex
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionTicker
-import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalCache
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.PortalListener
@@ -77,7 +77,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Builds the region index and the world's protection settings, collects the portals, connects the
-     * arrival cache, starts the reconnect service, turns off saving for every world, registers the
+     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, registers the
      * protection, world change, fishing, portal, arrival and region wand listeners and the `/hubregion`
      * command, starts the editor preview and the region ticker, registers the placeholder tags, then calls
      * [onHubEnabled].
@@ -88,7 +88,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         regionIndex = RegionIndex(RegionRegistry().apply { regions() }.build())
         protectionSettings = ProtectionSettingsBuilder().apply { settings() }.build()
         portalList = portals()
-        ArrivalCache.connect(name)
+        HubRedis.connect(name)
         ReconnectService.start(this)
         server.worlds.forEach { it.isAutoSave = false }
         HubProtectionListener.register()
@@ -107,7 +107,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
     /**
      * Calls [onHubDisabled], then restores every block waiting to regenerate, unregisters the
      * placeholder tags, stops ticking, removes the mobs of every mob spawn region, stops the reconnect
-     * service and disconnects the arrival cache. Each step runs even if an earlier one throws; the first
+     * service and disconnects from Redis. Each step runs even if an earlier one throws; the first
      * failure is thrown once all steps have run.
      */
     final override suspend fun onDisabled() {
@@ -120,7 +120,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
             if (this::regionIndex.isInitialized) regionIndex.regions.filterIsInstance<MobSpawnRegion>().forEach { it.removeMobs() }
         }
         steps.run { ReconnectService.stop(this) }
-        steps.run { ArrivalCache.disconnect() }
+        steps.run { HubRedis.disconnect() }
         steps.rethrow()
     }
 

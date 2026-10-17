@@ -15,15 +15,9 @@ import java.util.UUID
 object ReconnectCache {
     private lateinit var redis: RedisApi
 
-    /** Connects to Redis for the plugin named [pluginName]. */
-    fun connect(pluginName: String) {
-        redis = RedisApi.create(pluginName)
-        redis.freezeAndConnect()
-    }
-
-    /** Disconnects from Redis if [connect] was called. */
-    fun disconnect() {
-        if (::redis.isInitialized) redis.disconnect()
+    /** Stores and reads the entries through [redis]. */
+    fun attach(redis: RedisApi) {
+        this.redis = redis
     }
 
     /** Stores [entry] for [player] without expiry, replacing an earlier one. */

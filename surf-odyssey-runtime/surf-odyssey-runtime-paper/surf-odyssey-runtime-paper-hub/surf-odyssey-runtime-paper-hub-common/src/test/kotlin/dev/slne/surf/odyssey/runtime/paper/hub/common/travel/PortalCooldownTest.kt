@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+/** Tests that [PortalCooldown] lets each player use portals once per cooldown. */
 class PortalCooldownTest {
     @Test
     fun `a player can use a portal once per cooldown`() {

@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+/** Tests which server [ServerChooser] picks for a traveller. */
 class ServerChooserTest {
     @Test
     fun `the running server with the fewest players wins`() = assertEquals(

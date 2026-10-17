@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+/** Tests where arriving travellers and joining players spawn. */
 class ArrivalTest {
     private val shape = Cuboid.of(BlockPoint(0, 60, 0), BlockPoint(2, 63, 0))
     private val toNorth = Portal("to-north", shape, "hub-north", WorldPosition(1.5, 60.0, 2.5, 180f, 0f))

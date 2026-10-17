@@ -49,20 +49,20 @@ object EnvironmentRules {
     /**
      * Returns the category of using a block of [material] through an interaction of type [action] while
      * holding an item of type [item] (`null` for an empty hand), or `null` if the interaction does not
-     * change the block.
+     * change the block. [lecternHasBook] tells whether the block is a lectern that already holds a book.
      *
      * Right-clicking doors, trapdoors, fence gates, buttons, levers, decoration blocks, note blocks,
      * repeaters, comparators, daylight detectors, redstone ore and utility blocks such as jukeboxes,
      * bells, campfires, cauldrons or beehives changes or uses them, and right-clicking berry bushes or
-     * cave vines picks their berries; a lectern changes only when a book is put on it and a sign only
-     * when it is dyed, made to glow or waxed. Stepping on a
-     * pressure plate, a tripwire or redstone ore triggers it, stepping on a big dripleaf tilts it and
-     * stepping on turtle eggs tramples them.
-     * Left-clicks never count, so breaking a block is not affected.
+     * cave vines picks their berries. A lectern changes only when a book is put on an empty one, so
+     * reading a book on it stays possible; a sign changes only when it is dyed, made to glow or waxed.
+     * Stepping on a pressure plate, a tripwire or redstone ore triggers it, stepping on a big dripleaf
+     * tilts it and stepping on turtle eggs tramples them. Left-clicks never count, so breaking a block
+     * is not affected.
      */
-    fun blockUse(action: Action, material: Material, item: Material?): ProtectionCategory? = when (action) {
+    fun blockUse(action: Action, material: Material, item: Material?, lecternHasBook: Boolean = false): ProtectionCategory? = when (action) {
         Action.PHYSICAL -> physicalUse(material)
-        Action.RIGHT_CLICK_BLOCK -> rightClickUse(material, item)
+        Action.RIGHT_CLICK_BLOCK -> rightClickUse(material, item, lecternHasBook)
         else -> null
     }
 
@@ -82,14 +82,14 @@ object EnvironmentRules {
 
     /**
      * Returns the category of right-clicking a block of [material] while holding an item of type [item],
-     * or `null` if that changes nothing protected.
+     * or `null` if that changes nothing protected. [lecternHasBook] tells whether a lectern already holds a book.
      */
-    private fun rightClickUse(material: Material, item: Material?): ProtectionCategory? = when {
+    private fun rightClickUse(material: Material, item: Material?, lecternHasBook: Boolean): ProtectionCategory? = when {
         material in DOORS -> ProtectionCategory.DOORS
         material in BUTTONS -> ProtectionCategory.BUTTONS
         material == Material.LEVER -> ProtectionCategory.LEVERS
         material in DECO_BLOCKS -> ProtectionCategory.DECO_BLOCKS
-        material == Material.LECTERN && item in BOOKS -> ProtectionCategory.DECO_BLOCKS
+        material == Material.LECTERN && item in BOOKS && !lecternHasBook -> ProtectionCategory.DECO_BLOCKS
         material in REDSTONE_CLICKED -> ProtectionCategory.REDSTONE_COMPONENTS
         material in UTILITY_BLOCKS -> ProtectionCategory.UTILITY_BLOCKS
         material in BERRIES -> ProtectionCategory.PLANT_HARVEST
@@ -101,9 +101,10 @@ object EnvironmentRules {
      * Returns the category of a player interacting with a block of [material] through an interaction
      * of type [action] while holding an item of type [item]: [ProtectionCategory.TRAMPLE] for trampling
      * farmland, otherwise the [blockUse] category, or `null` if the interaction changes nothing protected.
+     * [lecternHasBook] tells whether the block is a lectern that already holds a book.
      */
-    fun interactionCategory(action: Action, material: Material, item: Material?): ProtectionCategory? =
-        if (isTrample(action, material)) ProtectionCategory.TRAMPLE else blockUse(action, material, item)
+    fun interactionCategory(action: Action, material: Material, item: Material?, lecternHasBook: Boolean = false): ProtectionCategory? =
+        if (isTrample(action, material)) ProtectionCategory.TRAMPLE else blockUse(action, material, item, lecternHasBook)
 
     /** Returns the category of entities of [type]: hanging entities, armor stands, or `null` for any other entity. */
     fun decorationCategory(type: EntityType): ProtectionCategory? = when (type) {

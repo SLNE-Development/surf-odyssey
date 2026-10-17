@@ -164,6 +164,8 @@ class EnvironmentRulesTest {
         assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.WRITABLE_BOOK))
         assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, null))
         assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.STICK))
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.WRITTEN_BOOK, lecternHasBook = true))
+        assertNull(EnvironmentRules.interactionCategory(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.WRITABLE_BOOK, lecternHasBook = true))
     }
 
     @Test

@@ -26,8 +26,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property signs players may open the sign editor, change the text of signs and dye, glow or wax them
  * @property dispensers dispensers and droppers may dispense items
  * @property decoBlocks players may change flower pots, cakes, composters, candles, candle cakes,
- *           lecterns, chiseled bookshelves and decorated pots by right-clicking them, and take books
- *           from lecterns
+ *           chiseled bookshelves and decorated pots by right-clicking them, put books on empty lecterns
+ *           and take books from lecterns; reading a book on a lectern is always possible
  * @property doors players may open and close doors, trapdoors and fence gates
  * @property buttons players may press buttons
  * @property levers players may flip levers

@@ -6,6 +6,7 @@ import io.papermc.paper.event.player.PlayerOpenSignEvent
 import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.block.Block
+import org.bukkit.block.data.type.Lectern
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
@@ -142,7 +143,8 @@ object WorldChangeListener : Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onInteract(event: PlayerInteractEvent) {
         val block = event.clickedBlock ?: return
-        val category = EnvironmentRules.interactionCategory(event.action, block.type, event.item?.type)
+        val lecternHasBook = (block.blockData as? Lectern)?.hasBook() == true
+        val category = EnvironmentRules.interactionCategory(event.action, block.type, event.item?.type, lecternHasBook)
         if (category != null && !allows(category, block)) event.setUseInteractedBlock(Event.Result.DENY)
         if (block.world == hub.hubWorld) hub.regionIndex.regionAt(block.x, block.y, block.z)?.onInteract(event)
     }

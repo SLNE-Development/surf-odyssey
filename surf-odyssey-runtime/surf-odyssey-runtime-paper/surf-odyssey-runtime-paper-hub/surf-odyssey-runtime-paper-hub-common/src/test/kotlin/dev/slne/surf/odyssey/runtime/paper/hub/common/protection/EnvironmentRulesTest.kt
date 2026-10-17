@@ -120,4 +120,54 @@ class EnvironmentRulesTest {
         assertEquals(ProtectionCategory.SPREAD, EnvironmentRules.spreadCategory(Material.GRASS_BLOCK))
         assertEquals(ProtectionCategory.SPREAD, EnvironmentRules.spreadCategory(Material.VINE))
     }
+
+    @Test
+    fun `right-clicking doors, trapdoors and fence gates is a door use`() {
+        for (material in listOf(Material.OAK_DOOR, Material.IRON_DOOR, Material.SPRUCE_TRAPDOOR, Material.BIRCH_FENCE_GATE)) {
+            assertEquals(ProtectionCategory.DOORS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
+    }
+
+    @Test
+    fun `right-clicking buttons and levers uses them`() {
+        assertEquals(ProtectionCategory.BUTTONS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.STONE_BUTTON, null))
+        assertEquals(ProtectionCategory.BUTTONS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.OAK_BUTTON, null))
+        assertEquals(ProtectionCategory.LEVERS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LEVER, null))
+    }
+
+    @Test
+    fun `stepping on a pressure plate triggers it`() {
+        for (material in listOf(Material.STONE_PRESSURE_PLATE, Material.OAK_PRESSURE_PLATE, Material.LIGHT_WEIGHTED_PRESSURE_PLATE)) {
+            assertEquals(ProtectionCategory.PRESSURE_PLATES, EnvironmentRules.blockUse(Action.PHYSICAL, material, null), "$material")
+        }
+        assertNull(EnvironmentRules.blockUse(Action.PHYSICAL, Material.FARMLAND, null))
+    }
+
+    @Test
+    fun `right-clicking decoration blocks changes them`() {
+        val deco = listOf(
+            Material.FLOWER_POT, Material.POTTED_POPPY, Material.CAKE, Material.CANDLE_CAKE, Material.RED_CANDLE_CAKE,
+            Material.CANDLE, Material.BLUE_CANDLE, Material.COMPOSTER, Material.CHISELED_BOOKSHELF, Material.DECORATED_POT,
+        )
+        for (material in deco) {
+            assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, material, null), "$material")
+        }
+    }
+
+    @Test
+    fun `putting a book on a lectern changes it, reading it does not`() {
+        assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.WRITTEN_BOOK))
+        assertEquals(ProtectionCategory.DECO_BLOCKS, EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.WRITABLE_BOOK))
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, null))
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.LECTERN, Material.STICK))
+    }
+
+    @Test
+    fun `left-clicks and ordinary blocks are no block use`() {
+        assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.OAK_DOOR, null))
+        assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.FLOWER_POT, null))
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.STONE, null))
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.OAK_SIGN, null))
+        assertNull(EnvironmentRules.blockUse(Action.RIGHT_CLICK_BLOCK, Material.STONE_PRESSURE_PLATE, null))
+    }
 }

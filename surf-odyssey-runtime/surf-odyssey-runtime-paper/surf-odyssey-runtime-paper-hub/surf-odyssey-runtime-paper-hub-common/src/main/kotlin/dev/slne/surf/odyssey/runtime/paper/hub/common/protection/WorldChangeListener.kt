@@ -2,14 +2,17 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.protection
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import io.papermc.paper.event.player.PlayerItemFrameChangeEvent
+import io.papermc.paper.event.player.PlayerOpenSignEvent
 import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.event.Cancellable
+import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBurnEvent
+import org.bukkit.event.block.BlockDispenseEvent
 import org.bukkit.event.block.BlockExplodeEvent
 import org.bukkit.event.block.BlockFadeEvent
 import org.bukkit.event.block.BlockFertilizeEvent
@@ -23,6 +26,7 @@ import org.bukkit.event.block.BlockPistonRetractEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.block.BlockSpreadEvent
 import org.bukkit.event.block.LeavesDecayEvent
+import org.bukkit.event.block.SignChangeEvent
 import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityExplodeEvent
@@ -33,6 +37,7 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent
 import org.bukkit.event.player.PlayerBucketFillEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerTakeLecternBookEvent
 import org.bukkit.event.world.StructureGrowEvent
 
 /**
@@ -125,11 +130,20 @@ object WorldChangeListener : Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onDecay(event: LeavesDecayEvent) = apply(ProtectionCategory.LEAF_DECAY, event.block, event)
 
-    /** Cancels players trampling farmland. */
+    /**
+     * Cancels players trampling farmland and denies using doors, trapdoors, fence gates, buttons,
+     * levers, pressure plates and decoration blocks, as [EnvironmentRules.blockUse] classifies them.
+     * A denied block use still lets the player use the item in their hand.
+     */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    fun onPhysicalInteract(event: PlayerInteractEvent) {
+    fun onInteract(event: PlayerInteractEvent) {
         val block = event.clickedBlock ?: return
-        if (EnvironmentRules.isTrample(event.action, block.type)) apply(ProtectionCategory.TRAMPLE, block, event)
+        if (EnvironmentRules.isTrample(event.action, block.type)) {
+            apply(ProtectionCategory.TRAMPLE, block, event)
+            return
+        }
+        val category = EnvironmentRules.blockUse(event.action, block.type, event.item?.type) ?: return
+        if (!allows(category, block)) event.setUseInteractedBlock(Event.Result.DENY)
     }
 
     /** Cancels entities changing blocks, e.g. endermen, falling blocks or mobs trampling farmland. */
@@ -169,6 +183,22 @@ object WorldChangeListener : Listener {
         val category = EnvironmentRules.decorationCategory(entity.type) ?: return
         apply(category, entity.location, event)
     }
+
+    /** Cancels players opening the sign editor. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onOpenSign(event: PlayerOpenSignEvent) = apply(ProtectionCategory.SIGNS, event.sign.block, event)
+
+    /** Cancels players changing the text of a sign. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onSignChange(event: SignChangeEvent) = apply(ProtectionCategory.SIGNS, event.block, event)
+
+    /** Cancels dispensers and droppers dispensing items. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onDispense(event: BlockDispenseEvent) = apply(ProtectionCategory.DISPENSERS, event.block, event)
+
+    /** Cancels players taking the book from a lectern. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onTakeLecternBook(event: PlayerTakeLecternBookEvent) = apply(ProtectionCategory.DECO_BLOCKS, event.lectern.block, event)
 
     /** Cancels [event] unless the piston and every block it moves, before and after moving, allow pistons. */
     private fun applyPiston(event: BlockPistonEvent, moved: List<Block>) {

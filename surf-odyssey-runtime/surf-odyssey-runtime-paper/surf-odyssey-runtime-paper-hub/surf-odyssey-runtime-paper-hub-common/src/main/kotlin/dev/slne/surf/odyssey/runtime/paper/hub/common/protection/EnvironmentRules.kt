@@ -66,6 +66,12 @@ object EnvironmentRules {
         else -> null
     }
 
+    /**
+     * Returns the category of an entity other than a player stepping on a block of [material]: the
+     * same category as a player stepping on it, or `null` if that changes nothing protected.
+     */
+    fun entityInteractionCategory(material: Material): ProtectionCategory? = physicalUse(material)
+
     /** Returns the category of stepping on a block of [material], or `null` if that changes nothing protected. */
     private fun physicalUse(material: Material): ProtectionCategory? = when (material) {
         in PRESSURE_PLATES -> ProtectionCategory.PRESSURE_PLATES

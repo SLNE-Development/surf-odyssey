@@ -30,6 +30,7 @@ import org.bukkit.event.block.SignChangeEvent
 import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityExplodeEvent
+import org.bukkit.event.entity.EntityInteractEvent
 import org.bukkit.event.entity.EntityPlaceEvent
 import org.bukkit.event.hanging.HangingBreakEvent
 import org.bukkit.event.hanging.HangingPlaceEvent
@@ -144,6 +145,13 @@ object WorldChangeListener : Listener {
         val category = EnvironmentRules.interactionCategory(event.action, block.type, event.item?.type)
         if (category != null && !allows(category, block)) event.setUseInteractedBlock(Event.Result.DENY)
         if (block.world == hub.hubWorld) hub.regionIndex.regionAt(block.x, block.y, block.z)?.onInteract(event)
+    }
+
+    /** Cancels mobs and other entities triggering pressure plates, tripwires and other blocks by stepping on them. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onEntityInteract(event: EntityInteractEvent) {
+        val category = EnvironmentRules.entityInteractionCategory(event.block.type) ?: return
+        apply(category, event.block, event)
     }
 
     /** Cancels entities changing blocks, e.g. endermen, falling blocks or mobs trampling farmland. */

@@ -31,10 +31,10 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
  * @property doors players may open and close doors, trapdoors and fence gates
  * @property buttons players may press buttons
  * @property levers players may flip levers
- * @property pressurePlates players may trigger pressure plates by stepping on them
- * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it
+ * @property pressurePlates players and other entities may trigger pressure plates by stepping on them
+ * @property redstoneComponents players may change note blocks, repeaters, comparators and daylight detectors, trigger tripwires and light redstone ore by touching it; tripwires and redstone ore also cover other entities
  * @property utilityBlocks players may use jukeboxes, bells, campfires, cauldrons, beehives, bee nests, respawn anchors and end portal frames
- * @property plantHarvest players may pick sweet berries and glow berries, tilt big dripleaves and trample turtle eggs
+ * @property plantHarvest players may pick sweet berries and glow berries, tilt big dripleaves and trample turtle eggs; dripleaves and turtle eggs also cover other entities
  * @property vehicles players may place boats, minecarts and end crystals
  */
 data class ProtectionSettings(
@@ -244,7 +244,7 @@ enum class ProtectionCategory(val allowedIn: (ProtectionSettings) -> Boolean) {
     /** A player flips a lever. */
     LEVERS({ it.levers }),
 
-    /** A player triggers a pressure plate by stepping on it. */
+    /** A player or another entity triggers a pressure plate by stepping on it. */
     PRESSURE_PLATES({ it.pressurePlates }),
 
     /** A player changes a note block, repeater, comparator or daylight detector, triggers a tripwire or lights redstone ore by touching it. */

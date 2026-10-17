@@ -231,6 +231,15 @@ class EnvironmentRulesTest {
     }
 
     @Test
+    fun `mobs stepping on blocks trigger the same categories as players`() {
+        assertEquals(ProtectionCategory.PRESSURE_PLATES, EnvironmentRules.entityInteractionCategory(Material.STONE_PRESSURE_PLATE))
+        assertEquals(ProtectionCategory.REDSTONE_COMPONENTS, EnvironmentRules.entityInteractionCategory(Material.TRIPWIRE))
+        assertEquals(ProtectionCategory.PLANT_HARVEST, EnvironmentRules.entityInteractionCategory(Material.TURTLE_EGG))
+        assertNull(EnvironmentRules.entityInteractionCategory(Material.FARMLAND))
+        assertNull(EnvironmentRules.entityInteractionCategory(Material.STONE))
+    }
+
+    @Test
     fun `left-clicks and ordinary blocks are no block use`() {
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.OAK_DOOR, null))
         assertNull(EnvironmentRules.blockUse(Action.LEFT_CLICK_BLOCK, Material.FLOWER_POT, null))

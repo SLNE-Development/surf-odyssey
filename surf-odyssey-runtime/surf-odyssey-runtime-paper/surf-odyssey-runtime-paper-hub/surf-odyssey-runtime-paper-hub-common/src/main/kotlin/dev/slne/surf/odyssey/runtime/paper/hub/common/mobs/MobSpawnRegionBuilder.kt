@@ -49,7 +49,7 @@ class MobSpawnRegionBuilder(private val id: String) {
         this.types += types
     }
 
-    /** Adds a block mobs can spawn on. */
+    /** Adds a block mobs spawn on top of. */
     fun spawnPoint(x: Int, y: Int, z: Int) {
         points += BlockPoint(x, y, z)
     }

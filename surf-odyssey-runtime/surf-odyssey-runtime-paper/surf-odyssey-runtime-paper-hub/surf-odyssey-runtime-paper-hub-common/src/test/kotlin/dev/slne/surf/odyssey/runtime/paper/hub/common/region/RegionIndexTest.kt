@@ -9,7 +9,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/** Checks how [RegionIndex] resolves blocks to regions, what the declared regions allow and which regions are rejected. */
 class RegionIndexTest {
+    /** Returns a mine and a forest that do not overlap. */
     private fun registry() = RegionRegistry().apply {
         mine("north_mine") {
             displayName = Component.text("Grat")

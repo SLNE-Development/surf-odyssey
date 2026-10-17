@@ -7,7 +7,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/** Checks which blocks cuboids, prisms and compound shapes contain, their bounds and which shapes are rejected. */
 class ShapeTest {
+    /** An L-shaped prism between y 60 and 70 with the notch at x and z above 4. */
     private val lShape = Prism(listOf(Point2(0, 0), Point2(10, 0), Point2(10, 4), Point2(4, 4), Point2(4, 10), Point2(0, 10)), minY = 60, maxY = 70)
 
     @Test

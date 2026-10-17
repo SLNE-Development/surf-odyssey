@@ -5,7 +5,9 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/** Checks how [RegionDisplay] combines the world and region names. */
 class RegionDisplayTest {
+    /** Returns the plain text of [c]. */
     private fun plain(c: Component) = PlainTextComponentSerializer.plainText().serialize(c)
 
     @Test

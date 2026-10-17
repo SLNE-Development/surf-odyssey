@@ -3,6 +3,12 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.fishing
 /** Counts the water under a fishing hook. */
 object WaterDepth {
     /**
+     * Returns the vertical offset of the block the water under a hook is measured from: 0 when the
+     * hook block is water, otherwise -1 for the block below it. [isWaterAt] is read as in [count].
+     */
+    fun startOffset(isWaterAt: (Int) -> Boolean): Int = if (isWaterAt(0)) 0 else -1
+
+    /**
      * Returns the number of water blocks in the column under a hook, at most [limit].
      *
      * [isWaterAt] tells whether the block at a vertical offset from the hook block is water: 0 is the
@@ -10,7 +16,7 @@ object WaterDepth {
      * when the hook block is not water, and stops at the first block that is not water.
      */
     fun count(isWaterAt: (Int) -> Boolean, limit: Int): Int {
-        var offset = if (isWaterAt(0)) 0 else -1
+        var offset = startOffset(isWaterAt)
         var depth = 0
         while (depth < limit && isWaterAt(offset)) {
             depth++

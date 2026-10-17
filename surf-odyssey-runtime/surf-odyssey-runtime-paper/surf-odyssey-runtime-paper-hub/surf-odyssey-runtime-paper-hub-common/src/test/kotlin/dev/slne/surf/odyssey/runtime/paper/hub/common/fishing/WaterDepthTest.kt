@@ -21,5 +21,11 @@ class WaterDepthTest {
     fun `counting stops at the first block that is not water`() = assertEquals(1, WaterDepth.count(column(0, -2, -3), 16))
 
     @Test
+    fun `a hook in water starts at its own block`() = assertEquals(0, WaterDepth.startOffset(column(0, -1)))
+
+    @Test
+    fun `a hook above the water starts at the block below`() = assertEquals(-1, WaterDepth.startOffset(column(-1)))
+
+    @Test
     fun `counting stops at the limit`() = assertEquals(4, WaterDepth.count({ true }, 4))
 }

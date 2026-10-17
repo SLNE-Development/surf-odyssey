@@ -16,7 +16,8 @@ import org.bukkit.event.player.PlayerQuitEvent
  * Sends a player who steps onto a portal block inside a portal area to the portal's target.
  *
  * A player can use portals at most once every three seconds and never while a transfer is still running. While the
- * transfer runs, the player is noted as leaving through the portal, so that leaving records them in front of it.
+ * transfer runs, the player is noted as leaving through the portal, so that leaving records them in front of it; the
+ * note is dropped again if the transfer fails or throws.
  */
 object PortalListener : Listener {
     /** CraftEngine block that marks portal surfaces. */
@@ -45,7 +46,7 @@ object PortalListener : Listener {
         ReconnectService.departThroughPortal(id, portal.arrival)
         hub.launch {
             try {
-                if (!HubTravel.send(player, portal.targetCategory)) ReconnectService.cancelDeparture(id)
+                sendOrCancelDeparture({ HubTravel.send(player, portal.targetCategory) }) { ReconnectService.cancelDeparture(id) }
             } finally {
                 inFlight.finish(id)
             }

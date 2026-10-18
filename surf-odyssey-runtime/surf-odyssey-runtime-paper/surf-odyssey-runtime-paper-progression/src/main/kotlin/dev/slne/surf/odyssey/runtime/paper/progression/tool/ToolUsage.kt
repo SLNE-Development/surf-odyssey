@@ -9,8 +9,8 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefin
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolType
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 /** Computes levels of tools from their usage. */
 object ToolProgress {
@@ -42,21 +42,23 @@ object ToolProgress {
         if (level >= tool.maxLevel) null else tool.curve.usageFor(level + 1)
 }
 
-/** Adds usage to the tools players hold and applies level-ups. */
+/**
+ * Adds usage to the tools players hold and applies level-ups.
+ *
+ * Usage and chronicle events are kept in a [ToolWriteBuffer] and written to the tool item, together with its bonuses
+ * and lore, at most once per second, and at once when the tool reaches a new level or a flush is requested.
+ */
 object ToolUsage {
-    /** How long, in milliseconds, the lore of one tool item is not rendered again after it was rendered. */
-    private const val LORE_INTERVAL_MILLIS = 1_000L
-
-    /** The time the lore of each tool item was last rendered, by the unique ID of the item. */
-    private val loreRenderedAt = ConcurrentHashMap<UUID, Long>()
+    /** The changes of every tool that are not written to its item yet. */
+    private val buffer = ToolWriteBuffer()
 
     /**
      * Adds [amount] usage to the tool in the main hand of [player] and records [detail] in its chronicle.
      *
      * Nothing happens unless the engine runs in [ProgressionMode.FULL] and the main hand holds a tool of the installed
-     * content whose type is [type]. The bonuses of the tool are applied again after every change, and its lore is
-     * rendered at most once per second, but always when the tool reaches a new level. A new level is announced to
-     * the player with a message and a sound.
+     * content whose type is [type]. The change is written to the item at once when the tool was not written within
+     * the last second or reaches a new level; otherwise it stays buffered. A new level is announced to the player with
+     * a message and a sound.
      *
      * Must run on the thread of [player].
      *
@@ -74,31 +76,94 @@ object ToolUsage {
         val added = amount.coerceAtLeast(0).toLong()
         if (added == 0L && detail == null) return
 
-        val leveledUp = ToolProgress.isLevelUp(tool, state.usage, added)
-        val updated = state.copy(
-            usage = state.usage + added,
-            chronicle = detail?.let(state.chronicle::record) ?: state.chronicle,
-        )
-        ToolItems.write(item, updated)
-        ToolItems.refresh(item, tool, updated, lore = loreDue(updated.uuid, forced = leveledUp))
-        player.inventory.setItemInMainHand(item)
+        val before = state.usage + buffer.pendingUsage(state.uuid)
+        val leveledUp = ToolProgress.isLevelUp(tool, before, added)
+        buffer.add(state.uuid, player.uniqueId, added, detail)
+        if (buffer.shouldWriteNow(state.uuid, now(), leveledUp) && writeInto(item)) {
+            player.inventory.setItemInMainHand(item)
+        }
 
-        if (leveledUp) announceLevel(player, tool, ToolProgress.levelFor(tool, updated.usage))
+        if (leveledUp) announceLevel(player, tool, ToolProgress.levelFor(tool, before + added))
     }
 
     /**
-     * Returns whether the lore of the tool item [uuid] is rendered now: always when [forced], otherwise when it was
-     * not rendered within the last second. Remembers the time of every render.
+     * Writes the buffered changes of the tool [item] into it, with bonuses and lore, and changes it in place.
+     *
+     * @param item the item to write into, may be `null`
+     * @return `true` if [item] is a tool with buffered changes and was changed
      */
-    private fun loreDue(uuid: UUID, forced: Boolean): Boolean {
-        val now = Progression.runtime.clock.millis()
-        var due = false
-        loreRenderedAt.compute(uuid) { _, last ->
-            due = forced || last == null || now - last >= LORE_INTERVAL_MILLIS
-            if (due) now else last
-        }
-        return due
+    fun writeInto(item: ItemStack?): Boolean {
+        val state = ToolItems.read(item) ?: return false
+        val tool = ToolItems.definitionOf(state) ?: return false
+        val delta = buffer.drain(state.uuid, now()) ?: return false
+        val updated = state.copy(
+            usage = state.usage + delta.usage,
+            chronicle = delta.events.fold(state.chronicle) { chronicle, event -> chronicle.record(event) },
+        )
+        ToolItems.write(item!!, updated)
+        ToolItems.refresh(item, tool, updated)
+        return true
     }
+
+    /**
+     * Writes the buffered changes of the tool item in inventory slot [slot] of [player].
+     *
+     * Must run on the thread of [player].
+     *
+     * @param player the player whose inventory holds the item
+     * @param slot the slot index of the inventory contents
+     */
+    fun flushSlot(player: Player, slot: Int) {
+        val item = player.inventory.getItem(slot) ?: return
+        if (writeInto(item)) player.inventory.setItem(slot, item)
+    }
+
+    /**
+     * Writes the buffered changes of every tool item in the inventory of [player].
+     *
+     * Must run on the thread of [player].
+     *
+     * @param player the player whose tools are written
+     */
+    fun flushAll(player: Player) {
+        val contents = player.inventory.contents
+        contents.indices.filter { ToolItems.uuidOf(contents[it])?.let(buffer::hasPending) == true }
+            .forEach { flushSlot(player, it) }
+    }
+
+    /**
+     * Writes the buffered changes of every tool item in the inventory of [player] and forgets their write times; used
+     * when the player leaves.
+     *
+     * Must run on the thread of [player].
+     *
+     * @param player the leaving player
+     */
+    fun flushOnQuit(player: Player) {
+        flushAll(player)
+        player.inventory.contents.mapNotNull(ToolItems::uuidOf).forEach(buffer::forget)
+    }
+
+    /**
+     * Returns every buffered tool with its newest holder whose last write is at least a second ago, for writes after
+     * the buffering interval.
+     */
+    fun due(): List<Pair<UUID, UUID>> = buffer.due(now())
+
+    /**
+     * Writes the buffered changes of the tool item [tool] when [player] holds it.
+     *
+     * Must run on the thread of [player].
+     *
+     * @param player the holder
+     * @param tool the unique ID of the tool item
+     */
+    fun flushTool(player: Player, tool: UUID) {
+        ToolItems.findSlot(player, tool)?.let { flushSlot(player, it) }
+    }
+
+    /** Returns the current time of the engine clock in epoch milliseconds. */
+    private fun now(): Long = Progression.runtime.clock.millis()
 
     /** Tells [player] that [tool] reached [level] and plays the level-up sound. */
     private fun announceLevel(player: Player, tool: ToolDefinition, level: Int) {

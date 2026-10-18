@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.definition
 
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.curve.Curve
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.curve.Curves
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.dialog.NodeAction
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.CustomItemRef
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.npc.NpcDefinition
@@ -12,6 +13,8 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.recipe.recipe
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentValidationException
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.station
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessorySlot
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolBonus
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolType
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.tool
@@ -131,5 +134,27 @@ class ValidationRulesTest {
             curve = Curve { 0 }
         }
         assertTrue(problemsWithTool(flat).any { "not strictly increasing" in it })
+    }
+
+    @Test
+    fun `a bonus above the maximum level is reported`() {
+        val pick = tool("pick", ToolType.PICKAXE) {
+            name = text("Hacke")
+            material = Material.IRON_PICKAXE
+            curve = Curves.PICKAXE
+            bonus(11, ToolBonus.MaxDamage(10))
+        }
+        assertTrue(problemsWithTool(pick).any { "bonus at level 11" in it })
+    }
+
+    @Test
+    fun `a slot below level one is reported`() {
+        val pick = tool("pick", ToolType.PICKAXE) {
+            name = text("Hacke")
+            material = Material.IRON_PICKAXE
+            curve = Curves.PICKAXE
+            slot(0, AccessorySlot("bait", text("Köder")))
+        }
+        assertTrue(problemsWithTool(pick).any { "slot at level 0" in it })
     }
 }

@@ -32,7 +32,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.trade.TradeRes
  *
  * It checks unique and well-formed IDs, references to items, stations, recipes, titles, tools, NPCs and nodes,
  * quest and recipe IDs inside requirements,
- * positive amounts, the neutral NPC portrait, quest structure, recurring pool sizes and tool curves. All problems are
+ * positive amounts, the neutral NPC portrait, quest structure, recurring pool sizes, tool curves and tool levels. All problems are
  * collected instead of stopping at the first.
  *
  * @property pack the pack to check
@@ -205,7 +205,10 @@ internal class ContentValidator(private val pack: ContentPack) {
         }
     }
 
-    /** Reports tools whose curve does not start at zero or does not rise strictly up to the maximum level. */
+    /**
+     * Reports tools whose curve does not start at zero or does not rise strictly up to the maximum level, and tools
+     * with bonuses or slots at levels outside `1..maxLevel`.
+     */
     private fun checkTools() {
         pack.tools.forEach { tool ->
             val where = "tool '${tool.id}'"
@@ -213,6 +216,12 @@ internal class ContentValidator(private val pack: ContentPack) {
             if (tool.curve.usageFor(1) != 0L) problems += "$where curve needs usage at level 1"
             (2..tool.maxLevel).firstOrNull { tool.curve.usageFor(it) <= tool.curve.usageFor(it - 1) }?.let {
                 problems += "$where curve is not strictly increasing at level $it"
+            }
+            tool.bonuses.keys.filterNot { it in 1..tool.maxLevel }.forEach {
+                problems += "$where has a bonus at level $it outside 1..${tool.maxLevel}"
+            }
+            tool.slots.keys.filterNot { it in 1..tool.maxLevel }.forEach {
+                problems += "$where has a slot at level $it outside 1..${tool.maxLevel}"
             }
         }
     }

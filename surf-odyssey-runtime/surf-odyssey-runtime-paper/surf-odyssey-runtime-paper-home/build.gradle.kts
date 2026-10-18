@@ -1,4 +1,5 @@
 import dev.slne.surf.api.gradle.util.registerRequired
+import dev.slne.surf.api.gradle.util.registerSoft
 
 plugins {
     id("dev.slne.surf.api.gradle.paper-plugin")
@@ -16,6 +17,8 @@ surfPaperPluginApi {
         registerRequired("HuskSync")
         // The Odyssey book is a CraftEngine item
         registerRequired("CraftEngine")
+        // The progression tags are registered as MiniPlaceholders expansion when MiniPlaceholders is installed
+        registerSoft("MiniPlaceholders")
     }
 
     testing {

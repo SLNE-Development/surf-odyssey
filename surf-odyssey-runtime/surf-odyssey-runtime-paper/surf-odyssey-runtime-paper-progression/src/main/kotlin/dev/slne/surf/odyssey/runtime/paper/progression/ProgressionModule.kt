@@ -58,6 +58,7 @@ object ProgressionModule {
      * @param placements where the NPCs and stations of this server stand, in the main world; used only in
      *        [ProgressionMode.FULL]
      * @param clock the clock every time of the engine comes from
+     * @param standalonePlaceholders whether the engine registers its placeholder tags as an own `odyssey` expansion
      * @return the installed engine
      * @throws dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentValidationException if
      *         the content is invalid
@@ -69,6 +70,7 @@ object ProgressionModule {
         serverName: () -> String,
         placements: ProgressionPlacements = ProgressionPlacements(),
         clock: Clock = Clock.systemUTC(),
+        standalonePlaceholders: Boolean = false,
     ): ProgressionRuntime {
         val registry = ProgressionRegistry.build(pack)
         this.plugin = plugin
@@ -90,7 +92,7 @@ object ProgressionModule {
             Conversations.register(plugin)
             ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = Conversations::open)
         }
-        MenuModule.install(plugin, runtime)
+        MenuModule.install(plugin, runtime, standalonePlaceholders)
         return runtime
     }
 }

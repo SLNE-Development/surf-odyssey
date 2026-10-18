@@ -2,6 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression
 
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
 import dev.slne.surf.odyssey.runtime.paper.progression.npc.ProgressionNpcs
+import dev.slne.surf.odyssey.runtime.paper.progression.menu.ProgressionPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
 import java.time.Clock
@@ -31,9 +32,13 @@ class ProgressionRuntime(
     val operations: OperationRunner,
     val clock: Clock,
 ) {
-    /** Removes the spawned NPCs, stops the background work of the engine and sends every buffered counter delta. */
+    /**
+     * Removes the spawned NPCs and a standalone placeholder expansion, stops the background work of the engine and
+     * sends every buffered counter delta.
+     */
     suspend fun shutdown() {
         ProgressionNpcs.despawnAll()
+        ProgressionPlaceholders.unregisterStandalone()
         store.stop()
     }
 }

@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.north
 
+import dev.slne.surf.odyssey.runtime.paper.content.OdysseyContent
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.shape
@@ -16,6 +17,9 @@ import kotlin.time.Duration.Companion.seconds
 class NorthHubPlugin : HubPlugin() {
     /** Shown to players as "Norden". */
     override val worldDisplayName: Component = Component.text("Norden")
+
+    /** The progression content of the network. */
+    override val content = OdysseyContent
 
     /** Declares North's regions. */
     override fun RegionRegistry.regions() = northRegions()

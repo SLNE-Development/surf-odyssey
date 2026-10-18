@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.lobby
 
 import dev.slne.surf.api.paper.event.register
+import dev.slne.surf.odyssey.runtime.paper.content.OdysseyContent
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
@@ -13,6 +14,9 @@ import org.bukkit.plugin.java.JavaPlugin
 class LobbyHubPlugin : HubPlugin() {
     /** Shown to players as "Lobby". */
     override val worldDisplayName = Component.text("Lobby")
+
+    /** The progression content of the network. */
+    override val content = OdysseyContent
 
     /** Placeholder coordinate until the lobby map's real spawn point is known. */
     override val spawnPoint = WorldPosition(0.0, 64.0, 0.0, 0f, 0f)

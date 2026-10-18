@@ -9,6 +9,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.regionEditorCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
+import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.HubProgression
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
@@ -23,6 +24,9 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.PortalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.WorldPosition
+import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
+import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionPlacements
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.MobLootProvider
 import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.VanillaLockdown
 import net.kyori.adventure.text.Component
@@ -68,8 +72,14 @@ abstract class HubPlugin : OdysseyPaperMain() {
     lateinit var portalList: List<Portal>
         private set
 
+    /** The progression content this hub world installs. */
+    protected abstract val content: ContentPack
+
     /** Declares the regions of this hub world. */
     protected open fun RegionRegistry.regions() {}
+
+    /** Declares where the NPCs and stations of this hub world stand. */
+    protected open fun ProgressionPlacements.placements() {}
 
     /** Declares the portals of this hub world. */
     protected open fun portals(): List<Portal> = emptyList()
@@ -77,9 +87,15 @@ abstract class HubPlugin : OdysseyPaperMain() {
     /** Declares the changes allowed everywhere in this hub world; by default every change is blocked. */
     protected open fun ProtectionSettingsBuilder.settings() {}
 
+    /** Registers the inventory views of the progression engine. */
+    final override suspend fun onLoaded() {
+        ProgressionModule.registerViews()
+    }
+
     /**
      * Builds the region index and the world's protection settings, collects the portals, connects the
-     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, registers the
+     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, removes vanilla recipes and loot, installs the progression engine
+     * with [content] and the [placements], registers the
      * protection, world change, fishing, portal, arrival and region wand listeners and the `/hubregion`
      * command, starts the editor preview and the region ticker, registers the placeholder tags, then calls
      * [onHubEnabled].
@@ -94,6 +110,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         ReconnectService.start(this)
         server.worlds.forEach { it.isAutoSave = false }
         VanillaLockdown.install(this, MobLootProvider.NONE)
+        HubProgression.install(this, content, ProgressionPlacements().apply { placements() })
         HubProtectionListener.register()
         WorldChangeListener.register()
         FishingListener.register()
@@ -108,7 +125,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
     }
 
     /**
-     * Calls [onHubDisabled], then restores every block waiting to regenerate, unregisters the
+     * Calls [onHubDisabled], then despawns the progression NPCs and sends the buffered progress, restores every block waiting to regenerate, unregisters the
      * placeholder tags, stops ticking, removes the mobs of every mob spawn region, stops the reconnect
      * service and disconnects from Redis. Each step runs even if an earlier one throws; the first
      * failure is thrown once all steps have run.
@@ -116,6 +133,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
     final override suspend fun onDisabled() {
         val steps = ShutdownSteps()
         steps.run { onHubDisabled() }
+        steps.run { HubProgression.shutdown() }
         steps.run { RegenerationTicker.restoreAll(hubWorld) }
         steps.run { HubPlaceholders.unregister() }
         steps.run { RegionTicker.stop() }

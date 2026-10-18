@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.south
 
+import dev.slne.surf.odyssey.runtime.paper.content.OdysseyContent
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
@@ -10,6 +11,9 @@ import net.kyori.adventure.text.Component
 class SouthHubPlugin : HubPlugin() {
     /** Shown to players as "Süden". */
     override val worldDisplayName: Component = Component.text("Süden")
+
+    /** The progression content of the network. */
+    override val content = OdysseyContent
 
     /** Declares South's portals: one back to the lobby. Coordinates are placeholders until the map is in place. */
     override fun portals() = listOf(

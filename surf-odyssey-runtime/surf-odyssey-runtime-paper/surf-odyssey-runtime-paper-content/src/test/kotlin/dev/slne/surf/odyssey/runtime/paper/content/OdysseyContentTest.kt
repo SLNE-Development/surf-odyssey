@@ -6,6 +6,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.papermc.paper.registry.RegistryAccess
 import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.Component.text
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.dialog.NodeAction
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ref
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.Objective
@@ -103,6 +104,7 @@ class OdysseyContentTest {
         assertEquals(Objective.TalkTo(Npcs.OLEK, quest.steps[0].entryNode), quest.steps[0].objectives.single())
         assertEquals(Objective.Fish(null, Material.SALMON, 5, "north_lake"), quest.steps[1].objectives.single())
         assertEquals(listOf(RecipeReward(Recipes.BAIT_WORM)), quest.steps[1].rewards)
+        assertEquals(text("Fange 5 Lachse im Eissee (nachts beißen sie)"), quest.steps[1].description)
         assertEquals(Objective.Deliver(Material.INK_SAC.ref, 12, Npcs.MIRA), quest.steps[2].objectives.single())
         assertEquals(Objective.Deliver(Items.LANTERN_OIL.ref, 3, Npcs.YSA), quest.steps[3].objectives.single())
         assertEquals(

@@ -40,7 +40,7 @@ internal fun leuchtfeuer(): QuestDefinition = quest(Quests.LEUCHTFEUER_ID, Quest
         talkTo(Npcs.OLEK, "o1")
     }
     step(1, Npcs.OLEK, "o5") {
-        description = text("Fange 5 Lachse am Nordsee")
+        description = text("Fange 5 Lachse im Eissee (nachts beißen sie)")
         fish(5, material = Material.SALMON, regionId = "north_lake")
         reward(RecipeReward(Recipes.BAIT_WORM))
     }

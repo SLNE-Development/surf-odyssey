@@ -66,3 +66,11 @@ data class MaterialRef(val material: Material) : ItemRef {
  * @property amount how many of the item are required
  */
 data class Ingredient(val item: ItemRef, val amount: Int)
+
+/** Reference to this custom item. */
+val ItemDefinition.ref: ItemRef
+    get() = CustomItemRef(this)
+
+/** Reference to this plain vanilla material. */
+val Material.ref: ItemRef
+    get() = MaterialRef(this)

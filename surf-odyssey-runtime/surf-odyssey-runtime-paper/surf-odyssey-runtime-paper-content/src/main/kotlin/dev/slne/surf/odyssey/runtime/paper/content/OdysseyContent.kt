@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.content
 
+import dev.slne.surf.odyssey.runtime.paper.content.quests.Quests
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ItemDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.npc.NpcDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestDefinition
@@ -29,13 +30,13 @@ object OdysseyContent : ContentPack {
     override val titles: List<TitleDefinition>
         get() = Titles.all
 
-    /** No NPCs yet. */
+    /** The NPCs of [Npcs]. */
     override val npcs: List<NpcDefinition>
-        get() = emptyList()
+        get() = Npcs.all
 
-    /** No quests yet. */
+    /** The quests of [Quests]. */
     override val quests: List<QuestDefinition>
-        get() = emptyList()
+        get() = Quests.all
 
     /** The tools of [Tools]. */
     override val tools: List<ToolDefinition>

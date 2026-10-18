@@ -2,7 +2,9 @@ package dev.slne.surf.odyssey.runtime.paper.progression.definition.item
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolItems
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 
 /** Reference to either a custom item or a plain vanilla material, used for ingredients, prices and rewards. */
 sealed interface ItemRef {
@@ -51,9 +53,10 @@ data class MaterialRef(val material: Material) : ItemRef {
     override val displayName: Component
         get() = Component.translatable(material)
 
-    /** Matches stacks of [material] that are not custom items. */
+    /** Matches stacks of [material] that are neither custom items nor tool items. */
     override fun matches(stack: ItemStack?): Boolean =
-        stack != null && stack.type == material && ItemDefinition.itemIdOf(stack) == null
+        stack != null && stack.type == material && ItemDefinition.itemIdOf(stack) == null &&
+            !stack.persistentDataContainer.has(ToolItems.TOOL_ID_KEY, PersistentDataType.STRING)
 
     /** Creates a plain stack of [material]. */
     override fun create(amount: Int): ItemStack = ItemStack.of(material, amount)

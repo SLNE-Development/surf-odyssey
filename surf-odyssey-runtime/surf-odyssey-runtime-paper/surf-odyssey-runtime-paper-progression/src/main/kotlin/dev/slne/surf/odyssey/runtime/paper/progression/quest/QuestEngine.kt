@@ -30,7 +30,8 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * Accepting, talking, delivering and turning in are item operations and only run in [ProgressionMode.FULL];
  * abandoning and tracking also run in [ProgressionMode.VIEW_ONLY]. Only one quest action per player runs at a time.
- * When the tracked quest is completed or abandoned, the next active quest is tracked, main quests first.
+ * When the tracked quest is completed or abandoned, the next active quest is tracked, main quests first; an accepted
+ * quest is tracked when no active quest is tracked.
  */
 object QuestEngine {
     /** The players with a running quest action. */
@@ -88,7 +89,8 @@ object QuestEngine {
     }
 
     /**
-     * Accepts [quest] for [player] if its giver offers it to the player, by the rules of [QuestAvailability].
+     * Accepts [quest] for [player] if its giver offers it to the player, by the rules of [QuestAvailability]. When
+     * the player tracks no active quest, the accepted quest becomes the tracked one.
      *
      * @return the outcome of the operation; [OperationOutcome.Rejected] without an operation if the quest is not
      *         offered or the server does not run [ProgressionMode.FULL]
@@ -99,7 +101,13 @@ object QuestEngine {
         if (!QuestAvailability.isOffered(quest, progression, context, player.uniqueId, now, runtime.registry)) {
             return@guarded OperationOutcome.Rejected("quest ${quest.id} is not offered")
         }
-        runtime.operations.run(player, QuestPlans.accept(quest, QuestProgressView.periodOf(quest, now)))
+        val outcome = runtime.operations.run(player, QuestPlans.accept(quest, QuestProgressView.periodOf(quest, now)))
+        if (outcome == OperationOutcome.Success &&
+            !QuestProgressView.tracksActiveQuest(runtime.registry, progression.state, runtime.clock.instant())
+        ) {
+            runtime.store.setTrackedQuest(player.uniqueId, quest.id)
+        }
+        outcome
     }
 
     /**

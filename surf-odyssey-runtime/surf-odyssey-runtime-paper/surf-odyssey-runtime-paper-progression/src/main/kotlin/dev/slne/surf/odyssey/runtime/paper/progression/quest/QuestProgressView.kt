@@ -95,6 +95,19 @@ object QuestProgressView {
         }
 
     /**
+     * Returns whether the tracked quest of [state] is a known quest that is active and still counts at [now].
+     *
+     * @param registry the installed definitions
+     * @param state the player's stored progression
+     * @param now the current time
+     * @return `false` if no quest is tracked, or the tracked quest is unknown, not active or of an earlier period
+     */
+    fun tracksActiveQuest(registry: ProgressionRegistry, state: ProgressionStateDto, now: Instant): Boolean {
+        val quest = state.trackedQuest?.let(registry::quest) ?: return false
+        return isCurrent(quest, state.quests.find { it.questId == quest.id }, periodOf(quest, now))
+    }
+
+    /**
      * Picks the quest to track next: the first active main quest, otherwise the first active quest in the order of
      * the stored states.
      *

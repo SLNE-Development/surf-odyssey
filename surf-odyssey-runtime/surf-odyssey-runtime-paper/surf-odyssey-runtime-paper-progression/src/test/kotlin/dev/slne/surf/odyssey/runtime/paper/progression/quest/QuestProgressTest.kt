@@ -131,4 +131,23 @@ class QuestProgressTest {
         assertEquals("d2", QuestProgressView.nextTracked(registry, state(listOf(d2, w1)), now)?.id)
         assertNull(QuestProgressView.nextTracked(registry, state(listOf(main.copy(status = COMPLETED))), now))
     }
+
+    @Test
+    fun `a player tracks an active quest only while the tracked quest still counts`() {
+        val registry = ProgressionRegistry.build(TestPacks.valid())
+        val now = Instant.parse("2026-03-10T12:00:00Z")
+        val today = Periods.index(QuestType.DAILY, now)
+        val main = QuestStateDto("harbor_intro", ACTIVE, 0, 1, 0, null)
+        val staleDaily = QuestStateDto("d1", ACTIVE, 0, 1, today - 1, null)
+
+        assertTrue(QuestProgressView.tracksActiveQuest(registry, state(listOf(main)).copy(trackedQuest = "harbor_intro"), now))
+        assertFalse(QuestProgressView.tracksActiveQuest(registry, state(listOf(main)), now))
+        assertFalse(QuestProgressView.tracksActiveQuest(registry, state(listOf(staleDaily)).copy(trackedQuest = "d1"), now))
+        assertFalse(QuestProgressView.tracksActiveQuest(registry, state(emptyList()).copy(trackedQuest = "gone"), now))
+        assertFalse(
+            QuestProgressView.tracksActiveQuest(
+                registry, state(listOf(main.copy(status = COMPLETED))).copy(trackedQuest = "harbor_intro"), now
+            )
+        )
+    }
 }

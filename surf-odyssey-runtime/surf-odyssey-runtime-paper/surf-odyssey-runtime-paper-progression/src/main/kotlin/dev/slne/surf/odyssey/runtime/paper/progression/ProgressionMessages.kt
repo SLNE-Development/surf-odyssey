@@ -115,4 +115,24 @@ object ProgressionMessages {
         appendInfoPrefix()
         info("Die Forschung folgt bald.")
     }
+
+    /** Tells [player] that the title [display] is now shown. */
+    fun titleChanged(player: Player, display: Component) = player.sendText {
+        appendSuccessPrefix()
+        success("Dein Titel ist jetzt ")
+        append(display)
+        success(".")
+    }
+
+    /** Tells [player] that no title is shown any more. */
+    fun titleCleared(player: Player) = player.sendText {
+        appendSuccessPrefix()
+        success("Du trägst jetzt keinen Titel.")
+    }
+
+    /** Tells [player] that a title cannot be shown because the player has not earned it. */
+    fun titleNotEarned(player: Player) = player.sendText {
+        appendErrorPrefix()
+        error("Diesen Titel hast du nicht verdient.")
+    }
 }

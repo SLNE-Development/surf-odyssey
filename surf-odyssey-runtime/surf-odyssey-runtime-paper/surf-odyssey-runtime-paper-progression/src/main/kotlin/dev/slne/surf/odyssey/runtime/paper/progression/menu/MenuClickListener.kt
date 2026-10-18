@@ -22,6 +22,8 @@ class MenuClickListener(private val plugin: Plugin) : Listener {
     fun onCustomClick(event: PlayerCustomClickEvent) {
         val player = (event.commonConnection as? PlayerGameConnection)?.player ?: return
         val open: (Player) -> Unit = when (event.identifier) {
+            OdysseyMenuDialog.OPEN_QUESTS -> QuestBookDialog::show
+            OdysseyMenuDialog.OPEN_TITLES -> TitleDialog::show
             OdysseyMenuDialog.OPEN_PICKUP -> ::openPickupBox
             else -> return
         }

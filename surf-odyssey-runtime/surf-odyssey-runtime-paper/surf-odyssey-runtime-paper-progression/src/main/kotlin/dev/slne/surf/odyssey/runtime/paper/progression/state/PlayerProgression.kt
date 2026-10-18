@@ -100,6 +100,17 @@ class PlayerProgression(initial: ProgressionStateDto, private val clock: Clock) 
     }
 
     /**
+     * Sets the cached active title.
+     *
+     * @param titleId the id of the shown title, or `null` for none
+     */
+    @Synchronized
+    fun setActiveTitle(titleId: String?) {
+        state = state.copy(activeTitle = titleId)
+        revision++
+    }
+
+    /**
      * Replaces the cached state with a freshly loaded one and adds the deltas that were not sent yet on top.
      *
      * @param loaded the state loaded from the progression service

@@ -138,6 +138,26 @@ class ProgressionStore(
         return true
     }
 
+    /**
+     * Sets the title [player] shows at the progression service and in the cache.
+     *
+     * @param player the player
+     * @param titleId the id of the title to show, or `null` for none
+     * @return `true` if the title is set, `false` if the player has not earned it or the call failed
+     */
+    suspend fun setActiveTitle(player: UUID, titleId: String?): Boolean {
+        val set = try {
+            bridge.setActiveTitle(player, titleId).also { Progression.markAvailable() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            fail("set the active title of $player", e)
+            return false
+        }
+        if (set) players[player]?.setActiveTitle(titleId)
+        return set
+    }
+
     /** Registers the join and quit listener, loads the players already online and starts the flush and ping loops. */
     fun start() {
         Bukkit.getPluginManager().registerEvents(this, plugin)

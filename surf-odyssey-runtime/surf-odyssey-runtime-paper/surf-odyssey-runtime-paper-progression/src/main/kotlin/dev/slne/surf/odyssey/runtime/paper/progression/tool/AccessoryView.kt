@@ -165,8 +165,8 @@ private fun store(player: Player, held: HeldTool, state: ToolState) {
 
 /**
  * Takes one [accessory] from the inventory of [player] into escrow, commits the operation and attaches the accessory
- * to the slot [slot] of the tool item [toolUuid]. If the tool cannot take it after the commit, the accessory is put
- * into the inventory or dropped at the feet of the player. The view is opened again afterwards.
+ * to the slot [slot] of the tool item [toolUuid]. If the player left or the tool cannot take it after the commit, the
+ * accessory is given back with [returnAccessory]. The view is opened again afterwards.
  */
 private fun insertAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot, accessory: AccessoryDefinition) {
     val plugin = ProgressionModule.plugin
@@ -174,6 +174,10 @@ private fun insertAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot,
     plugin.launch {
         val plan = OperationPlan(listOf(Ingredient(accessory.item.ref, 1)), emptyList(), emptyList(), ACCESSORY_SOURCE)
         val outcome = runtime.operations.run(player, plan)
+        if (outcome == OperationOutcome.Success && !player.isOnline) {
+            returnAccessory(player, accessory)
+            return@launch
+        }
         withContext(plugin.entityDispatcher(player)) {
             if (outcome != OperationOutcome.Success) {
                 runtime.operations.report(player, outcome)
@@ -183,7 +187,7 @@ private fun insertAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot,
             val held = findTool(player, toolUuid)
             val attached = held?.let { AccessoryRules.attach(it.tool, it.state, slot.id, accessory) }
             if (held == null || attached == null) {
-                giveBack(player, accessory)
+                returnAccessory(player, accessory)
                 return@withContext
             }
             store(player, held, attached)
@@ -225,6 +229,22 @@ private fun removeAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot)
             val current = findTool(player, toolUuid)
             val reattached = current?.let { AccessoryRules.attach(it.tool, it.state, slot.id, accessory) }
             if (current != null && reattached != null) store(player, current, reattached) else giveBack(player, accessory)
+        }
+    }
+}
+
+/**
+ * Gives one [accessory] back to [player] in the background through an operation that delivers it into the inventory
+ * or the pickup box. If that operation is not stored, for example because the player left, the loss is logged.
+ */
+private fun returnAccessory(player: Player, accessory: AccessoryDefinition) {
+    val plugin = ProgressionModule.plugin
+    val runtime = Progression.runtime
+    plugin.launch {
+        val plan = OperationPlan(emptyList(), emptyList(), listOf(ItemReward(accessory.item.ref, 1)), ACCESSORY_SOURCE)
+        val outcome = runtime.operations.run(player, plan)
+        if (outcome != OperationOutcome.Success) {
+            plugin.logger.severe("Could not return accessory ${accessory.id} to ${player.uniqueId}: $outcome")
         }
     }
 }

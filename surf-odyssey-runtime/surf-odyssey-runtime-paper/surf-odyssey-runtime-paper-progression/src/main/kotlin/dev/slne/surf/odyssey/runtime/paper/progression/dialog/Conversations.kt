@@ -89,7 +89,7 @@ object Conversations {
             player,
             ConversationScreen(
                 title = npc.name,
-                portrait = Portraits.of(npc, NpcDefinition.NEUTRAL_MOOD),
+                portrait = portraitOf(npc, NpcDefinition.NEUTRAL_MOOD),
                 npcName = npc.name,
                 meta = null,
                 text = npc.greeting,
@@ -182,7 +182,7 @@ object Conversations {
             player,
             ConversationScreen(
                 title = ConversationRenderer.questTitle(quest.type),
-                portrait = Portraits.of(node.npc, node.mood),
+                portrait = portraitOf(node.npc, node.mood),
                 npcName = node.npc.name,
                 meta = node.meta,
                 text = node.text,
@@ -292,6 +292,15 @@ object Conversations {
     private fun phaseOf(player: Player, quest: QuestDefinition): NodePhase {
         QuestEngine.progressOf(player, quest)?.let { return NodePhase.Step(it.step) }
         return if (isOffered(player, quest)) NodePhase.Offered else NodePhase.Done
+    }
+
+    /** Returns the portrait of [npc] in [mood], or no portrait if looking it up fails. */
+    private fun portraitOf(npc: NpcDefinition, mood: String): Component = try {
+        Portraits.of(npc, mood)
+    } catch (_: LinkageError) {
+        Component.empty()
+    } catch (_: RuntimeException) {
+        Component.empty()
     }
 
     /** Ends the conversation of [player] and tells them [hint]. */

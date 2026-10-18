@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.vanilla
 
 import org.bukkit.entity.AbstractVillager
+import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -38,6 +39,16 @@ fun interface MobLootProvider {
      */
     fun lootFor(entityType: EntityType): MobLoot?
 
+    /**
+     * Returns the loot of a dying entity. By default this is the loot of its type.
+     *
+     * Providers may return shared stacks; the caller copies them before dropping.
+     *
+     * @param entity the entity that died
+     * @return the loot, or `null` if this entity drops nothing
+     */
+    fun lootFor(entity: Entity): MobLoot? = lootFor(entity.type)
+
     companion object {
         /** A provider that knows no loot, so every entity drops nothing. */
         val NONE = MobLootProvider { null }
@@ -58,6 +69,19 @@ object LootLockdownRules {
         if (entityType == EntityType.PLAYER) return null
         return provider.lootFor(entityType) ?: MobLoot.NONE
     }
+
+    /**
+     * Decides the loot of a dying entity, letting the provider look at the entity itself.
+     *
+     * @param entity the entity that died
+     * @param provider the source of allowed loot
+     * @return the loot to drop, [MobLoot.NONE] if the entity has none, or `null` for players, whose
+     *         drops are left untouched
+     */
+    fun lootFor(entity: Entity, provider: MobLootProvider): MobLoot? {
+        if (entity.type == EntityType.PLAYER) return null
+        return provider.lootFor(entity) ?: MobLoot.NONE
+    }
 }
 
 /**
@@ -71,7 +95,7 @@ internal class LootLockdown(private val mobLoot: MobLootProvider) : Listener {
     /** Replaces the drops and experience of a dying non-player entity with the allowed loot. */
     @EventHandler(priority = EventPriority.HIGH)
     fun onEntityDeath(event: EntityDeathEvent) {
-        val loot = LootLockdownRules.lootFor(event.entityType, mobLoot) ?: return
+        val loot = LootLockdownRules.lootFor(event.entity, mobLoot) ?: return
         event.drops.clear()
         loot.items.forEach { event.drops.add(it.clone()) }
         event.droppedExp = loot.exp

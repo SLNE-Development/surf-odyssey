@@ -26,14 +26,15 @@ import dev.slne.surf.odyssey.runtime.paper.progression.Progression
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.recipe.RecipeDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.StationDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.PlayerEscrowInventory
+import me.devnatan.inventoryframework.context.IFRenderContext
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 /**
  * The recipe browser of one station kind, passed as the initial data: every recipe of the station in registry order.
  * Unlocked recipes show the result item with ingredients and crafting time, locked recipes a gray dye named `???`.
- * Clicking an unlocked recipe crafts it once, shift-clicking an instant recipe as often as possible; the browser is
- * opened again afterwards. The back button opens the station menu.
+ * Clicking an unlocked recipe crafts it once, shift-clicking an instant recipe as often as possible; afterwards the
+ * current page is rendered again if the player still looks at it. The back button opens the station menu.
  */
 val recipeBrowserView: AbstractPaginatedSurfView = paginatedSurfView("Rezepte") {
     settings {
@@ -53,8 +54,9 @@ val recipeBrowserView: AbstractPaginatedSurfView = paginatedSurfView("Rezepte") 
             }
             onItemClick {
                 playGeneralClickSound()
+                val browser = parent
                 Crafting.craft(player, recipe, everything = isShiftClick) { crafter ->
-                    RecipeBrowserView.open(crafter, recipe.station)
+                    RecipeBrowserView.refreshIfShown(browser, crafter)
                 }
             }
         }
@@ -81,6 +83,15 @@ object RecipeBrowserView {
     fun open(player: Player, station: StationDefinition) {
         if (!StationView.canUse(player)) return
         recipeBrowserView.open(player, station)
+    }
+
+    /**
+     * Renders the current page of the browser [context] again if it is still the menu [player] looks at; does
+     * nothing after the player closed it or switched to another menu.
+     */
+    fun refreshIfShown(context: IFRenderContext, player: Player) {
+        val id = player.uniqueId.toString()
+        if (context.viewers.any { it.id == id && it.activeContext === context }) context.update()
     }
 
     /**

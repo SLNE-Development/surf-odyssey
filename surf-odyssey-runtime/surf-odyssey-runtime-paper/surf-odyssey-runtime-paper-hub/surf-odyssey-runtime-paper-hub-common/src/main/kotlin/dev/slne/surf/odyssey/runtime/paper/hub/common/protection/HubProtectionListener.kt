@@ -2,6 +2,9 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.protection
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.EditorSessions
+import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.RegionProgress
+import dev.slne.surf.odyssey.runtime.paper.progression.quest.ProgressEvent
+import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolBonuses
 import dev.slne.surf.odyssey.runtime.paper.hub.common.regeneration.RegenerationTicker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.HarvestRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.PlayerRegionTracker
@@ -18,6 +21,7 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.event.player.PlayerTeleportEvent
+import kotlin.random.Random
 
 /**
  * Applies the region rules to block breaks in the hub world and keeps track of the region each
@@ -44,6 +48,9 @@ object HubProtectionListener : Listener {
      * Harvests a block whose break went through: replaces its drops if the region provides them,
      * schedules it to regenerate and, on the next tick, turns it into the region's placeholder if
      * it is still waiting to regenerate.
+     *
+     * The harvest counts for the player's quests and for the pickaxe (mines) or axe (forests) in the
+     * main hand. With the double drop bonus of that tool the region's drops may drop twice.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onBreakHarvest(event: BlockBreakEvent) {
@@ -52,14 +59,22 @@ object HubProtectionListener : Listener {
         val block = event.block
         val point = BlockPoint(block.x, block.y, block.z)
         if (!RegenerationTicker.schedule(point, block.blockData.clone(), region.regenerateAfter.inWholeMilliseconds)) return
+        val material = block.type
         region.drops?.let { provider ->
             event.isDropItems = false
-            provider(block).forEach { block.world.dropItemNaturally(block.location.toCenterLocation(), it) }
+            val times = if (rollsDoubleDrop(ToolBonuses.doubleDropChance(event.player.inventory.itemInMainHand))) 2 else 1
+            provider(block).forEach { drop ->
+                repeat(times) { block.world.dropItemNaturally(block.location.toCenterLocation(), drop.clone()) }
+            }
         }
+        RegionProgress.harvested(event.player, region, ProgressEvent.Harvested(material, region.id))
         hub.server.scheduler.runTask(hub, Runnable {
             if (RegenerationTicker.queue.isPending(point)) block.setType(region.placeholder, false)
         })
     }
+
+    /** Returns whether a double drop with [chance] between 0 and 1 happens. */
+    private fun rollsDoubleDrop(chance: Double): Boolean = chance > 0.0 && Random.nextDouble() < chance
 
     /**
      * Cancels physics destroying a block in the hub world, e.g. a torch, ladder, cocoa pod, flower or

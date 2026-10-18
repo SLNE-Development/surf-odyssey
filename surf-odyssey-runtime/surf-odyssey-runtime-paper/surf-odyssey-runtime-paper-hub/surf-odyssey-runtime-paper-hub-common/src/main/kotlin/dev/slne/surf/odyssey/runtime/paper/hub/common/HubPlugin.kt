@@ -7,6 +7,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.EditorPreviewTask
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.RegionWandListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.regionEditorCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobKillListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.HubProgression
@@ -96,7 +97,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
      * Builds the region index and the world's protection settings, collects the portals, connects the
      * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, removes vanilla recipes and loot, installs the progression engine
      * with [content] and the [placements], registers the
-     * protection, world change, fishing, portal, arrival and region wand listeners and the `/hubregion`
+     * protection, world change, fishing, mob kill, portal, arrival and region wand listeners and the `/hubregion`
      * command, starts the editor preview and the region ticker, registers the placeholder tags, then calls
      * [onHubEnabled].
      *
@@ -114,6 +115,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         HubProtectionListener.register()
         WorldChangeListener.register()
         FishingListener.register()
+        MobKillListener.register()
         PortalListener.register()
         ArrivalListener.register()
         regionEditorCommand()

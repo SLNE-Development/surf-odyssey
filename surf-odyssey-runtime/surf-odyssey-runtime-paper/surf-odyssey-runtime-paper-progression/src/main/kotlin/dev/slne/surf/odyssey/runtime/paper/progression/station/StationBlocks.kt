@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.station
 
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.StationDefinition
+import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -11,6 +12,7 @@ import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.plugin.Plugin
+import java.util.UUID
 
 /**
  * A block position that opens a station.
@@ -22,31 +24,60 @@ import org.bukkit.plugin.Plugin
  */
 data class StationPlacement(val station: StationDefinition, val x: Int, val y: Int, val z: Int)
 
-/** Turns block positions into stations. */
-object StationBlocks {
-    /**
-     * Registers a listener that opens the station of a placement when a player right-clicks its block, and cancels
-     * every interaction with, break of and placement at a placement's block. The listener runs at the highest
-     * priority, so these blocks stay protected whatever other region rules decide.
-     *
-     * @param plugin the plugin that owns the listener
-     * @param placements the station positions; positions are matched in every world
-     */
-    fun install(plugin: Plugin, placements: List<StationPlacement>) {
-        plugin.server.pluginManager.registerEvents(StationBlockListener(placements), plugin)
-    }
-}
-
 /**
- * Opens and protects the blocks of [placements].
+ * Finds the station placed at a block position of one world.
  *
- * @param placements the station positions
+ * @param worldId the id of the world the placements belong to
+ * @param placements the station positions in that world
  */
-private class StationBlockListener(placements: List<StationPlacement>) : Listener {
+class StationPositions(private val worldId: UUID, placements: List<StationPlacement>) {
     /** The station at each position. */
     private val stations: Map<Position, StationDefinition> =
         placements.associate { Position(it.x, it.y, it.z) to it.station }
 
+    /**
+     * Returns the station at the block position [x], [y], [z] of the world [world].
+     *
+     * @return the station, or `null` if [world] is not the world of the placements or no station is placed there
+     */
+    fun stationAt(world: UUID, x: Int, y: Int, z: Int): StationDefinition? =
+        if (world != worldId) null else stations[Position(x, y, z)]
+
+    /**
+     * A block position.
+     *
+     * @property x the block x coordinate
+     * @property y the block y coordinate
+     * @property z the block z coordinate
+     */
+    private data class Position(val x: Int, val y: Int, val z: Int)
+}
+
+/** Turns block positions into stations. */
+object StationBlocks {
+    /**
+     * Registers a listener that opens the station of a placement when a player right-clicks its block in [world],
+     * and cancels every interaction with, break of and placement at a placement's block there. Blocks at the same
+     * positions in other worlds are left alone. The listener runs at the highest priority, so these blocks stay
+     * protected whatever other region rules decide.
+     *
+     * @param plugin the plugin that owns the listener
+     * @param world the world the placements are in
+     * @param placements the station positions
+     */
+    fun install(plugin: Plugin, world: World, placements: List<StationPlacement>) {
+        plugin.server.pluginManager.registerEvents(
+            StationBlockListener(StationPositions(world.uid, placements)), plugin
+        )
+    }
+}
+
+/**
+ * Opens and protects the station blocks of [positions].
+ *
+ * @param positions the station positions
+ */
+private class StationBlockListener(private val positions: StationPositions) : Listener {
     /** Cancels any interaction with a station block and opens the station on a main-hand right-click. */
     @EventHandler(priority = EventPriority.HIGHEST)
     fun onInteract(event: PlayerInteractEvent) {
@@ -69,15 +100,6 @@ private class StationBlockListener(placements: List<StationPlacement>) : Listene
         if (stationAt(event.block) != null) event.isCancelled = true
     }
 
-    /** Returns the station at the position of [block], or `null`. */
-    private fun stationAt(block: Block): StationDefinition? = stations[Position(block.x, block.y, block.z)]
-
-    /**
-     * A block position.
-     *
-     * @property x the block x coordinate
-     * @property y the block y coordinate
-     * @property z the block z coordinate
-     */
-    private data class Position(val x: Int, val y: Int, val z: Int)
+    /** Returns the station at [block], or `null`. */
+    private fun stationAt(block: Block): StationDefinition? = positions.stationAt(block.world.uid, block.x, block.y, block.z)
 }

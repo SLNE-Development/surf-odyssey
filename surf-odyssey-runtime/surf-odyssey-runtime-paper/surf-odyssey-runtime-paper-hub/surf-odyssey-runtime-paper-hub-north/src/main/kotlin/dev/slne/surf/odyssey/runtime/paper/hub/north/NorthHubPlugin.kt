@@ -49,13 +49,13 @@ fun RegionRegistry.northRegions() {
     }
     mine("north_mine_ridge") {
         displayName = Component.text("Frostgrat")
-        shape { cuboid(100, 20, 300, 140, 59, 340) }
+        shape { cuboid(100, 20, 300, 140, 63, 340) }
         breakable(Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE, Material.COAL_ORE)
         regenerateAfter = 5.minutes
     }
     mine("north_mine_deep") {
         displayName = Component.text("Tiefe Grube")
-        shape { cuboid(200, -40, 300, 240, 10, 340) }
+        shape { cuboid(200, -40, 300, 240, 12, 340) }
         breakable(Material.DEEPSLATE_GOLD_ORE, Material.DEEPSLATE_DIAMOND_ORE)
         placeholder = Material.DEEPSLATE
         regenerateAfter = 10.minutes

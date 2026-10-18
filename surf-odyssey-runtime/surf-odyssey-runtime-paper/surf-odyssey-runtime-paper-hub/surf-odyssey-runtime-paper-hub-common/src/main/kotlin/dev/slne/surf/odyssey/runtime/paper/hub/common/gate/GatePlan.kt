@@ -17,6 +17,20 @@ data class GateDamage(val grace: Duration = 5.seconds, val interval: Duration = 
 
 /** Decides when gates lock players out and when a locked region deals damage. */
 object GatePlan {
+    /** How long each application of the gate darkness lasts, in ticks; longer than the check interval of a second. */
+    const val DARKNESS_TICKS = 60
+
+    /**
+     * Returns whether a darkness effect is the one gates apply: at most [DARKNESS_TICKS] left, without particles and
+     * without icon. Infinite effects have a negative duration and never count.
+     *
+     * @param durationTicks the remaining duration of the effect
+     * @param hasParticles whether the effect shows particles
+     * @param hasIcon whether the effect shows an icon
+     */
+    fun isGateDarkness(durationTicks: Int, hasParticles: Boolean, hasIcon: Boolean): Boolean =
+        durationTicks in 0..DARKNESS_TICKS && !hasParticles && !hasIcon
+
     /**
      * Returns whether a player inside a locked region takes damage now.
      *

@@ -71,4 +71,18 @@ class GatePlanTest {
         assertFalse(GatePlan.isExempt(GameMode.SURVIVAL, hasBypass = false))
         assertFalse(GatePlan.isExempt(GameMode.ADVENTURE, hasBypass = false))
     }
+
+    @Test
+    fun `the darkness of a gate is short and hidden`() {
+        assertTrue(GatePlan.isGateDarkness(GatePlan.DARKNESS_TICKS, hasParticles = false, hasIcon = false))
+        assertTrue(GatePlan.isGateDarkness(1, hasParticles = false, hasIcon = false))
+    }
+
+    @Test
+    fun `darkness from other sources is not the gate's`() {
+        assertFalse(GatePlan.isGateDarkness(GatePlan.DARKNESS_TICKS + 1, hasParticles = false, hasIcon = false))
+        assertFalse(GatePlan.isGateDarkness(-1, hasParticles = false, hasIcon = false))
+        assertFalse(GatePlan.isGateDarkness(40, hasParticles = true, hasIcon = false))
+        assertFalse(GatePlan.isGateDarkness(40, hasParticles = false, hasIcon = true))
+    }
 }

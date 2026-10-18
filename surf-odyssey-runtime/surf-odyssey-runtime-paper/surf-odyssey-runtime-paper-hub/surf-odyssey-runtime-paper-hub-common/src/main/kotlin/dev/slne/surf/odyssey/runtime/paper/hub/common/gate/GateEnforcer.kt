@@ -29,9 +29,6 @@ object GateEnforcer {
     /** The server category of the lobby. */
     const val LOBBY_CATEGORY = "odyssey-hub-lobby"
 
-    /** How long each refresh of the darkness lasts, in ticks; longer than the check interval. */
-    private const val DARKNESS_TICKS = 60
-
     /** The locked region each player is in and whether this enforcer darkened them. */
     private val tracker = GateTracker()
 
@@ -58,7 +55,7 @@ object GateEnforcer {
     fun stop() {
         task?.cancel()
         task = null
-        tracker.clear().forEach { id -> Bukkit.getPlayer(id)?.removePotionEffect(PotionEffectType.DARKNESS) }
+        tracker.clear().forEach { id -> Bukkit.getPlayer(id)?.let(::removeGateDarkness) }
         worldChecked.clear()
     }
 
@@ -86,15 +83,32 @@ object GateEnforcer {
     /** Darkens [player] inside the locked [region], reminds them and deals damage when due. */
     private fun punish(player: Player, region: Region, now: Long) {
         val damageDue = tracker.inLockedRegion(player.uniqueId, region.id, region.gateDamage, now)
-        player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, DARKNESS_TICKS, 0, false, false, false))
+        darken(player)
         GateAccess.tellRegionLocked(player)
         if (damageDue) player.damage(region.gateDamage.damage)
     }
 
     /** Ends the effects of a locked region on [player]. */
     private fun release(player: Player) {
-        if (tracker.release(player.uniqueId)) player.removePotionEffect(PotionEffectType.DARKNESS)
+        if (tracker.release(player.uniqueId)) removeGateDarkness(player)
     }
+
+    /** Applies the gate darkness to [player] unless darkness from another source is active. */
+    private fun darken(player: Player) {
+        val current = player.getPotionEffect(PotionEffectType.DARKNESS)
+        if (current != null && !isGateDarkness(current)) return
+        player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, GatePlan.DARKNESS_TICKS, 0, false, false, false))
+    }
+
+    /** Removes the darkness of [player] if it is the gate darkness. */
+    private fun removeGateDarkness(player: Player) {
+        val current = player.getPotionEffect(PotionEffectType.DARKNESS) ?: return
+        if (isGateDarkness(current)) player.removePotionEffect(PotionEffectType.DARKNESS)
+    }
+
+    /** Returns whether [effect] is the darkness gates apply. */
+    private fun isGateDarkness(effect: PotionEffect): Boolean =
+        GatePlan.isGateDarkness(effect.duration, effect.hasParticles(), effect.hasIcon())
 
     /**
      * Checks the world gate of [hub] once per join, as soon as the progression of [player] is loaded, and sends them

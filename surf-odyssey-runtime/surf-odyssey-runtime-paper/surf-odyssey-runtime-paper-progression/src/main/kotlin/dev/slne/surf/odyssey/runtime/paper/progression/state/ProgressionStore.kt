@@ -92,6 +92,52 @@ class ProgressionStore(
         players[player]?.apply(changes)
     }
 
+    /**
+     * Abandons the active quest [questId] of [player] at the progression service. On success the quest's buffered
+     * deltas are dropped and the cache marks it abandoned.
+     *
+     * @param player the player
+     * @param questId the id of the quest definition
+     * @return `true` if the quest was active and is now abandoned, `false` if it was not active or the call failed
+     */
+    suspend fun abandon(player: UUID, questId: String): Boolean = lockOf(player).withLock {
+        try {
+            val abandoned = bridge.abandonQuest(player, questId)
+            Progression.markAvailable()
+            if (abandoned) {
+                bufferOf(player).discard(questId)
+                players[player]?.abandon(questId)
+            }
+            abandoned
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            fail("abandon the quest $questId of $player", e)
+            false
+        }
+    }
+
+    /**
+     * Sets the quest [player] tracks at the progression service and in the cache.
+     *
+     * @param player the player
+     * @param questId the id of the quest to track, or `null` for none
+     * @return `false` if the call failed and nothing changed
+     */
+    suspend fun setTrackedQuest(player: UUID, questId: String?): Boolean {
+        try {
+            bridge.setTrackedQuest(player, questId)
+            Progression.markAvailable()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            fail("set the tracked quest of $player", e)
+            return false
+        }
+        players[player]?.setTrackedQuest(questId)
+        return true
+    }
+
     /** Registers the join and quit listener, loads the players already online and starts the flush and ping loops. */
     fun start() {
         Bukkit.getPluginManager().registerEvents(this, plugin)

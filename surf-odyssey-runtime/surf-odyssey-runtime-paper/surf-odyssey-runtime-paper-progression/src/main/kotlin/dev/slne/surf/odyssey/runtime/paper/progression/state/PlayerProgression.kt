@@ -74,6 +74,32 @@ class PlayerProgression(initial: ProgressionStateDto, private val clock: Clock) 
     }
 
     /**
+     * Marks the active quest [questId] as abandoned and drops its counters. A quest that is not active is left as it is.
+     *
+     * @param questId the id of the quest definition
+     */
+    @Synchronized
+    fun abandon(questId: String) {
+        val quest = state.quests.find { it.questId == questId && it.status == QuestStatus.ACTIVE } ?: return
+        state = state.copy(
+            quests = state.quests.map { if (it === quest) it.copy(status = QuestStatus.ABANDONED) else it },
+            counters = state.counters.filterNot { it.questId == questId }
+        )
+        revision++
+    }
+
+    /**
+     * Sets the cached tracked quest.
+     *
+     * @param questId the id of the tracked quest, or `null` for none
+     */
+    @Synchronized
+    fun setTrackedQuest(questId: String?) {
+        state = state.copy(trackedQuest = questId)
+        revision++
+    }
+
+    /**
      * Replaces the cached state with a freshly loaded one and adds the deltas that were not sent yet on top.
      *
      * @param loaded the state loaded from the progression service

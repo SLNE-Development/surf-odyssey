@@ -54,6 +54,16 @@ class CounterBuffer {
     @Synchronized
     fun pending(): List<CounterDeltaDto> = deltas.map { (key, amount) -> key.toDelta(amount) }
 
+    /**
+     * Drops every buffered delta of the quest [questId].
+     *
+     * @param questId the id of the quest definition
+     */
+    @Synchronized
+    fun discard(questId: String) {
+        deltas.keys.removeIf { it.questId == questId }
+    }
+
     /** Returns whether no delta is buffered. */
     @Synchronized
     fun isEmpty(): Boolean = deltas.isEmpty()

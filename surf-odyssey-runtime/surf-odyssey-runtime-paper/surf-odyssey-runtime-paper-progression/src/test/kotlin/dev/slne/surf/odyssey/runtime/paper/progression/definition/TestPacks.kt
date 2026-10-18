@@ -18,7 +18,10 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.statio
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.title.TitleDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessoryDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.Objective
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirements
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component.text
 import org.bukkit.Material
@@ -44,12 +47,19 @@ object TestPacks {
      * @param id the quest ID
      * @param type the quest type
      * @param giver the NPC giving the quest and speaking its node
+     * @param requirement requirement to be offered the quest
      */
-    fun quest(id: String, type: QuestType = QuestType.SIDE, giver: NpcDefinition = brina): QuestDefinition =
+    fun quest(
+        id: String,
+        type: QuestType = QuestType.SIDE,
+        giver: NpcDefinition = brina,
+        requirement: Requirement = Requirements.ALWAYS,
+    ): QuestDefinition =
         questDefinition(id, type, giver) {
             title = text(id)
             description = text("Quest $id")
             offerNode = "${id}_offer"
+            this.requirement = requirement
             step(1, giver, "${id}_offer") {
                 talkTo(giver, "${id}_offer")
             }
@@ -59,6 +69,64 @@ object TestPacks {
                 answer(text("Nein"), text("Gespräch beenden"), NodeAction.Close, AnswerKind.LEAVE)
             }
         }
+
+    /**
+     * One step of a quest built by [questWithSteps].
+     *
+     * @property version the step version
+     * @property objectives the objectives of the step
+     * @property rewards the rewards of the step
+     */
+    data class StepSpec(
+        val version: Int,
+        val objectives: List<Objective>,
+        val rewards: List<QuestReward> = emptyList(),
+    )
+
+    /**
+     * Builds a quest given by [brina] with the given steps. Step `i` is described as `Schritt i` and is turned in at
+     * the offer node `<id>_offer`.
+     *
+     * @param id the quest ID
+     * @param type the quest type
+     * @param steps the steps in order
+     * @param rewards the rewards of the quest
+     */
+    fun questWithSteps(
+        id: String = "versioned",
+        type: QuestType = QuestType.SIDE,
+        steps: List<StepSpec>,
+        rewards: List<QuestReward> = emptyList(),
+    ): QuestDefinition = questDefinition(id, type, brina) {
+        title = text(id)
+        description = text("Quest $id")
+        offerNode = "${id}_offer"
+        steps.forEachIndexed { index, spec ->
+            step(spec.version, brina, "${id}_offer") {
+                description = text("Schritt $index")
+                spec.objectives.forEach(::objective)
+                spec.rewards.forEach(::reward)
+            }
+        }
+        rewards.forEach(::reward)
+        node("${id}_offer", brina) {
+            text = text("Hilfst du mir?")
+            answer(text("Ja"), text("Quest annehmen"), NodeAction.AcceptQuest(null), AnswerKind.ACCEPT)
+        }
+    }
+
+    /**
+     * Builds a one-step quest whose step has [stepVersion] and one objective to harvest [amount] wheat.
+     *
+     * @param stepVersion the version of the only step
+     * @param amount how much wheat the objective needs
+     * @param type the quest type
+     */
+    fun questWithVersion(stepVersion: Int, amount: Int = 12, type: QuestType = QuestType.SIDE): QuestDefinition =
+        questWithSteps(
+            type = type,
+            steps = listOf(StepSpec(stepVersion, listOf(Objective.Harvest(Material.WHEAT, amount, null)))),
+        )
 
     /**
      * Builds a pack that passes validation: rice, fish and sushi items, a sushi station with one recipe, one main

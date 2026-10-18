@@ -60,4 +60,15 @@ class CounterBufferTest {
         assertEquals(listOf(delta(0, 2)), buffer.pending())
         assertEquals(listOf(delta(0, 2)), buffer.drain())
     }
+
+    @Test
+    fun `discarding a quest drops only its deltas`() {
+        val buffer = CounterBuffer()
+        buffer.add(delta(0, 2, questId = "a"))
+        buffer.add(delta(0, 3, questId = "b"))
+
+        buffer.discard("a")
+
+        assertEquals(listOf(delta(0, 3, questId = "b")), buffer.drain())
+    }
 }

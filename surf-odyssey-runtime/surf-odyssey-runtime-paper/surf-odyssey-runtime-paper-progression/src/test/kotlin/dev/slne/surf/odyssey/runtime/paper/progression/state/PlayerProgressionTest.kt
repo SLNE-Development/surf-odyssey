@@ -76,4 +76,38 @@ class PlayerProgressionTest {
 
         assertEquals(6, progression.counter("q", step = 0, stepVersion = 1, objective = 0, period = 0))
     }
+
+    @Test
+    fun `abandoning drops the counters of the quest and keeps others`() {
+        val progression = PlayerProgression(empty(), clock)
+        progression.apply(listOf(StateChange.QuestAccepted("q", 1, 0), StateChange.QuestAccepted("o", 1, 0)))
+        progression.addCounter(CounterDeltaDto("q", 0, 1, 0, 0, 3))
+        progression.addCounter(CounterDeltaDto("o", 0, 1, 0, 0, 2))
+
+        progression.abandon("q")
+
+        assertEquals(QuestStatus.ABANDONED, progression.questState("q")?.status)
+        assertEquals(0, progression.counter("q", 0, 1, 0, 0))
+        assertEquals(2, progression.counter("o", 0, 1, 0, 0))
+    }
+
+    @Test
+    fun `abandoning a quest that is not active changes nothing`() {
+        val progression = PlayerProgression(empty(), clock)
+        progression.apply(listOf(StateChange.QuestAccepted("q", 1, 0), StateChange.QuestCompleted("q", 0)))
+
+        progression.abandon("q")
+
+        assertEquals(QuestStatus.COMPLETED, progression.questState("q")?.status)
+    }
+
+    @Test
+    fun `the tracked quest is cached`() {
+        val progression = PlayerProgression(empty(), clock)
+
+        progression.setTrackedQuest("q")
+        assertEquals("q", progression.state.trackedQuest)
+        progression.setTrackedQuest(null)
+        assertNull(progression.state.trackedQuest)
+    }
 }

@@ -15,6 +15,10 @@ object Progression {
     lateinit var runtime: ProgressionRuntime
         internal set
 
+    /** The installed engine, or `null` while none is installed. */
+    val runtimeOrNull: ProgressionRuntime?
+        get() = if (::runtime.isInitialized) runtime else null
+
     /** Backs [isAvailable]. */
     private val available = AtomicBoolean(true)
 

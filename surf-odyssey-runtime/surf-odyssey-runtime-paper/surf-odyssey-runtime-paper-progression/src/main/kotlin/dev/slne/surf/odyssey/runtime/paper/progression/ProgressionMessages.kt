@@ -1,6 +1,9 @@
 package dev.slne.surf.odyssey.runtime.paper.progression
 
+import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
+import net.kyori.adventure.text.Component
+import org.bukkit.Sound
 import org.bukkit.entity.Player
 
 /** The chat messages the progression engine sends to players. */
@@ -47,5 +50,24 @@ object ProgressionMessages {
     fun deliveryBroken(player: Player) = player.sendText {
         appendErrorPrefix()
         error("Diese Lieferung konnte nicht geladen werden.")
+    }
+
+    /** Tells [player] that an objective of the step described by [step] is met and plays a chime. */
+    fun objectiveDone(player: Player, step: Component) {
+        player.sendText {
+            appendSuccessPrefix()
+            success("Ziel erfüllt: ")
+            append(step)
+        }
+        player.playSound(true) {
+            type(Sound.ENTITY_EXPERIENCE_ORB_PICKUP)
+        }
+    }
+
+    /** Tells [player] that the quest titled [title] is completed. */
+    fun questCompleted(player: Player, title: Component) = player.sendText {
+        appendSuccessPrefix()
+        success("Quest abgeschlossen: ")
+        append(title)
     }
 }

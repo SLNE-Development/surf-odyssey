@@ -5,6 +5,8 @@ import dev.slne.surf.odyssey.runtime.paper.progression.npc.ProgressionNpcs
 import dev.slne.surf.odyssey.runtime.paper.progression.menu.ProgressionPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
+import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolUsage
+import org.bukkit.Bukkit
 import java.time.Clock
 
 /** Which parts of the progression engine a server runs. */
@@ -33,12 +35,13 @@ class ProgressionRuntime(
     val clock: Clock,
 ) {
     /**
-     * Removes the spawned NPCs and a standalone placeholder expansion, stops the background work of the engine and
-     * sends every buffered counter delta.
+     * Removes the spawned NPCs and a standalone placeholder expansion, writes the buffered tool usage of every online
+     * player into the tool items, stops the background work of the engine and sends every buffered counter delta.
      */
     suspend fun shutdown() {
         ProgressionNpcs.despawnAll()
         ProgressionPlaceholders.unregisterStandalone()
+        Bukkit.getOnlinePlayers().forEach(ToolUsage::flushAll)
         store.stop()
     }
 }

@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.fishing
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateDamage
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.protectionSettings
@@ -7,6 +8,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemStack
 
@@ -19,6 +21,12 @@ class FishingRegionBuilder(private val id: String) {
 
     /** Name shown to players, defaults to the id. */
     var displayName: Component = Component.text(id)
+
+    /** Requirement a player must meet to act in the region, or `null` to open it to everyone. */
+    var gate: Requirement? = null
+
+    /** How the region hurts players its [gate] locks out. */
+    var gateDamage: GateDamage = GateDamage()
     private var shape: Shape? = null
     private val fish = mutableListOf<FishEntry>()
     private var settings = ProtectionSettings()
@@ -41,7 +49,7 @@ class FishingRegionBuilder(private val id: String) {
     /** Creates the fishing region from the collected settings, failing when it has no shape or no fish. */
     internal fun build(): FishingRegion {
         require(fish.isNotEmpty()) { "Fishing region '$id' needs at least one fish" }
-        return FishingRegion(id, displayName, requireNotNull(shape) { "Region '$id' has no shape" }, FishTable(fish.toList()), settings)
+        return FishingRegion(id, displayName, requireNotNull(shape) { "Region '$id' has no shape" }, FishTable(fish.toList()), settings, gate, gateDamage)
     }
 }
 

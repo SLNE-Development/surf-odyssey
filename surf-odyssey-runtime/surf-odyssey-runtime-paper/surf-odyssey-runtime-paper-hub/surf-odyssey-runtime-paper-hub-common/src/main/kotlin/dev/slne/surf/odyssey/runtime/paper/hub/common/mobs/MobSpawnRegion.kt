@@ -1,10 +1,12 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.mobs
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateDamage
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import net.kyori.adventure.text.Component
 import org.bukkit.Location
 import org.bukkit.entity.EntityType
@@ -21,6 +23,8 @@ import kotlin.time.Duration
  * @property spawnPoints blocks mobs spawn on, all inside the shape
  * @property respawnInterval time between two spawns, positive
  * @property maxAlive most mobs alive at once, at least 1
+ * @property gate the requirement to act in this region, or `null` if it is open to everyone
+ * @property gateDamage how this region hurts players its [gate] locks out
  */
 class MobSpawnRegion(
     id: String,
@@ -31,6 +35,8 @@ class MobSpawnRegion(
     val respawnInterval: Duration,
     val maxAlive: Int,
     settings: ProtectionSettings = ProtectionSettings(),
+    override val gate: Requirement? = null,
+    override val gateDamage: GateDamage = GateDamage(),
 ) : Region(id, displayName, shape, settings) {
     init {
         require(types.isNotEmpty()) { "Mob region '$id' needs at least one mob type" }

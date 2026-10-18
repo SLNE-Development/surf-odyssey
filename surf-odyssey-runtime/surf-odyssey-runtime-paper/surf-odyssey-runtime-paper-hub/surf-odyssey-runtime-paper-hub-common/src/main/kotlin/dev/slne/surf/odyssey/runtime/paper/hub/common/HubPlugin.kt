@@ -7,6 +7,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.EditorPreviewTask
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.RegionWandListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.editor.regionEditorCommand
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateEnforcer
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobKillListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
@@ -28,6 +30,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.WorldPosition
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionPlacements
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.MobLootProvider
 import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.VanillaLockdown
 import net.kyori.adventure.text.Component
@@ -76,6 +79,12 @@ abstract class HubPlugin : OdysseyPaperMain() {
     /** The progression content this hub world installs. */
     protected abstract val content: ContentPack
 
+    /**
+     * The requirement a player must meet to stay in this hub world, or `null` if it is open to everyone. A player
+     * who does not meet it is sent to the lobby once their progression has loaded after joining.
+     */
+    open val worldGate: Requirement? = null
+
     /** Declares the regions of this hub world. */
     protected open fun RegionRegistry.regions() {}
 
@@ -97,8 +106,8 @@ abstract class HubPlugin : OdysseyPaperMain() {
      * Builds the region index and the world's protection settings, collects the portals, connects the
      * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, removes vanilla recipes and loot, installs the progression engine
      * with [content] and the [placements], registers the
-     * protection, world change, fishing, mob kill, portal, arrival and region wand listeners and the `/hubregion`
-     * command, starts the editor preview and the region ticker, registers the placeholder tags, then calls
+     * gate, protection, world change, fishing, mob kill, portal, arrival and region wand listeners and the
+     * `/hubregion` command, starts the editor preview, the region ticker and the gate enforcer, registers the placeholder tags, then calls
      * [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
@@ -112,6 +121,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         server.worlds.forEach { it.isAutoSave = false }
         VanillaLockdown.install(this, MobLootProvider.NONE)
         HubProgression.install(this, content, ProgressionPlacements().apply { placements() })
+        GateListener.register()
         HubProtectionListener.register()
         WorldChangeListener.register()
         FishingListener.register()
@@ -122,13 +132,14 @@ abstract class HubPlugin : OdysseyPaperMain() {
         RegionWandListener.register()
         EditorPreviewTask.start(this)
         RegionTicker.start(this)
+        GateEnforcer.start(this)
         HubPlaceholders.register(this)
         onHubEnabled()
     }
 
     /**
      * Calls [onHubDisabled], then despawns the progression NPCs and sends the buffered progress, restores every block waiting to regenerate, unregisters the
-     * placeholder tags, stops ticking, removes the mobs of every mob spawn region, stops the reconnect
+     * placeholder tags, stops ticking and enforcing gates, removes the mobs of every mob spawn region, stops the reconnect
      * service and disconnects from Redis. Each step runs even if an earlier one throws; the first
      * failure is thrown once all steps have run.
      */
@@ -139,6 +150,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         steps.run { RegenerationTicker.restoreAll(hubWorld) }
         steps.run { HubPlaceholders.unregister() }
         steps.run { RegionTicker.stop() }
+        steps.run { GateEnforcer.stop() }
         steps.run {
             if (this::regionIndex.isInitialized) regionIndex.regions.filterIsInstance<MobSpawnRegion>().forEach { it.removeMobs() }
         }

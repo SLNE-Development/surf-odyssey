@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.content
 
+import dev.slne.surf.odyssey.runtime.paper.content.quests.Quests
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
 import io.mockk.every
 import io.mockk.mockk
@@ -8,6 +9,8 @@ import io.papermc.paper.registry.RegistryAccess
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component.text
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.dialog.NodeAction
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredient
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.MaterialRef
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ref
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.Objective
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestDefinition
@@ -297,6 +300,66 @@ class OdysseyContentTest {
         }
         return reachable
     }
+
+    @Test
+    fun `every plain material the content asks for has a source on the hubs`() {
+        val sources = hubSources + tradeSources() + rewardSources()
+        val recipeNeeds = Recipes.all.flatMap { recipe -> materialsOf(recipe.ingredients).map { recipe.id to it } }
+        val priceNeeds = Npcs.all.flatMap { npc ->
+            npc.trades.flatMap { offer ->
+                val paid = (offer.price as? Price.Items)?.let { materialsOf(it.ingredients) }.orEmpty()
+                paid.map { "${npc.id}/${offer.id}" to it }
+            }
+        }
+        val deliveryNeeds = Quests.all.flatMap { quest ->
+            quest.steps.flatMap { it.objectives }.filterIsInstance<Objective.Deliver>()
+                .mapNotNull { (it.item as? MaterialRef)?.material }
+                .map { quest.id to it }
+        }
+
+        val missing = (recipeNeeds + priceNeeds + deliveryNeeds).filter { (_, material) -> material !in sources }
+        assertTrue(missing.isEmpty(), "No source on the hubs for: $missing")
+    }
+
+    @Test
+    fun `the cook sells glass bottles copper ingots kelp and wheat for fish and coal`() {
+        val sold = Npcs.KOCH.trades.associate { it.result to it.price }
+        assertEquals(items(Material.COD, 2), sold[TradeResult.Item(Material.GLASS_BOTTLE.ref, 3)])
+        assertEquals(items(Material.COAL, 8), sold[TradeResult.Item(Material.COPPER_INGOT.ref, 2)])
+        assertEquals(items(Material.COD, 1), sold[TradeResult.Item(Material.KELP.ref, 4)])
+        assertEquals(items(Material.COD, 1), sold[TradeResult.Item(Material.WHEAT.ref, 4)])
+    }
+
+    /**
+     * The plain materials the hub worlds hand out: catches of the North lake, the vanilla drops of the blocks in the
+     * North forests and mines and the loot of the North wolves.
+     */
+    private val hubSources: Set<Material> = setOf(
+        Material.COD, Material.SALMON, Material.INK_SAC,
+        Material.SPRUCE_LOG, Material.BIRCH_LOG, Material.OAK_LOG,
+        Material.RAW_IRON, Material.COAL, Material.RAW_GOLD, Material.DIAMOND,
+        Material.BONE, Material.LEATHER,
+    )
+
+    /** Returns the plain materials NPCs sell. */
+    private fun tradeSources(): Set<Material> = Npcs.all.flatMap { it.trades }
+        .mapNotNull { (it.result as? TradeResult.Item)?.item as? MaterialRef }
+        .map { it.material }
+        .toSet()
+
+    /** Returns the plain materials quests give as rewards, for the whole quest or for one step. */
+    private fun rewardSources(): Set<Material> = Quests.all
+        .flatMap { quest -> quest.rewards + quest.steps.flatMap { it.rewards } }
+        .mapNotNull { (it as? ItemReward)?.item as? MaterialRef }
+        .map { it.material }
+        .toSet()
+
+    /** Returns the plain materials among [ingredients]. */
+    private fun materialsOf(ingredients: List<Ingredient>): List<Material> =
+        ingredients.mapNotNull { (it.item as? MaterialRef)?.material }
+
+    /** Returns a price of [amount] plain items of [material]. */
+    private fun items(material: Material, amount: Int): Price = Price.Items(listOf(Ingredient(material.ref, amount)))
 
     /** Reads the image IDs defined in the CraftEngine portrait configuration of the repository. */
     private fun portraitImages(): Set<String> {

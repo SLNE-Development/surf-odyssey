@@ -24,8 +24,9 @@ object Npcs {
     }
 
     /**
-     * Koch Anselm in the lobby, who runs the cooking station and sells the sushi and smoked fish recipes, bait worms
-     * and a fish platter for coins.
+     * Koch Anselm in the lobby, who runs the cooking station and sells the sushi and smoked fish recipes, bait worms,
+     * a fish platter for coins and the basic ingredients the hubs do not yield: glass bottles, kelp and wheat for cod
+     * and copper ingots for coal.
      */
     val KOCH: NpcDefinition = npc("koch") {
         name = text("Koch Anselm")
@@ -37,6 +38,10 @@ object Npcs {
         trade("smoked_fish_recipe", TradeResult.Recipe(Recipes.SMOKED_FISH), items(Material.SALMON, 4))
         trade("bait_worms", TradeResult.Item(Items.BAIT_WORM.ref, 4), items(Material.COD, 3))
         trade("fish_platter", TradeResult.Item(Items.FISH_PLATTER.ref, 1), Price.Currency("coins", 25.0))
+        trade("glass_bottles", TradeResult.Item(Material.GLASS_BOTTLE.ref, 3), items(Material.COD, 2))
+        trade("copper_ingots", TradeResult.Item(Material.COPPER_INGOT.ref, 2), items(Material.COAL, 8))
+        trade("kelp", TradeResult.Item(Material.KELP.ref, 4), items(Material.COD, 1))
+        trade("wheat", TradeResult.Item(Material.WHEAT.ref, 4), items(Material.COD, 1))
     }
 
     /** Olek, the old fisherman at the North lake. */

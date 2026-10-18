@@ -97,7 +97,7 @@ tasks.register<Exec>("startDevelopmentStack") {
             |Development stack started:
             |  Velocity proxy      localhost:25565 (console: docker compose attach proxy)
             |  Hubs and home       reachable through the proxy (console: docker compose attach hub-lobby-01,
-            |                      hub-north-01, hub-north-02, hub-south-01 or home; pack-01 builds the pack)
+            |                      hub-lobby-02, hub-lobby-03, hub-north-01, hub-north-02, hub-south-01 or home; pack-01 builds the pack)
             |  RabbitMQ management http://localhost:15672
             |  PostgreSQL          localhost:5432
             |  Valkey              localhost:6379

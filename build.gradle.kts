@@ -47,6 +47,8 @@ developmentStack {
         )
     }
     hubServer("hub-lobby-01", "lobby")
+    hubServer("hub-lobby-02", "lobby")
+    hubServer("hub-lobby-03", "lobby")
     hubServer("hub-north-01", "north")
     hubServer("hub-north-02", "north")
     hubServer("hub-south-01", "south")

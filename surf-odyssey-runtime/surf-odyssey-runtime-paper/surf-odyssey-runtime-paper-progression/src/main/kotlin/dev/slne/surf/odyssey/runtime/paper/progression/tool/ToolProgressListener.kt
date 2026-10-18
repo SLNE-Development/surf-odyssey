@@ -1,16 +1,21 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.tool
 
 import org.bukkit.entity.Player
+import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityPickupItemEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 
 /**
  * Keeps the owner chain of tool items current: a player who joins with tools or picks one up becomes the newest
- * holder of each tool whose newest holder is someone else.
+ * holder of each tool whose newest holder is someone else. A right-click into the air while sneaking with a tool in
+ * the main hand opens its accessory view instead of using the tool.
  *
  * Usage itself is added by the region features through [ToolUsage.record].
  *
@@ -34,6 +39,19 @@ class ToolProgressListener(private val onTakenOver: (Player, ToolState) -> Unit 
         val player = event.entity as? Player ?: return
         val updated = takeOver(player, event.item.itemStack) ?: return
         event.item.itemStack = updated
+    }
+
+    /** Opens the accessory view when a sneaking player right-clicks into the air with a tool in the main hand. */
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onInteract(event: PlayerInteractEvent) {
+        if (event.action != Action.RIGHT_CLICK_AIR || event.hand != EquipmentSlot.HAND) return
+        val player = event.player
+        if (!player.isSneaking) return
+        val state = ToolItems.read(player.inventory.itemInMainHand) ?: return
+        if (ToolItems.definitionOf(state) == null) return
+        event.setUseItemInHand(Event.Result.DENY)
+        event.setUseInteractedBlock(Event.Result.DENY)
+        openAccessoryView(player)
     }
 
     /**

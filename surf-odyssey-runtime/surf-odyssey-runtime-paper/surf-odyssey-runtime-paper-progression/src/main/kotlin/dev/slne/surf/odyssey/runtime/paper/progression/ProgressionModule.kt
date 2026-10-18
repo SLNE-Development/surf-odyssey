@@ -13,6 +13,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.station.recipeBrowserView
 import dev.slne.surf.odyssey.runtime.paper.progression.station.stationView
 import dev.slne.surf.odyssey.runtime.paper.progression.trade.tradeView
 import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolItems
+import dev.slne.surf.odyssey.runtime.paper.progression.tool.accessoryView
 import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolModule
 import org.bukkit.plugin.Plugin
 import java.time.Clock
@@ -32,6 +33,7 @@ object ProgressionModule {
         stationView.register()
         recipeBrowserView.register()
         tradeView.register()
+        accessoryView.register()
     }
 
     /**

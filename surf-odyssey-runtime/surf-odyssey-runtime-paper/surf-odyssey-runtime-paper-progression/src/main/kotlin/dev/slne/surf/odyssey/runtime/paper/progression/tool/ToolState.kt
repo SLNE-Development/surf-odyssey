@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.tool
 
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessoryDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessorySlot
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
 import java.util.*
@@ -31,4 +32,35 @@ object ToolSlots {
      */
     fun unlocked(tool: ToolDefinition, level: Int): List<AccessorySlot> =
         tool.slots.entries.filter { it.key <= level }.sortedBy { it.key }.map { it.value }
+}
+
+/** Attaches accessories to and detaches them from the slots of a tool state. */
+object AccessoryRules {
+    /**
+     * Returns [state] with [accessory] attached to the slot [slotId], or `null` if the slot is not open at the level
+     * of the tool, the accessory does not fit the slot or the slot is filled.
+     *
+     * @param tool the tool definition
+     * @param state the state of the tool item
+     * @param slotId the ID of the slot
+     * @param accessory the accessory to attach
+     */
+    fun attach(tool: ToolDefinition, state: ToolState, slotId: String, accessory: AccessoryDefinition): ToolState? {
+        val level = ToolProgress.levelFor(tool, state.usage)
+        if (ToolSlots.unlocked(tool, level).none { it.id == slotId }) return null
+        if (accessory.slot.id != slotId || slotId in state.accessories) return null
+        return state.copy(accessories = state.accessories + (slotId to accessory.id))
+    }
+
+    /**
+     * Returns [state] with the slot [slotId] emptied together with the ID of the accessory that was attached there,
+     * or `null` if the slot is empty.
+     *
+     * @param state the state of the tool item
+     * @param slotId the ID of the slot
+     */
+    fun detach(state: ToolState, slotId: String): Pair<ToolState, String>? {
+        val accessoryId = state.accessories[slotId] ?: return null
+        return state.copy(accessories = state.accessories - slotId) to accessoryId
+    }
 }

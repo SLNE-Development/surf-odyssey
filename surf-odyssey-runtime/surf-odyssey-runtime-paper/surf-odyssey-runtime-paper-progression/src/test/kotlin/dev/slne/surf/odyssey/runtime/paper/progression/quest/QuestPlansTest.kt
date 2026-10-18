@@ -36,6 +36,7 @@ class QuestPlansTest {
         rewards = listOf(questReward),
     )
 
+    /** Returns the stored state of the active test quest at [step] in [period]. */
     private fun state(step: Int, period: Long = 0) = QuestStateDto(quest.id, QuestStatus.ACTIVE, step, 1, period, null)
 
     @Test

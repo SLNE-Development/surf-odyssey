@@ -23,6 +23,7 @@ import kotlin.test.assertTrue
 
 /** Tests for computing quest progress from stored counters. */
 class QuestProgressTest {
+    /** Returns the stored progression of a new player with only [quests]. */
     private fun state(quests: List<QuestStateDto>) = ProgressionStateDto(
         UUID.randomUUID(), quests, emptyList(), emptySet(), emptySet(), null, null, emptyList(), emptyList()
     )

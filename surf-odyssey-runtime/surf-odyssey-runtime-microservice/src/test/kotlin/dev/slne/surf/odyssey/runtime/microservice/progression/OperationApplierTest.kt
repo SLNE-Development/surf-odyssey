@@ -15,8 +15,10 @@ import kotlin.test.assertIs
 /** Tests for the pure decision logic that applies progression operations. */
 class OperationApplierTest {
     private val player = UUID.randomUUID()
+    /** Returns the stored progression of [player] with only [quests]. */
     private fun state(vararg quests: QuestStateDto) = ProgressionStateDto(player, quests.toList(), emptyList(),
         emptySet(), emptySet(), null, null, emptyList(), emptyList())
+    /** Returns an operation of [player] with a new id that makes [changes] and delivers nothing. */
     private fun op(vararg changes: StateChange) = OperationDto(UUID.randomUUID(), player, changes.toList(), emptyList())
 
     @Test fun `accepting an active quest of the same period is rejected`() {

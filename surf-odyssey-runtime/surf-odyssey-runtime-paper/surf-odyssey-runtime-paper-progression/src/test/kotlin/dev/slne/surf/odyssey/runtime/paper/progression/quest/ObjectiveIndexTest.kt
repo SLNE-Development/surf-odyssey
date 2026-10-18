@@ -12,6 +12,10 @@ import kotlin.test.assertTrue
 
 /** Tests for the event-type index of active objectives. */
 class ObjectiveIndexTest {
+    /**
+     * Returns the index of a quest whose step [step] has [objectives], with a stone harvest step before it for
+     * every earlier step.
+     */
     private fun indexOf(vararg objectives: Objective, step: Int = 0): ObjectiveIndex {
         val steps = List(step) { StepSpec(1, listOf(Objective.Harvest(Material.STONE, 1, null))) } +
                 StepSpec(1, objectives.toList())

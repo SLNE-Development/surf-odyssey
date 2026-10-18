@@ -15,6 +15,7 @@ import kotlin.test.assertEquals
 
 /** Tests for the one-line text of the tracked quest. */
 class TrackerTextTest {
+    /** Returns the tracker text of [quest] with [progress] as plain text. */
     private fun plain(quest: QuestDefinition?, progress: QuestProgress?) =
         PlainTextComponentSerializer.plainText().serialize(TrackerText.render(quest, progress))
 

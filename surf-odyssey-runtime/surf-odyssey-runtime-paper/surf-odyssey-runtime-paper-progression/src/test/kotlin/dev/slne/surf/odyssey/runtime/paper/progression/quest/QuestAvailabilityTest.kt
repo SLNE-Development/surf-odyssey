@@ -20,6 +20,7 @@ class QuestAvailabilityTest {
     private val now = Instant.parse("2026-03-10T12:00:00Z")
     private val today = Periods.index(QuestType.DAILY, now)
 
+    /** Returns the IDs of the quests Brina offers to the player of [ctx] now, looked up in [registry]. */
     private fun offered(registry: ProgressionRegistry, ctx: FakeContext): List<String> =
         QuestAvailability.offeredBy(TestPacks.brina, ctx.progression, ctx, player, now, registry).map { it.id }
 

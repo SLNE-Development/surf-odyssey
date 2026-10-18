@@ -12,7 +12,9 @@ class LootLockdownRulesTest {
 
     private val custom = MobLoot(emptyList(), 7)
 
+    /** Supplies [custom] loot for zombies and no loot for every other type. */
     private val provider = object : MobLootProvider {
+        /** Returns [custom] for zombies, otherwise `null`. */
         override fun lootFor(entityType: EntityType): MobLoot? =
             if (entityType == EntityType.ZOMBIE) custom else null
     }

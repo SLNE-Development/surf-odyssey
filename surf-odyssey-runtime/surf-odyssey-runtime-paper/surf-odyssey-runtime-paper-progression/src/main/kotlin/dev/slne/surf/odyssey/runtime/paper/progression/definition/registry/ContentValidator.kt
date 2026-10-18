@@ -11,6 +11,13 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.Objectiv
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestType
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.recipe.RecipeDefinition
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.AllOfRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.AnyOfRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.NotRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.QuestCompletedRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.QuestStepRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.RecipeUnlockedRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.CurrencyReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
@@ -24,6 +31,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.trade.TradeRes
  * Checks a [ContentPack] for problems that must stop the server from starting.
  *
  * It checks unique and well-formed IDs, references to items, stations, recipes, titles, tools, NPCs and nodes,
+ * quest and recipe IDs inside requirements,
  * positive amounts, the neutral NPC portrait, quest structure, recurring pool sizes and tool curves. All problems are
  * collected instead of stopping at the first.
  *
@@ -47,6 +55,9 @@ internal class ContentValidator(private val pack: ContentPack) {
 
     /** IDs of the NPCs in the pack. */
     private val npcIds = pack.npcs.mapTo(HashSet()) { it.id }
+
+    /** IDs of the quests in the pack. */
+    private val questIds = pack.quests.mapTo(HashSet()) { it.id }
 
     /** IDs of the tools in the pack. */
     private val toolIds = pack.tools.mapTo(HashSet()) { it.id }
@@ -103,6 +114,7 @@ internal class ContentValidator(private val pack: ContentPack) {
         if (NpcDefinition.NEUTRAL_MOOD !in npc.portraits) {
             problems += "$where has no '${NpcDefinition.NEUTRAL_MOOD}' portrait"
         }
+        npc.visibleWhen?.let { checkRequirement("$where visibility", it) }
         npc.station?.let { if (it.id !in stationIds) problems += "$where references unknown station '${it.id}'" }
         checkIdStrings("trade offer of $where", npc.trades.map { it.id })
         npc.trades.forEach { offer ->
@@ -133,6 +145,7 @@ internal class ContentValidator(private val pack: ContentPack) {
         }
 
         checkNpcRef(where, "giver", quest.giver)
+        checkRequirement("$where requirement", quest.requirement)
         checkNode("offer", quest.offerNode)
         if (quest.steps.isEmpty()) problems += "$where has no steps"
         if (quest.type.recurring && quest.steps.size != 1) {
@@ -169,6 +182,7 @@ internal class ContentValidator(private val pack: ContentPack) {
             val nodeWhere = "node '${node.id}'"
             checkNpcRef(where, "$nodeWhere npc", node.npc)
             node.answers.forEach { answer ->
+                answer.visibleWhen?.let { checkRequirement("$where $nodeWhere answer visibility", it) }
                 when (val action = answer.action) {
                     is NodeAction.Goto -> checkNode("$nodeWhere goto", action.nodeId)
                     is NodeAction.AcceptQuest -> action.then?.let { checkNode("$nodeWhere then", it) }
@@ -201,6 +215,25 @@ internal class ContentValidator(private val pack: ContentPack) {
                 problems += "$where curve is not strictly increasing at level $it"
             }
         }
+    }
+
+    /** Reports quest and recipe IDs in [requirement] and its nested requirements that are not in the pack. */
+    private fun checkRequirement(where: String, requirement: Requirement) {
+        when (requirement) {
+            is QuestCompletedRequirement -> checkQuestId(where, requirement.questId)
+            is QuestStepRequirement -> checkQuestId(where, requirement.questId)
+            is RecipeUnlockedRequirement -> if (requirement.recipeId !in recipeIds) {
+                problems += "$where references unknown recipe '${requirement.recipeId}'"
+            }
+            is AllOfRequirement -> requirement.requirements.forEach { checkRequirement(where, it) }
+            is AnyOfRequirement -> requirement.requirements.forEach { checkRequirement(where, it) }
+            is NotRequirement -> checkRequirement(where, requirement.requirement)
+        }
+    }
+
+    /** Reports [questId] when the pack has no quest with this ID. */
+    private fun checkQuestId(where: String, questId: String) {
+        if (questId !in questIds) problems += "$where references unknown quest '$questId'"
     }
 
     /** Checks the target and amount of a reward. */

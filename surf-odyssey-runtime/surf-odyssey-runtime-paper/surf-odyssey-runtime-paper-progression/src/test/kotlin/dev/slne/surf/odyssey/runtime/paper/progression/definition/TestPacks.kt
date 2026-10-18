@@ -18,6 +18,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.statio
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.title.TitleDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessoryDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component.text
 import org.bukkit.Material
@@ -42,20 +43,22 @@ object TestPacks {
      *
      * @param id the quest ID
      * @param type the quest type
+     * @param giver the NPC giving the quest and speaking its node
      */
-    fun quest(id: String, type: QuestType = QuestType.SIDE): QuestDefinition = questDefinition(id, type, brina) {
-        title = text(id)
-        description = text("Quest $id")
-        offerNode = "${id}_offer"
-        step(1, brina, "${id}_offer") {
-            talkTo(brina, "${id}_offer")
+    fun quest(id: String, type: QuestType = QuestType.SIDE, giver: NpcDefinition = brina): QuestDefinition =
+        questDefinition(id, type, giver) {
+            title = text(id)
+            description = text("Quest $id")
+            offerNode = "${id}_offer"
+            step(1, giver, "${id}_offer") {
+                talkTo(giver, "${id}_offer")
+            }
+            node("${id}_offer", giver) {
+                text = text("Hilfst du mir?")
+                answer(text("Ja"), text("Quest annehmen"), NodeAction.AcceptQuest(null), AnswerKind.ACCEPT)
+                answer(text("Nein"), text("Gespräch beenden"), NodeAction.Close, AnswerKind.LEAVE)
+            }
         }
-        node("${id}_offer", brina) {
-            text = text("Hilfst du mir?")
-            answer(text("Ja"), text("Quest annehmen"), NodeAction.AcceptQuest(null), AnswerKind.ACCEPT)
-            answer(text("Nein"), text("Gespräch beenden"), NodeAction.Close, AnswerKind.LEAVE)
-        }
-    }
 
     /**
      * Builds a pack that passes validation: rice, fish and sushi items, a sushi station with one recipe, one main
@@ -63,13 +66,13 @@ object TestPacks {
      *
      * @param dailyCount how many daily quests are drawn per period
      */
-    fun valid(dailyCount: Int = 2): ContentPack = pack(RecurringPools(dailyCount = dailyCount))
+    fun valid(dailyCount: Int = 2): TestPack = pack(RecurringPools(dailyCount = dailyCount))
 
     /**
      * Builds the [valid] pack plus a second item called `sushi` and a quest whose answer jumps to the missing node
      * `brina_nope`.
      */
-    fun broken(): ContentPack {
+    fun broken(): TestPack {
         val base = pack(RecurringPools())
         val brokenQuest = questDefinition("lost_net", QuestType.SIDE, brina) {
             title = text("Das verlorene Netz")
@@ -93,14 +96,28 @@ object TestPacks {
         )
     }
 
+    /**
+     * Builds an NPC with a neutral portrait.
+     *
+     * @param id the NPC ID
+     * @param visibleWhen requirement to see the NPC
+     */
+    fun npcNamed(id: String, visibleWhen: Requirement? = null): NpcDefinition = npc(id) {
+        name = text(id)
+        skin("texture", "signature")
+        portrait("neutral", Key.key("odyssey", "portrait_${id}_neutral"))
+        greeting = text("Hallo!")
+        this.visibleWhen = visibleWhen
+    }
+
     /** Builds an item definition whose display name is its ID. */
-    private fun item(id: String, material: Material): ItemDefinition = itemDefinition(id) {
+    fun item(id: String, material: Material): ItemDefinition = itemDefinition(id) {
         displayName = text(id)
         this.material = material
     }
 
     /** Builds the content of [valid] with the given pools. */
-    private fun pack(pools: RecurringPools): ContentPack {
+    private fun pack(pools: RecurringPools): TestPack {
         val rice = item("rice", Material.WHEAT)
         val fish = item("fish", Material.COD)
         val sushi = item("sushi", Material.COOKED_COD)

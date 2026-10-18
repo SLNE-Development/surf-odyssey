@@ -73,6 +73,75 @@ fun interface Requirement {
     fun isMet(context: RequirementContext): Boolean
 }
 
+/**
+ * Holds when the player has completed the quest with [questId].
+ *
+ * @property questId ID of the quest to check
+ */
+data class QuestCompletedRequirement(val questId: String) : Requirement {
+    /** Returns whether the quest state is [QuestStatus.COMPLETED]. */
+    override fun isMet(context: RequirementContext): Boolean =
+        context.progression.questState(questId)?.status == QuestStatus.COMPLETED
+}
+
+/**
+ * Holds when the quest with [questId] is active at step [step] or later, or completed.
+ *
+ * @property questId ID of the quest to check
+ * @property step the minimum step index
+ */
+data class QuestStepRequirement(val questId: String, val step: Int) : Requirement {
+    /** Returns whether the quest is completed or active at [step] or later. */
+    override fun isMet(context: RequirementContext): Boolean {
+        val state = context.progression.questState(questId)
+        return when (state?.status) {
+            QuestStatus.COMPLETED -> true
+            QuestStatus.ACTIVE -> state.step >= step
+            QuestStatus.ABANDONED, null -> false
+        }
+    }
+}
+
+/**
+ * Holds when the player has unlocked the recipe with [recipeId].
+ *
+ * @property recipeId ID of the recipe to check
+ */
+data class RecipeUnlockedRequirement(val recipeId: String) : Requirement {
+    /** Returns whether the recipe is unlocked. */
+    override fun isMet(context: RequirementContext): Boolean = context.progression.isRecipeUnlocked(recipeId)
+}
+
+/**
+ * Holds when every requirement in [requirements] holds; holds for an empty list.
+ *
+ * @property requirements the combined requirements
+ */
+data class AllOfRequirement(val requirements: List<Requirement>) : Requirement {
+    /** Returns whether all [requirements] hold. */
+    override fun isMet(context: RequirementContext): Boolean = requirements.all { it.isMet(context) }
+}
+
+/**
+ * Holds when at least one requirement in [requirements] holds; never holds for an empty list.
+ *
+ * @property requirements the combined requirements
+ */
+data class AnyOfRequirement(val requirements: List<Requirement>) : Requirement {
+    /** Returns whether any of [requirements] holds. */
+    override fun isMet(context: RequirementContext): Boolean = requirements.any { it.isMet(context) }
+}
+
+/**
+ * Holds when [requirement] does not hold.
+ *
+ * @property requirement the negated requirement
+ */
+data class NotRequirement(val requirement: Requirement) : Requirement {
+    /** Returns the negation of [requirement]. */
+    override fun isMet(context: RequirementContext): Boolean = !requirement.isMet(context)
+}
+
 /** Factories for the built-in [Requirement]s. */
 object Requirements {
     /** Requirement that always holds. */
@@ -83,9 +152,15 @@ object Requirements {
      *
      * @param quest the quest to check
      */
-    fun questCompleted(quest: QuestDefinition): Requirement = Requirement { context ->
-        context.progression.questState(quest.id)?.status == QuestStatus.COMPLETED
-    }
+    fun questCompleted(quest: QuestDefinition): Requirement = questCompleted(quest.id)
+
+    /**
+     * Holds when the player has completed the quest with [questId]. Usable before the quest is defined, for
+     * example in the visibility of the NPC that gives the quest.
+     *
+     * @param questId ID of the quest to check
+     */
+    fun questCompleted(questId: String): Requirement = QuestCompletedRequirement(questId)
 
     /**
      * Holds when [quest] is active at step [step] or later, or completed.
@@ -93,23 +168,29 @@ object Requirements {
      * @param quest the quest to check
      * @param step the minimum step index
      */
-    fun questStepReached(quest: QuestDefinition, step: Int): Requirement = Requirement { context ->
-        val state = context.progression.questState(quest.id)
-        when (state?.status) {
-            QuestStatus.COMPLETED -> true
-            QuestStatus.ACTIVE -> state.step >= step
-            QuestStatus.ABANDONED, null -> false
-        }
-    }
+    fun questStepReached(quest: QuestDefinition, step: Int): Requirement = questStepReached(quest.id, step)
+
+    /**
+     * Holds when the quest with [questId] is active at step [step] or later, or completed.
+     *
+     * @param questId ID of the quest to check
+     * @param step the minimum step index
+     */
+    fun questStepReached(questId: String, step: Int): Requirement = QuestStepRequirement(questId, step)
 
     /**
      * Holds when the player has unlocked [recipe].
      *
      * @param recipe the recipe to check
      */
-    fun recipeUnlocked(recipe: RecipeDefinition): Requirement = Requirement { context ->
-        context.progression.isRecipeUnlocked(recipe.id)
-    }
+    fun recipeUnlocked(recipe: RecipeDefinition): Requirement = recipeUnlocked(recipe.id)
+
+    /**
+     * Holds when the player has unlocked the recipe with [recipeId].
+     *
+     * @param recipeId ID of the recipe to check
+     */
+    fun recipeUnlocked(recipeId: String): Requirement = RecipeUnlockedRequirement(recipeId)
 
     /**
      * Holds when the player carries at least [amount] of [item].
@@ -137,25 +218,19 @@ object Requirements {
      *
      * @param requirements the combined requirements
      */
-    fun allOf(vararg requirements: Requirement): Requirement {
-        val all = requirements.toList()
-        return Requirement { context -> all.all { it.isMet(context) } }
-    }
+    fun allOf(vararg requirements: Requirement): Requirement = AllOfRequirement(requirements.toList())
 
     /**
      * Holds when at least one requirement in [requirements] holds; never holds for an empty list.
      *
      * @param requirements the combined requirements
      */
-    fun anyOf(vararg requirements: Requirement): Requirement {
-        val any = requirements.toList()
-        return Requirement { context -> any.any { it.isMet(context) } }
-    }
+    fun anyOf(vararg requirements: Requirement): Requirement = AnyOfRequirement(requirements.toList())
 
     /**
      * Holds when [requirement] does not hold.
      *
      * @param requirement the negated requirement
      */
-    fun not(requirement: Requirement): Requirement = Requirement { context -> !requirement.isMet(context) }
+    fun not(requirement: Requirement): Requirement = NotRequirement(requirement)
 }

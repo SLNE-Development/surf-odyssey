@@ -45,10 +45,21 @@ object QuestEngine {
      * An objective index and what it was built from.
      *
      * @property quests the quest states the index was built from
-     * @property day the daily period the index was built in; weekly and monthly periods change only with it
+     * @property dayStart the first epoch millisecond of the daily period the index was built in
+     * @property dayEnd the first epoch millisecond after that daily period; weekly and monthly periods change only
+     *           with the day
      * @property index the index
      */
-    private class CachedIndex(val quests: List<QuestStateDto>, val day: Long, val index: ObjectiveIndex)
+    private class CachedIndex(
+        val quests: List<QuestStateDto>,
+        val dayStart: Long,
+        val dayEnd: Long,
+        val index: ObjectiveIndex,
+    ) {
+        /** Returns whether the index was built from [quests] in the daily period that contains [millis]. */
+        fun isValid(quests: List<QuestStateDto>, millis: Long): Boolean =
+            this.quests === quests && millis >= dayStart && millis < dayEnd
+    }
 
     /**
      * Counts [event] for the matching objectives of the active quests of [player]. Does nothing outside of
@@ -279,13 +290,18 @@ object QuestEngine {
         runtime.store.setTrackedQuest(player.uniqueId, next?.id)
     }
 
-    /** Returns the objective index of [progression] at [now], building it when the active quests or the day changed. */
+    /**
+     * Returns the objective index of [progression] at [now], building it when the active quests or the day changed.
+     * A cached index is reused without computing the period of [now].
+     */
     private fun indexOf(progression: PlayerProgression, runtime: ProgressionRuntime, now: Instant): ObjectiveIndex {
         val state = progression.state
+        indices[progression]?.let { if (it.isValid(state.quests, now.toEpochMilli())) return it.index }
         val day = Periods.index(QuestType.DAILY, now)
-        indices[progression]?.let { if (it.quests === state.quests && it.day == day) return it.index }
+        val dayStart = Periods.endOf(QuestType.DAILY, day - 1).toEpochMilli()
+        val dayEnd = Periods.endOf(QuestType.DAILY, day).toEpochMilli()
         val index = ObjectiveIndex.build(QuestProgressView.activeQuests(runtime.registry, state, now))
-        indices[progression] = CachedIndex(state.quests, day, index)
+        indices[progression] = CachedIndex(state.quests, dayStart, dayEnd, index)
         return index
     }
 }

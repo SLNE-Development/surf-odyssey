@@ -52,26 +52,39 @@ class ObjectiveIndex private constructor(
      * Returns the objectives [event] advances, in the order of the quests and objectives given to [build].
      *
      * An objective with a region only matches events in that region. Crafts add the crafted amount, every other
-     * event adds one.
+     * event adds one. An event no objective is indexed for returns at once without allocating.
      *
      * @param event what the player did
      */
     fun matching(event: ProgressEvent): List<ObjectiveMatch> = when (event) {
-        is ProgressEvent.Harvested -> harvest[event.material].orEmpty()
-            .filter { inRegion((it.definition as Objective.Harvest).regionId, event.regionId) }
-            .map { ObjectiveMatch(it, 1) }
-        is ProgressEvent.Killed -> kill[event.entity].orEmpty()
-            .filter { inRegion((it.definition as Objective.Kill).regionId, event.regionId) }
-            .map { ObjectiveMatch(it, 1) }
-        is ProgressEvent.Crafted -> craft[event.recipeId].orEmpty().map { ObjectiveMatch(it, event.amount) }
-        is ProgressEvent.Fished -> fish
-            .filter {
-                val objective = it.definition as Objective.Fish
-                (objective.fishId == null || objective.fishId == event.fishId) &&
-                        (objective.material == null || objective.material == event.material) &&
-                        inRegion(objective.regionId, event.regionId)
+        is ProgressEvent.Harvested -> {
+            val candidates = harvest[event.material] ?: return emptyList()
+            candidates.mapNotNull { candidate ->
+                val objective = candidate.definition as Objective.Harvest
+                if (inRegion(objective.regionId, event.regionId)) ObjectiveMatch(candidate, 1) else null
             }
-            .map { ObjectiveMatch(it, 1) }
+        }
+        is ProgressEvent.Killed -> {
+            val candidates = kill[event.entity] ?: return emptyList()
+            candidates.mapNotNull { candidate ->
+                val objective = candidate.definition as Objective.Kill
+                if (inRegion(objective.regionId, event.regionId)) ObjectiveMatch(candidate, 1) else null
+            }
+        }
+        is ProgressEvent.Crafted -> {
+            val candidates = craft[event.recipeId] ?: return emptyList()
+            candidates.map { ObjectiveMatch(it, event.amount) }
+        }
+        is ProgressEvent.Fished -> {
+            if (fish.isEmpty()) return emptyList()
+            fish.mapNotNull { candidate ->
+                val objective = candidate.definition as Objective.Fish
+                val matches = (objective.fishId == null || objective.fishId == event.fishId) &&
+                    (objective.material == null || objective.material == event.material) &&
+                    inRegion(objective.regionId, event.regionId)
+                if (matches) ObjectiveMatch(candidate, 1) else null
+            }
+        }
     }
 
     /** Returns whether an event in [actual] counts for an objective limited to [required]. */

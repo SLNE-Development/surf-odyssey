@@ -24,6 +24,16 @@ class ObjectiveIndexTest {
     }
 
     @Test
+    fun `events without an indexed objective match nothing`() {
+        val index = indexOf(Objective.Harvest(Material.COAL_ORE, 3, null))
+
+        assertTrue(index.matching(ProgressEvent.Harvested(Material.IRON_ORE, null)).isEmpty())
+        assertTrue(index.matching(ProgressEvent.Killed(EntityType.WOLF, null)).isEmpty())
+        assertTrue(index.matching(ProgressEvent.Crafted("sushi", 1)).isEmpty())
+        assertTrue(index.matching(ProgressEvent.Fished("cod", Material.COD, null)).isEmpty())
+    }
+
+    @Test
     fun `a fish event only matches fish objectives in the same region`() {
         val index = indexOf(
             Objective.Fish(null, Material.COD, 3, "harbor"),

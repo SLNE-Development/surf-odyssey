@@ -71,8 +71,8 @@ class ToolWriteListener(private val plugin: Plugin) : Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     fun onQuit(event: PlayerQuitEvent) {
         val dropped = ToolUsage.flushOnQuit(event.player)
-        if (dropped.isNotEmpty()) {
-            plugin.logger.fine("Dropped buffered usage of ${event.player.uniqueId} for tools no longer held: $dropped")
+        dropped.forEach { tool ->
+            plugin.logger.warning("Dropped buffered usage of ${event.player.uniqueId} for tool $tool, which was no longer held")
         }
     }
 

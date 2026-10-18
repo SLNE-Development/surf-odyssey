@@ -21,6 +21,12 @@ object PlacementWriter {
     /** Returns the name of the constant that holds the definition with [id], which is [id] in upper case. */
     fun constantName(id: String): String = id.uppercase(Locale.ROOT)
 
+    /** Returns the name of the file that places the NPC with [id]. */
+    fun npcFileName(id: String): String = "npc_$id.kt"
+
+    /** Returns the name of the file that places the station with [id]. */
+    fun stationFileName(id: String): String = "station_$id.kt"
+
     /**
      * Returns the statement that places the NPC with [id], ended by a line break. Coordinates have one decimal and
      * the angles are whole degrees.
@@ -57,7 +63,7 @@ object PlacementWriter {
     private fun degrees(value: Float): Int = Math.round(value)
 }
 
-/** Saves a placement statement as `placements/<id>.kt`. */
+/** Saves a placement statement as a file in `placements/`. */
 object PlacementFile {
     /** The outcome of [save]. */
     sealed interface Result {
@@ -85,15 +91,15 @@ object PlacementFile {
     }
 
     /**
-     * Writes [text] to `placements/<id>.kt` inside [dataFolder], creating the folder if needed. An existing file is
+     * Writes [text] to `placements/<fileName>` inside [dataFolder], creating the folder if needed. An existing file is
      * never overwritten, and a file whose writing fails is deleted again.
      *
      * @param dataFolder the data folder of the plugin
-     * @param id the ID of the placed definition
+     * @param fileName the name of the file
      * @param text the file content
      */
-    fun save(dataFolder: Path, id: String, text: String): Result {
-        val file = dataFolder.resolve("placements").resolve("$id.kt")
+    fun save(dataFolder: Path, fileName: String, text: String): Result {
+        val file = dataFolder.resolve("placements").resolve(fileName)
         if (file.exists()) return Result.Exists(file)
         val writer = try {
             file.parent.createDirectories()

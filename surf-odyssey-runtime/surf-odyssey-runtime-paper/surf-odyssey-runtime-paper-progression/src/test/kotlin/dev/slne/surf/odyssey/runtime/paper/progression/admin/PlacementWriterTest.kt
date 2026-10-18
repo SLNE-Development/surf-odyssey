@@ -32,6 +32,12 @@ class PlacementWriterTest {
     }
 
     @Test
+    fun `npc and station placements of one id use different files`() {
+        assertEquals("npc_smith.kt", PlacementWriter.npcFileName("smith"))
+        assertEquals("station_smith.kt", PlacementWriter.stationFileName("smith"))
+    }
+
+    @Test
     fun `an id outside the allowed characters is rejected`() {
         assertEquals(false, PlacementWriter.isValidId("Old-Smith"))
         assertEquals(true, PlacementWriter.isValidId("old_smith"))
@@ -40,11 +46,11 @@ class PlacementWriterTest {
     @Test
     fun `saving writes the file and refuses to overwrite it`() {
         val folder = Files.createTempDirectory("placements")
-        val first = PlacementFile.save(folder, "smith", "npc(Npcs.SMITH, at = SpawnPoint(1.0, 2.0, 3.0, 4f, 5f))\n")
+        val first = PlacementFile.save(folder, PlacementWriter.npcFileName("smith"), "npc(Npcs.SMITH, at = SpawnPoint(1.0, 2.0, 3.0, 4f, 5f))\n")
         val saved = assertIs<PlacementFile.Result.Saved>(first)
         assertEquals("npc(Npcs.SMITH, at = SpawnPoint(1.0, 2.0, 3.0, 4f, 5f))\n", saved.file.readText())
-        assertEquals(folder.resolve("placements").resolve("smith.kt"), saved.file)
-        assertIs<PlacementFile.Result.Exists>(PlacementFile.save(folder, "smith", "other"))
+        assertEquals(folder.resolve("placements").resolve("npc_smith.kt"), saved.file)
+        assertIs<PlacementFile.Result.Exists>(PlacementFile.save(folder, PlacementWriter.npcFileName("smith"), "other"))
         assertEquals("npc(Npcs.SMITH, at = SpawnPoint(1.0, 2.0, 3.0, 4f, 5f))\n", saved.file.readText())
     }
 }

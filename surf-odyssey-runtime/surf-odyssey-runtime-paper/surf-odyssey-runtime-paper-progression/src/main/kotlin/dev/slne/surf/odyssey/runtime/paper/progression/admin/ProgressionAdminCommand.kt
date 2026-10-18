@@ -51,7 +51,7 @@ private const val TARGET_RANGE = 6
  * - `tool give <player> <tool> [level]` gives a new tool, `tool setlevel <level>` sets the level of the tool in the
  *   main hand and `tool lookup <uuid>` shows the registration of a tool.
  * - `place npc <npc>` and `place station <station>` write the statement that places the definition at the position
- *   of the admin, or at the block the admin looks at, to `placements/<id>.kt` in the data folder of the plugin.
+ *   of the admin, or at the block the admin looks at, to `placements/npc_<id>.kt` or `placements/station_<id>.kt` in the data folder of the plugin.
  *
  * Only `quest info` exists in [ProgressionMode.VIEW_ONLY]. Every subcommand needs [ProgressionPermissions.ADMIN].
  *
@@ -383,19 +383,19 @@ private fun toolLookup(sender: CommandSender, tool: UUID) {
 private fun placeNpc(player: Player, id: String) {
     if (Progression.runtime.registry.npc(id) == null) return refuse(player, AdminMessages.unknownNpc(id))
     val at = player.location
-    save(player, id, PlacementWriter.npc(id, at.x, at.y, at.z, at.yaw, at.pitch))
+    save(player, PlacementWriter.npcFileName(id), PlacementWriter.npc(id, at.x, at.y, at.z, at.yaw, at.pitch))
 }
 
 /** Writes the statement that places the station named by [id] on the block [player] looks at. */
 private fun placeStation(player: Player, id: String) {
     if (Progression.runtime.registry.station(id) == null) return refuse(player, AdminMessages.unknownStation(id))
     val block = player.getTargetBlockExact(TARGET_RANGE) ?: return refuse(player, AdminMessages.noBlockTargeted())
-    save(player, id, PlacementWriter.station(id, block.x, block.y, block.z))
+    save(player, PlacementWriter.stationFileName(id), PlacementWriter.station(id, block.x, block.y, block.z))
 }
 
-/** Saves [text] as the placement file of [id] and tells [player] the path or the reason it failed. */
-private fun save(player: Player, id: String, text: String) {
-    when (val result = PlacementFile.save(ProgressionModule.plugin.dataFolder.toPath(), id, text)) {
+/** Saves [text] as the placement file [fileName] and tells [player] the path or the reason it failed. */
+private fun save(player: Player, fileName: String, text: String) {
+    when (val result = PlacementFile.save(ProgressionModule.plugin.dataFolder.toPath(), fileName, text)) {
         is PlacementFile.Result.Saved -> reply(player, AdminMessages.saved(result.file.toAbsolutePath()))
         is PlacementFile.Result.Exists ->
             refuse(player, AdminMessages.fileExists(result.file.toAbsolutePath()))

@@ -232,10 +232,9 @@ class ProgressionStore(
         }
     }
 
-    /** Logs a failed call to the progression service and marks it unavailable. */
+    /** Marks the progression service unavailable and logs the failed call once per outage. */
     private fun fail(action: String, error: Exception) {
-        Progression.markUnavailable()
-        plugin.logger.log(Level.WARNING, "Could not $action", error)
+        Progression.reportFailure(plugin.logger, action, error)
     }
 
     /** Returns the delta buffer of [player], creating it if needed. */

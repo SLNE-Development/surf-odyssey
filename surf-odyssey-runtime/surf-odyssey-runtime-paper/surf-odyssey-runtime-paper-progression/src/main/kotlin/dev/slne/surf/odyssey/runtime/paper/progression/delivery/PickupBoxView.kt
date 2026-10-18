@@ -34,7 +34,6 @@ import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import java.util.logging.Level
 
 /**
  * The pickup box: every unclaimed delivery of the viewer, oldest first. Clicking a delivery claims it and puts its
@@ -91,8 +90,7 @@ private suspend fun loadDeliveries(player: Player): List<DeliveryDto> = try {
 } catch (e: CancellationException) {
     throw e
 } catch (e: Exception) {
-    Progression.markUnavailable()
-    ProgressionModule.plugin.logger.log(Level.WARNING, "Could not load the deliveries of ${player.uniqueId}", e)
+    Progression.reportFailure(ProgressionModule.plugin.logger, "load the deliveries of ${player.uniqueId}", e)
     emptyList()
 }
 

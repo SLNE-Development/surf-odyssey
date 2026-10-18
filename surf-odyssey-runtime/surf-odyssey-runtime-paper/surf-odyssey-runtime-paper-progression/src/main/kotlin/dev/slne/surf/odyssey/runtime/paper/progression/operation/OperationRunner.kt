@@ -41,10 +41,9 @@ class OperationRunner(
         /** Returns [Progression.isAvailable]. */
         override fun isAvailable(): Boolean = Progression.isAvailable
 
-        /** Marks the service unavailable and logs the failure. */
+        /** Marks the service unavailable and logs the failure once per outage. */
         override fun onServiceFailure(action: String, error: Throwable) {
-            Progression.markUnavailable()
-            plugin.logger.log(Level.WARNING, "Could not $action", error)
+            Progression.reportFailure(plugin.logger, action, error)
         }
 
         /** Applies the stored changes to the cached progression. */

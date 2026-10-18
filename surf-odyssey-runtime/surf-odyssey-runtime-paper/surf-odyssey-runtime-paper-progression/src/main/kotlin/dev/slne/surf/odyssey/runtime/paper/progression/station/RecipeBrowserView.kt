@@ -32,7 +32,8 @@ import org.bukkit.inventory.ItemStack
 /**
  * The recipe browser of one station kind, passed as the initial data: every recipe of the station in registry order.
  * Unlocked recipes show the result item with ingredients and crafting time, locked recipes a gray dye named `???`.
- * The back button opens the station menu.
+ * Clicking an unlocked recipe crafts it once, shift-clicking an instant recipe as often as possible; the browser is
+ * opened again afterwards. The back button opens the station menu.
  */
 val recipeBrowserView: AbstractPaginatedSurfView = paginatedSurfView("Rezepte") {
     settings {
@@ -49,6 +50,12 @@ val recipeBrowserView: AbstractPaginatedSurfView = paginatedSurfView("Rezepte") 
         itemFactory { recipe ->
             onItemRender {
                 item = RecipeBrowserView.itemOf(RecipeBrowserView.iconFor(player, recipe), recipe)
+            }
+            onItemClick {
+                playGeneralClickSound()
+                Crafting.craft(player, recipe, everything = isShiftClick) { crafter ->
+                    RecipeBrowserView.open(crafter, recipe.station)
+                }
             }
         }
     }

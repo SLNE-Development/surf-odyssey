@@ -5,6 +5,7 @@ import dev.slne.surf.api.paper.builder.buildItem
 import dev.slne.surf.api.paper.builder.buildLore
 import dev.slne.surf.api.paper.builder.displayName
 import dev.slne.surf.api.paper.inventory.framework.dsl.onItemClick
+import dev.slne.surf.api.paper.inventory.framework.dsl.onItemRender
 import dev.slne.surf.api.paper.inventory.framework.dsl.openForPlayer
 import dev.slne.surf.api.paper.inventory.framework.dsl.slot
 import dev.slne.surf.api.paper.inventory.framework.dsl.withItem
@@ -31,8 +32,10 @@ import org.bukkit.Material
 import org.bukkit.entity.Player
 
 /**
- * The menu of one station kind, passed as the initial data and named after it. The button in the bottom row opens
- * the recipe browser of the station.
+ * The menu of one station kind, passed as the initial data and named after it. The first two rows show the open jobs
+ * of the viewer at stations of this kind, the soonest ready first: clicking a finished job collects it and opens the
+ * menu again, clicking a running job refreshes the remaining times. The button in the bottom row opens the recipe
+ * browser of the station.
  */
 val stationView: AbstractSurfView = surfView("Station") {
     val stationState = initialState<StationDefinition>()
@@ -54,6 +57,23 @@ val stationView: AbstractSurfView = surfView("Station") {
     onFirstRender {
         val station = stationState[this]
 
+        for (index in 0 until JOB_SLOTS) {
+            slot(index) {
+                onItemRender {
+                    item = StationJobs.jobsAt(player, station).getOrNull(index)?.let(StationJobs::itemOf)
+                }
+                onItemClick {
+                    val open = StationJobs.jobsAt(player, station).getOrNull(index) ?: return@onItemClick
+                    playGeneralClickSound()
+                    if (CraftPlanner.isReady(open.job, Progression.runtime.clock.instant())) {
+                        StationJobs.collect(player, open) { collector -> StationView.open(collector, station) }
+                    } else {
+                        update()
+                    }
+                }
+            }
+        }
+
         slot(3, 1) {
             withItem(closeItem)
             onItemClick {
@@ -71,6 +91,9 @@ val stationView: AbstractSurfView = surfView("Station") {
         }
     }
 }
+
+/** How many open jobs the station menu shows: the slots of the first two rows. */
+private const val JOB_SLOTS = 18
 
 /** The button that opens the recipe browser. */
 private val recipesItem = buildItem(Material.BOOK) {

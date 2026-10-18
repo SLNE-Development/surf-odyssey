@@ -70,4 +70,29 @@ object ProgressionMessages {
         success("Quest abgeschlossen: ")
         append(title)
     }
+
+    /** Tells [player] that [amount] items named [name] were crafted. */
+    fun crafted(player: Player, amount: Int, name: Component) = player.sendText {
+        appendSuccessPrefix()
+        success("Hergestellt: ")
+        variableValue("$amount× ")
+        append(name)
+    }
+
+    /** Tells [player] that a station job for [name] started and is ready after [duration], written for players. */
+    fun jobStarted(player: Player, name: Component, duration: String) = player.sendText {
+        appendSuccessPrefix()
+        success("Auftrag gestartet: ")
+        append(name)
+        success(" (fertig in ")
+        variableValue(duration)
+        success(")")
+    }
+
+    /** Tells [player] that the station job for [name] was collected. */
+    fun jobCollected(player: Player, name: Component) = player.sendText {
+        appendSuccessPrefix()
+        success("Abgeholt: ")
+        append(name)
+    }
 }

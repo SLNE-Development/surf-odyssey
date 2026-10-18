@@ -27,11 +27,16 @@ import dev.slne.surf.odyssey.runtime.paper.progression.ItemCodec
 import dev.slne.surf.odyssey.runtime.paper.progression.Progression
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMessages
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
+import dev.slne.surf.odyssey.runtime.paper.progression.StackCodec
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.util.*
+import java.util.logging.Level
 
 /**
  * The deliveries a pickup box is opened with.
@@ -110,9 +115,33 @@ private suspend fun loadDeliveries(player: Player): List<DeliveryDto>? = try {
     null
 }
 
-/** Returns the item of [delivery] with a lore line that explains how to pick it up. */
+/** Decodes the items of the deliveries the pickup box shows. */
+internal object DeliveryDisplay {
+    /**
+     * Returns the item of [delivery] decoded with [codec], or `null` if it cannot be decoded, in which case
+     * [onFailure] is called with the ID of the delivery and the failure.
+     *
+     * @param codec decodes the item
+     * @param delivery the delivery to show
+     * @param onFailure called when the item cannot be decoded
+     */
+    fun decodeOrNull(codec: StackCodec, delivery: DeliveryDto, onFailure: (UUID, Exception) -> Unit): ItemStack? =
+        try {
+            codec.decode(delivery.itemBase64)
+        } catch (e: Exception) {
+            onFailure(delivery.id, e)
+            null
+        }
+}
+
+/**
+ * Returns the item of [delivery] with a lore line that explains how to pick it up, or a barrier named "Beschädigte
+ * Lieferung" if the item cannot be decoded, which is logged with the ID of the delivery.
+ */
 private fun displayItem(delivery: DeliveryDto): ItemStack {
-    val item = ItemCodec.decode(delivery.itemBase64)
+    val item = DeliveryDisplay.decodeOrNull(ItemCodec, delivery) { id, e ->
+        ProgressionModule.plugin.logger.log(Level.WARNING, "Could not decode the item of delivery $id", e)
+    } ?: return brokenDeliveryItem()
     item.editMeta { meta ->
         val lore = meta.lore().orEmpty() + Component.empty() + buildText { spacer("Klicke zum Abholen".toSmallCaps()) }
         meta.lore(lore)
@@ -151,4 +180,9 @@ private fun claimFromBox(player: Player, delivery: DeliveryDto) {
             if (player.isOnline) openPickupBox(player)
         }
     }
+}
+
+/** Returns the placeholder shown for a delivery whose item cannot be decoded. */
+private fun brokenDeliveryItem(): ItemStack = ItemStack(Material.BARRIER).apply {
+    editMeta { it.displayName(Component.text("Beschädigte Lieferung").decoration(TextDecoration.ITALIC, false)) }
 }

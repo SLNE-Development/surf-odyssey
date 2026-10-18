@@ -4,6 +4,7 @@ import dev.slne.surf.odyssey.core.common.progression.DeliveryDto
 import dev.slne.surf.odyssey.core.common.progression.OperationResultDto
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.ClaimResult
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredient
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemReward
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -12,6 +13,8 @@ import kotlinx.coroutines.test.runTest
 import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 /** Tests for claiming single deliveries from the pickup box. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -50,5 +53,30 @@ class ClaimTest {
 
         assertEquals(ClaimResult.BROKEN, runner.claim(FakeInventory(emptyMap()), broken))
         assertEquals(listOf(broken.id), runner.brokenDeliveries)
+    }
+
+    @Test
+    fun `a claim the service does not answer in time is not claimed`() = runTest {
+        val runner = TestRunner(
+            commit = { OperationResultDto.Applied(emptyList()) }, claimHangs = true, commitTimeout = 1.seconds,
+        )
+
+        assertEquals(ClaimResult.FAILED, runner.claim(FakeInventory(emptyMap()), delivery()))
+        assertTrue(runner.serviceFailures > 0)
+    }
+
+    @Test
+    fun `rewards whose claim the service does not answer in time stay in the pickup box`() = runTest {
+        val inv = FakeInventory(emptyMap())
+        val runner = TestRunner(
+            commit = { OperationResultDto.Applied(listOf(UUID.randomUUID())) }, claimHangs = true, commitTimeout = 1.seconds,
+        )
+
+        val outcome = runner.run(inv, OperationPlan(emptyList(), emptyList(), listOf(ItemReward(TestItems.ink, 3)), "t"))
+
+        assertEquals(OperationOutcome.Success, outcome)
+        assertEquals(0, inv.count(TestItems.ink))
+        assertEquals(1, runner.unclaimedDeliveries)
+        assertEquals(1, runner.pickupNotices)
     }
 }

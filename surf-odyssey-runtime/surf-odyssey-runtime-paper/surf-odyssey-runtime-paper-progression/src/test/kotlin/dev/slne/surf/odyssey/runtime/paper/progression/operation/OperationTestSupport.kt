@@ -9,6 +9,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ItemRef
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ref
 import dev.slne.surf.odyssey.runtime.paper.progression.StackCodec
 import io.mockk.mockk
+import kotlinx.coroutines.awaitCancellation
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import java.util.*
@@ -102,6 +103,7 @@ class FakeInventory(initial: Map<ItemRef, Int>, private var freeSlots: Int = 36)
  * @param corruptFirstClaim whether the first claimed delivery hands out an item that cannot be decoded
  * @param commitTimeout how long a commit may take
  * @param available whether the service is reported as reachable before an operation starts
+ * @param claimHangs whether claiming a delivery never answers
  */
 class TestRunner(
     private val commit: suspend (OperationDto) -> OperationResultDto,
@@ -109,6 +111,7 @@ class TestRunner(
     private var corruptFirstClaim: Boolean = false,
     commitTimeout: Duration = 10.seconds,
     private val available: Boolean = true,
+    private val claimHangs: Boolean = false,
 ) {
     /** The player every operation runs for. */
     val player: UUID = UUID.randomUUID()
@@ -184,11 +187,12 @@ class TestRunner(
         }
 
         /**
-         * Hands out the item of an unclaimed delivery once; throws when [claimFails] and returns an undecodable
-         * item for the first claim when [corruptFirstClaim] is set.
+         * Hands out the item of an unclaimed delivery once; throws when [claimFails], never answers when
+         * [claimHangs] and returns an undecodable item for the first claim when [corruptFirstClaim] is set.
          */
         override suspend fun claim(player: UUID, deliveryId: UUID): String? {
             if (claimFails) error("claim failed")
+            if (claimHangs) awaitCancellation()
             if (deliveries[deliveryId] != false) return null
             deliveries[deliveryId] = true
             if (corruptFirstClaim) {

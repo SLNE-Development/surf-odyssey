@@ -41,7 +41,7 @@ enum class ClaimResult {
  * @param backend the progression service
  * @param codec encodes and decodes the items of deliveries
  * @param hooks the server the deliveries are handled on
- * @param commitTimeout how long a commit may take before it counts as failed
+ * @param commitTimeout how long a commit or a claim may take before it counts as failed
  */
 class Deliveries(
     private val backend: OperationBackend,
@@ -77,7 +77,7 @@ class Deliveries(
 
     /**
      * Claims each delivery and gives its item to [inventory]. Items that do not fit are put back into the pickup box;
-     * deliveries that cannot be claimed because the service fails stay there. A claimed item that cannot be decoded
+     * deliveries that cannot be claimed because the service fails or does not answer in time stay there. A claimed item that cannot be decoded
      * is reported and skipped. The player is told once if anything
      * is left in the pickup box.
      *
@@ -90,15 +90,12 @@ class Deliveries(
         var leftInBox = false
         val overflow = mutableListOf<ItemStack>()
         for (id in ids) {
-            val encoded = try {
-                backend.claim(player, id)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                hooks.onServiceFailure("claim delivery $id", e)
+            val claim = claimAtService(player, id)
+            if (claim is ServiceClaim.Failed) {
                 leftInBox = true
                 break
-            } ?: continue
+            }
+            val encoded = (claim as ServiceClaim.Answered).encoded ?: continue
             val stack = decode(player, id, encoded) ?: continue
             overflow += inventory.give(listOf(stack))
         }
@@ -108,7 +105,8 @@ class Deliveries(
 
     /**
      * Claims one delivery from the pickup box and gives its item to [inventory]. If the item does not fit after
-     * all, it is put back into the pickup box.
+     * all, it is put back into the pickup box. A claim the service does not answer in time ends with
+     * [ClaimResult.FAILED] and leaves the delivery in the pickup box.
      *
      * @param player the owner of the delivery
      * @param inventory the inventory the item goes to
@@ -116,18 +114,30 @@ class Deliveries(
      * @param source the source stored if the item is put back into the pickup box
      */
     suspend fun claim(player: UUID, inventory: EscrowInventory, deliveryId: UUID, source: String): ClaimResult {
-        val encoded = try {
-            backend.claim(player, deliveryId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            hooks.onServiceFailure("claim delivery $deliveryId", e)
-            return ClaimResult.FAILED
-        } ?: return ClaimResult.GONE
+        val claim = claimAtService(player, deliveryId) as? ServiceClaim.Answered ?: return ClaimResult.FAILED
+        val encoded = claim.encoded ?: return ClaimResult.GONE
         val stack = decode(player, deliveryId, encoded) ?: return ClaimResult.BROKEN
         val overflow = inventory.give(listOf(stack))
         if (overflow.isNotEmpty() && stash(player, overflow, source)) hooks.onLeftInPickupBox(player)
         return ClaimResult.CLAIMED
+    }
+
+    /**
+     * Claims the delivery [deliveryId] of [player] at the service within the commit timeout, reporting failures and
+     * timeouts to [OperationHooks.onServiceFailure].
+     *
+     * @return the answer of the service, or [ServiceClaim.Failed] if the claim failed or timed out
+     */
+    private suspend fun claimAtService(player: UUID, deliveryId: UUID): ServiceClaim = try {
+        ServiceClaim.Answered(withTimeout(commitTimeout) { backend.claim(player, deliveryId) })
+    } catch (e: TimeoutCancellationException) {
+        hooks.onServiceFailure("claim delivery $deliveryId", e)
+        ServiceClaim.Failed
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        hooks.onServiceFailure("claim delivery $deliveryId", e)
+        ServiceClaim.Failed
     }
 
     /**
@@ -160,4 +170,17 @@ class Deliveries(
         if (!stored) hooks.dropAtFeet(player, items)
         return stored
     }
+}
+
+/** How the service answered a claim of one delivery. */
+private sealed interface ServiceClaim {
+    /**
+     * The service answered.
+     *
+     * @property encoded the encoded item for the winning claim, or `null` if the delivery is gone
+     */
+    data class Answered(val encoded: String?) : ServiceClaim
+
+    /** The claim failed or timed out, so the delivery stays in the pickup box. */
+    data object Failed : ServiceClaim
 }

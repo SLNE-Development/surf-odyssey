@@ -5,7 +5,6 @@ import dev.slne.surf.odyssey.runtime.paper.common.listener.*
 
 object OdysseyPaperListenerManager {
     fun registerAllListeners() {
-        SkillConnectionListener.register()
         PlayerConnectionListener.register()
         TradeListener.register()
     }

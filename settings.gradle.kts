@@ -18,7 +18,11 @@ include("surf-odyssey-core:surf-odyssey-core-client")
 
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-common")
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home")
-include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub")
+include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-pack")
+include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-common")
+include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-lobby")
+include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-north")
+include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-south")
 
 include("surf-odyssey-runtime:surf-odyssey-runtime-velocity")
 include("surf-odyssey-runtime:surf-odyssey-runtime-microservice")

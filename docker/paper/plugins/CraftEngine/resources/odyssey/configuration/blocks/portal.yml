@@ -1,0 +1,33 @@
+items:
+  odyssey:portal:
+    texture: odyssey:block/portal
+    behavior:
+      type: block_item
+      block: odyssey:portal
+blocks:
+  odyssey:portal:
+    loot:
+      pools:
+        - rolls: 1
+          conditions:
+            - type: survives_explosion
+          entries:
+            - type: item
+              item: odyssey:portal
+    settings:
+      hardness: -1
+      resistance: 3600000
+      is_suffocating: false
+      replaceable: false
+      is_view_blocking: false
+      is_redstone_conductor: false
+      can_occlude: false
+      sounds:
+        break: minecraft:block.stone.break
+        step: minecraft:block.stone.step
+        place: minecraft:block.stone.place
+        hit: minecraft:block.stone.hit
+        fall: minecraft:block.stone.fall
+    state:
+      auto_state: sapling
+      texture: odyssey:block/portal

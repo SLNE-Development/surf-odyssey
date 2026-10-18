@@ -1,3 +1,5 @@
+import dev.slne.surf.odyssey.gradle.devstack.DevelopmentStackExtension
+
 buildscript {
     repositories {
         gradlePluginPortal()
@@ -20,12 +22,20 @@ allprojects {
 
 val paperServerPlugins = listOf(
     "surf-api-paper-server", "surf-rabbitmq-paper", "surf-redis-paper", "surf-core-paper",
-    "CommandAPI", "LuckPerms", "packetevents"
+    "CommandAPI", "LuckPerms", "packetevents", "HuskSync"
 )
+val hubServerPlugins = paperServerPlugins + listOf("craft-engine", "MiniPlaceholders")
+
+/** Adds the dev server [name] running the hub world module [world]. */
+fun DevelopmentStackExtension.hubServer(name: String, world: String) = server(name) {
+    project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-$world"
+    directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-$world/run/$name")
+    requiredPlugins = hubServerPlugins
+}
 
 developmentStack {
-    // LuckPerms of the proxy and the servers, see compose.yaml
-    schemas = listOf("luckperms")
+    // LuckPerms of the proxy and the servers and HuskSync of the servers, see compose.yaml
+    schemas = listOf("luckperms", "husksync")
 
     server("proxy") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-velocity"
@@ -35,17 +45,20 @@ developmentStack {
             "CommandAPI", "LuckPerms", "packetevents"
         )
     }
-    server("hub") {
-        project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub"
-        directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run")
-        // The skill world is loaded through the polar-paper microservice
-        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "Nexo")
-    }
+    hubServer("hub-lobby-01", "lobby")
+    hubServer("hub-north-01", "north")
+    hubServer("hub-north-02", "north")
+    hubServer("hub-south-01", "south")
     server("home") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home"
         directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run")
-        // Player worlds are stored through the polar-paper microservice
-        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper")
+        // Player worlds are stored through the polar-paper microservice, CraftEngine sends the resource pack
+        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "craft-engine")
+    }
+    server("pack-01") {
+        project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-pack"
+        directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-pack/run/pack-01")
+        requiredPlugins = listOf("surf-api-paper-server", "surf-rabbitmq-paper", "surf-redis-paper", "surf-core-paper", "CommandAPI", "LuckPerms", "packetevents", "craft-engine")
     }
 
     microservice("odyssey") {

@@ -12,8 +12,6 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitTask
 import java.time.Clock
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 
 /**
@@ -23,8 +21,8 @@ import java.util.logging.Level
  * after the region's grace period and then at its interval. The darkness ends at the first check after the player
  * leaves the region, meets its gate or becomes exempt.
  *
- * A player whose progression has loaded since joining is sent to the lobby once if the world gate of the hub locks
- * them out.
+ * A player whose progression has loaded since joining is sent to the lobby if the world gate of the hub locks them
+ * out. A failed transfer is tried again every five seconds until it succeeds or the player meets the gate.
  */
 object GateEnforcer {
     /** The server category of the lobby. */
@@ -33,8 +31,8 @@ object GateEnforcer {
     /** The locked region each player is in and whether this enforcer darkened them. */
     private val tracker = GateTracker()
 
-    /** The players whose world gate was checked since they joined. */
-    private val worldChecked = ConcurrentHashMap.newKeySet<UUID>()
+    /** The shortest time between two transfers of a player to the lobby, in milliseconds. */
+    private const val WORLD_RETRY_MILLIS = 5_000L
 
     /** The running check task. */
     private var task: BukkitTask? = null
@@ -61,7 +59,6 @@ object GateEnforcer {
         task?.cancel()
         task = null
         tracker.clear().forEach { id -> Bukkit.getPlayer(id)?.let(::removeGateDarkness) }
-        worldChecked.clear()
     }
 
     /**
@@ -70,13 +67,12 @@ object GateEnforcer {
      * @param player the leaving player
      */
     fun forget(player: Player) {
-        release(player)
-        worldChecked.remove(player.uniqueId)
+        if (tracker.forget(player.uniqueId)) removeGateDarkness(player)
     }
 
     /** Applies the region gate and the world gate to [player] at [now]. */
     private fun check(hub: HubPlugin, player: Player, now: Long) {
-        checkWorldGate(hub, player)
+        checkWorldGate(hub, player, now)
         val region = PlayerRegionTracker.regionOf(player)
         if (player.isDead || player.world != hub.hubWorld || region == null || !GateAccess.isLockedOut(player, region)) {
             release(player)
@@ -116,18 +112,33 @@ object GateEnforcer {
         GatePlan.isGateDarkness(effect.duration, effect.hasParticles(), effect.hasIcon())
 
     /**
-     * Checks the world gate of [hub] once per join, as soon as the progression of [player] is loaded, and sends them
-     * to the lobby if it locks them out. Exempt players and worlds without gate pass at once.
+     * Checks the world gate of [hub] for [player] at [now] until the check is finished for this join.
+     *
+     * Exempt players and worlds without gate pass at once. Otherwise the check waits for the progression of the player
+     * to load; a player who meets the gate passes, a player locked out is sent to the lobby. The check finishes only
+     * when the transfer succeeds, and a failed transfer is retried after [WORLD_RETRY_MILLIS].
      */
-    private fun checkWorldGate(hub: HubPlugin, player: Player) {
-        if (player.uniqueId in worldChecked) return
+    private fun checkWorldGate(hub: HubPlugin, player: Player, now: Long) {
+        val id = player.uniqueId
+        if (tracker.isWorldGatePassed(id)) return
         val gate = hub.worldGate
         if (gate == null || GateAccess.isExempt(player)) {
-            worldChecked += player.uniqueId
+            tracker.markWorldGatePassed(id)
             return
         }
-        if (Progression.runtimeOrNull?.store?.get(player.uniqueId) == null) return
-        worldChecked += player.uniqueId
-        if (GateAccess.isLockedOut(player, gate)) hub.launch { HubTravel.send(player, LOBBY_CATEGORY) }
+        if (Progression.runtimeOrNull?.store?.get(id) == null) return
+        if (!GateAccess.isLockedOut(player, gate)) {
+            tracker.markWorldGatePassed(id)
+            return
+        }
+        if (!tracker.tryStartWorldTransfer(id, now, WORLD_RETRY_MILLIS)) return
+        hub.launch {
+            var sent = false
+            try {
+                sent = HubTravel.send(player, LOBBY_CATEGORY)
+            } finally {
+                tracker.finishWorldTransfer(id, sent)
+            }
+        }
     }
 }

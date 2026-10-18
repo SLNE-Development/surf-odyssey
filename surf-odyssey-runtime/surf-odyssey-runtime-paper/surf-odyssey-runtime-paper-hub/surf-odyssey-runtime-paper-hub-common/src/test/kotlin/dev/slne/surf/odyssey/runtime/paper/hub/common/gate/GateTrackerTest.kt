@@ -55,4 +55,47 @@ class GateTrackerTest {
         assertEquals(setOf(player, other), tracker.clear())
         assertFalse(tracker.release(player))
     }
+
+    @Test
+    fun `a world transfer starts once and waits while it runs`() {
+        val tracker = GateTracker()
+        assertTrue(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        assertFalse(tracker.tryStartWorldTransfer(player, 10_000, 5_000))
+    }
+
+    @Test
+    fun `a failed world transfer is retried after the retry interval`() {
+        val tracker = GateTracker()
+        tracker.tryStartWorldTransfer(player, 0, 5_000)
+        tracker.finishWorldTransfer(player, sent = false)
+        assertFalse(tracker.isWorldGatePassed(player))
+        assertFalse(tracker.tryStartWorldTransfer(player, 4_999, 5_000))
+        assertTrue(tracker.tryStartWorldTransfer(player, 5_000, 5_000))
+    }
+
+    @Test
+    fun `a successful world transfer ends the world gate check`() {
+        val tracker = GateTracker()
+        tracker.tryStartWorldTransfer(player, 0, 5_000)
+        tracker.finishWorldTransfer(player, sent = true)
+        assertTrue(tracker.isWorldGatePassed(player))
+    }
+
+    @Test
+    fun `forgetting a player resets the world gate check`() {
+        val tracker = GateTracker()
+        tracker.markWorldGatePassed(player)
+        tracker.inLockedRegion(player, "mine", damage, 0)
+        assertTrue(tracker.forget(player))
+        assertFalse(tracker.isWorldGatePassed(player))
+        assertTrue(tracker.tryStartWorldTransfer(player, 0, 5_000))
+    }
+
+    @Test
+    fun `releasing a player keeps the world gate check`() {
+        val tracker = GateTracker()
+        tracker.markWorldGatePassed(player)
+        tracker.release(player)
+        assertTrue(tracker.isWorldGatePassed(player))
+    }
 }

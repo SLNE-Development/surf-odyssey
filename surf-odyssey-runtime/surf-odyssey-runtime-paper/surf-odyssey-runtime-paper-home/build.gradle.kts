@@ -21,4 +21,5 @@ surfPaperPluginApi {
 
 dependencies {
     api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperCommon)
+    implementation(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperContent)
 }

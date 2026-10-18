@@ -11,6 +11,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateEnforcer
 import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobKillListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobRegionLoot
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.HubProgression
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.HubProtectionListener
@@ -151,7 +152,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         steps.run { RegionTicker.stop() }
         steps.run { GateEnforcer.stop() }
         steps.run {
-            if (this::regionIndex.isInitialized) regionIndex.mobSpawnRegions.forEach { it.removeMobs() }
+            if (this::regionIndex.isInitialized) regionIndex.regionsOfType<MobSpawnRegion>().forEach { it.removeMobs() }
         }
         steps.run { ReconnectService.stop(this) }
         steps.run { HubRedis.disconnect() }

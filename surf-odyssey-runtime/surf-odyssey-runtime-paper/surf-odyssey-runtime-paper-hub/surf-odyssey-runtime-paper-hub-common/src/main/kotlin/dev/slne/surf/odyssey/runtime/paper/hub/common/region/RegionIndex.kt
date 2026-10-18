@@ -1,7 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
-import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Bounds
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Finds the region that covers a block.
@@ -14,8 +14,8 @@ class RegionIndex(regions: List<Region>) {
     val regions: List<Region> = regions.toList()
     private val byId = this.regions.associateBy { it.id }
 
-    /** The mob spawn regions among [regions], in declaration order. */
-    val mobSpawnRegions: List<MobSpawnRegion> = this.regions.filterIsInstance<MobSpawnRegion>()
+    /** The regions of each type asked for so far, in declaration order. */
+    private val byType = ConcurrentHashMap<Class<*>, List<Region>>()
 
     init {
         val duplicates = this.regions.groupBy { it.id }.filterValues { it.size > 1 }.keys
@@ -29,6 +29,19 @@ class RegionIndex(regions: List<Region>) {
 
     /** Returns the region with [id], or `null`. */
     fun byId(id: String): Region? = byId[id]
+
+    /**
+     * Returns the regions that are instances of [type], in declaration order. The list is computed once per type.
+     *
+     * @param type the region class to look for
+     */
+    fun <T : Region> regionsOfType(type: Class<T>): List<T> {
+        @Suppress("UNCHECKED_CAST")
+        return byType.computeIfAbsent(type) { regions.filter(type::isInstance) } as List<T>
+    }
+
+    /** Returns the regions that are instances of [T], in declaration order. The list is computed once per type. */
+    inline fun <reified T : Region> regionsOfType(): List<T> = regionsOfType(T::class.java)
 
     companion object {
         /** Returns the id pairs of regions that share at least one block, scanning only where their bounds meet. */

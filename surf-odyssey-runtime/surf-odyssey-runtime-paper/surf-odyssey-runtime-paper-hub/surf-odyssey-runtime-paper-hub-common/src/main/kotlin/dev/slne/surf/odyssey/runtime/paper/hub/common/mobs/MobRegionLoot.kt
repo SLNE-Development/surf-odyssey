@@ -19,7 +19,10 @@ object MobRegionLoot : MobLootProvider {
     /** Knows no loot by type alone; loot depends on the dying entity. */
     override fun lootFor(entityType: EntityType): MobLoot? = null
 
-    /** Returns one roll of the loot table of the mob region of [entity] without experience, or `null` if it has none. */
+    /**
+     * Returns one roll of the loot table of the mob region of [entity] without experience, or `null` if it has
+     * none.
+     */
     override fun lootFor(entity: Entity): MobLoot? {
         val hub = HubPlugin.instance
         val location = entity.location
@@ -27,7 +30,7 @@ object MobRegionLoot : MobLootProvider {
         val killer = (entity as? LivingEntity)?.killer
         val deathRegion = hub.regionIndex.regionAt(location.blockX, location.blockY, location.blockZ)
         val region = lootRegion(
-            hub.regionIndex.mobSpawnRegions,
+            hub.regionIndex.regionsOfType<MobSpawnRegion>(),
             { it.hasSpawned(entity.uniqueId) },
             deathRegion,
             admits = killer?.let { player -> { region -> !GateAccess.isLockedOut(player, region) } },

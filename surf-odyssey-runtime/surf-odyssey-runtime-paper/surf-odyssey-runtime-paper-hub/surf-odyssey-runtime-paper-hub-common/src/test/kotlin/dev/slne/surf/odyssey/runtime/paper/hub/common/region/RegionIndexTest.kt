@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
@@ -8,6 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /** Checks how [RegionIndex] resolves blocks to regions, what the declared regions allow and which regions are rejected. */
@@ -34,7 +36,7 @@ class RegionIndexTest {
     }
 
     @Test
-    fun `the mob spawn regions are listed apart`() {
+    fun `regions are listed by type`() {
         val regions = registry() + RegionRegistry().apply {
             mobSpawn("north_wolves") {
                 shape { cuboid(40, 0, 40, 49, 9, 49) }
@@ -42,7 +44,10 @@ class RegionIndexTest {
                 spawnPoint(45, 5, 45)
             }
         }.build()
-        assertEquals(listOf("north_wolves"), RegionIndex(regions).mobSpawnRegions.map { it.id })
+        val index = RegionIndex(regions)
+        assertEquals(listOf("north_wolves"), index.regionsOfType<MobSpawnRegion>().map { it.id })
+        assertEquals(listOf("north_mine", "north_forest"), index.regionsOfType<HarvestRegion>().map { it.id })
+        assertSame(index.regionsOfType<MobSpawnRegion>(), index.regionsOfType<MobSpawnRegion>())
     }
 
     @Test

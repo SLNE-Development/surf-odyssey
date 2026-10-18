@@ -21,7 +21,9 @@ import dev.slne.surf.odyssey.runtime.paper.progression.Progression
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMode
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionPermissions
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.CustomItemRef
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestDefinition
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.RecipeReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.TitleReward
@@ -49,6 +51,7 @@ private const val TARGET_RANGE = 6
  *   deletes its state and counters. Completing gives the rewards of the current step and the final rewards of the
  *   quest, even when the current step is not the last one; the rewards of the steps in between are not given.
  * - `recipe give|take <player> <recipe>` and `title give|take <player> <title>` unlock or revoke them.
+ * - `item give <player> <item> [amount]` gives custom items of the content.
  * - `tool give <player> <tool> [level]` gives a new tool, `tool setlevel <level>` sets the level of the tool in the
  *   main hand and `tool lookup <uuid>` shows the registration of a tool.
  * - `place npc <npc>` and `place station <station>` write the statement that places the definition at the position
@@ -129,6 +132,19 @@ fun progressionAdminCommand(mode: ProgressionMode) = commandTree("odysseyadmin")
                     stringArgument("title") {
                         suggestIds { Progression.runtime.registry.allTitles.map { it.id } }
                         anyExecutor { sender, args -> titleTake(sender, args) }
+                    }
+                }
+            }
+        }
+        literalArgument("item") {
+            literalArgument("give") {
+                entitySelectorArgumentOnePlayer("player") {
+                    stringArgument("item") {
+                        suggestIds { Progression.runtime.registry.allItems.map { it.id } }
+                        anyExecutor { sender, args -> itemGive(sender, args, amount = 1) }
+                        integerArgument("amount", 1) {
+                            anyExecutor { sender, args -> itemGive(sender, args, amount = args["amount"] as Int) }
+                        }
                     }
                 }
             }
@@ -334,6 +350,18 @@ private fun titleTake(sender: CommandSender, args: CommandArguments) {
     runChange(sender, target, null, AdminMessages.titleTaken(title.id, target.name)) {
         it.revokeTitle(target.uniqueId, title.id)
     }
+}
+
+/**
+ * Gives the player named in [args] [amount] of the custom item named in [args]. Items that do not fit into the
+ * inventory go to the pickup box.
+ */
+private fun itemGive(sender: CommandSender, args: CommandArguments, amount: Int) {
+    val target = args["player"] as Player
+    val id = args["item"] as String
+    val item = Progression.runtime.registry.item(id) ?: return refuse(sender, AdminMessages.unknownItem(id))
+    val plan = adminPlan(rewards = listOf(ItemReward(CustomItemRef(item), amount)))
+    runPlan(sender, target, plan, AdminMessages.itemGiven(item.id, amount, target.name))
 }
 
 /** Gives the player named in [args] a new item of the tool named in [args], on [level]. */

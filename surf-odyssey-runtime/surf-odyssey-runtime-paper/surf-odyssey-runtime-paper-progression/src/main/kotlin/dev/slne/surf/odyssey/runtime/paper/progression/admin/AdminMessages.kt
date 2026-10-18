@@ -13,6 +13,9 @@ object AdminMessages {
     /** Names a title ID that no title has. */
     fun unknownTitle(id: String): String = "Unbekannter Titel: $id"
 
+    /** Names an item ID that no custom item has. */
+    fun unknownItem(id: String): String = "Unbekanntes Item: $id"
+
     /** Names a tool ID that no tool has. */
     fun unknownTool(id: String): String = "Unbekanntes Werkzeug: $id"
 
@@ -90,6 +93,9 @@ object AdminMessages {
 
     /** Says that [title] was taken from [player]. */
     fun titleTaken(title: String, player: String): String = "$title wurde $player entzogen."
+
+    /** Says that [amount] of [item] were given to [player]. */
+    fun itemGiven(item: String, amount: Int, player: String): String = "${amount}x $item wurde an $player gegeben."
 
     /** Says that [tool] on [level] was given to [player]. */
     fun toolGiven(tool: String, level: Int, player: String): String = "$tool (Level $level) wurde an $player gegeben."

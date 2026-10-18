@@ -6,6 +6,7 @@ import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.skill.view.skillDetailView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.skill.view.skillView
+import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeView
 
 /** Registers every inventory view of the common module; must run during plugin load. */
@@ -16,4 +17,5 @@ internal fun registerViews() {
     skillView.register()
     skillDetailView.register()
     tradeView.register()
+    tradeListView.register()
 }

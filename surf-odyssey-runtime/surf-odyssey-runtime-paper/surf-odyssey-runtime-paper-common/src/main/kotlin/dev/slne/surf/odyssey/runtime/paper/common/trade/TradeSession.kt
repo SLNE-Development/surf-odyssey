@@ -44,13 +44,37 @@ internal class TradeSettlement(
     val cancelledBy: UUID?
 )
 
+/**
+ * What a finished trade looked like, taken once per session for the trade history.
+ *
+ * @property first the player who sent the trade request
+ * @property second the player who accepted the trade request
+ */
+internal class TradeSnapshot(
+    val id: UUID,
+    val first: UUID,
+    val second: UUID,
+    val completed: Boolean,
+    val cancelReason: TradeCancelReason?,
+    val cancelledBy: UUID?,
+    val startedAt: Long,
+    val endedAt: Long,
+    val firstItems: List<ItemStack>,
+    val secondItems: List<ItemStack>
+)
+
 internal class TradeSession(val first: TradeSide, val second: TradeSide) {
     private val lock = Any()
+
+    val id: UUID = UUID.randomUUID()
+    val startedAt = System.currentTimeMillis()
 
     private var phaseValue = TradePhase.NEGOTIATING
     private var countdownEndsAtValue = 0L
     private var cancelReasonValue: TradeCancelReason? = null
     private var cancelledByValue: UUID? = null
+    private var endedAtValue = 0L
+    private var snapshotTaken = false
 
     val phase get() = synchronized(lock) { phaseValue }
 
@@ -147,6 +171,7 @@ internal class TradeSession(val first: TradeSide, val second: TradeSide) {
         if (!first.ready || !second.ready) return false
 
         phaseValue = TradePhase.COMPLETED
+        endedAtValue = now
         true
     }
 
@@ -156,7 +181,32 @@ internal class TradeSession(val first: TradeSide, val second: TradeSide) {
         phaseValue = TradePhase.CANCELLED
         cancelReasonValue = reason
         cancelledByValue = by
+        endedAtValue = System.currentTimeMillis()
         true
+    }
+
+    /**
+     * Takes the snapshot of the finished trade for the trade history.
+     *
+     * @return the snapshot the first time it is called after the trade ended, `null` before the trade ended and on
+     *         every later call
+     */
+    fun takeSnapshot(): TradeSnapshot? = synchronized(lock) {
+        if (!phaseValue.isTerminal || snapshotTaken) return null
+
+        snapshotTaken = true
+        TradeSnapshot(
+            id = id,
+            first = first.uuid,
+            second = second.uuid,
+            completed = phaseValue == TradePhase.COMPLETED,
+            cancelReason = cancelReasonValue,
+            cancelledBy = cancelledByValue,
+            startedAt = startedAt,
+            endedAt = endedAtValue,
+            firstItems = first.offer.mapNotNull { it?.clone() },
+            secondItems = second.offer.mapNotNull { it?.clone() }
+        )
     }
 
     fun settle(uuid: UUID): TradeSettlement? = synchronized(lock) {

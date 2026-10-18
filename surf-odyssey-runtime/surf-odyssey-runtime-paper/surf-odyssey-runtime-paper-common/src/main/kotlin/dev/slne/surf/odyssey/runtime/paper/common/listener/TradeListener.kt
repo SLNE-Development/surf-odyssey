@@ -1,7 +1,10 @@
 package dev.slne.surf.odyssey.runtime.paper.common.listener
 
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playNoSound
+import dev.slne.surf.odyssey.runtime.paper.common.plugin
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeManager
+import dev.slne.surf.odyssey.runtime.paper.common.trade.TradePreferences
+import kotlinx.coroutines.runBlocking
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -9,7 +12,9 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import java.util.logging.Level
 
 object TradeListener : Listener {
 
@@ -52,8 +57,21 @@ object TradeListener : Listener {
         event.isCancelled = true
     }
 
+    /**
+     * Loads the stored trade request setting of the joining player. A failure is logged and the player keeps the
+     * default of accepting requests, so trading never blocks a login.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onAsyncPlayerPreLogin(event: AsyncPlayerPreLoginEvent) {
+        if (event.loginResult != AsyncPlayerPreLoginEvent.Result.ALLOWED) return
+
+        runCatching { runBlocking { TradePreferences.load(event.uniqueId) } }
+            .onFailure { plugin.logger.log(Level.SEVERE, "Failed to load the trade settings of ${event.uniqueId}", it) }
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPlayerQuit(event: PlayerQuitEvent) {
         TradeManager.forget(event.player)
+        TradePreferences.evict(event.player.uniqueId)
     }
 }

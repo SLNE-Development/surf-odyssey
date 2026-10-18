@@ -4,6 +4,7 @@ import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.odyssey.core.client.OdysseyClientInstance
 import dev.slne.surf.odyssey.runtime.paper.common.menu.registerViews
 import dev.slne.surf.odyssey.runtime.paper.common.skill.SkillRuntime
+import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeLog
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeManager
 
 abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
@@ -26,12 +27,14 @@ abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
         OdysseyPaperCommandManager.registerAllCommands()
         OdysseyPaperListenerManager.registerAllListeners()
         SkillRuntime.start()
+        TradeManager.start()
         onEnabled()
     }
 
     final override suspend fun onDisableAsync() {
         onDisabled()
         TradeManager.shutdown()
+        TradeLog.flush()
         SkillRuntime.stop()
         OdysseyClientInstance.INSTANCE.onDisable()
     }

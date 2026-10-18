@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.common.commands.trade
 
+import com.github.shynixn.mccoroutine.folia.launch
 import dev.jorel.commandapi.kotlindsl.commandTree
 import dev.jorel.commandapi.kotlindsl.entitySelectorArgumentOnePlayer
 import dev.jorel.commandapi.kotlindsl.literalArgument
@@ -7,14 +8,24 @@ import dev.jorel.commandapi.kotlindsl.playerExecutor
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.api.paper.inventory.framework.open
+import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playNoSound
+import dev.slne.surf.odyssey.runtime.paper.common.plugin
+import dev.slne.surf.odyssey.runtime.paper.common.trade.MAX_OUTGOING_TRADE_REQUESTS
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TRADE_REQUEST_TIMEOUT_MILLIS
-import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeAcceptResult
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeManager
+import dev.slne.surf.odyssey.runtime.paper.common.trade.TradePreferences
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeRequestResult
+import dev.slne.surf.odyssey.runtime.paper.common.trade.acceptTradeRequest
+import dev.slne.surf.odyssey.runtime.paper.common.trade.declineTradeRequest
+import dev.slne.surf.odyssey.runtime.paper.common.trade.withdrawTradeRequest
 import dev.slne.surf.odyssey.runtime.paper.common.utils.OdysseyBasePermissionRegistry
+import kotlinx.coroutines.CancellationException
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import java.util.logging.Level
+import kotlin.math.ceil
 
 fun tradeCommand() = commandTree("trade") {
     withPermission(OdysseyBasePermissionRegistry.TRADE_COMMAND)
@@ -45,6 +56,24 @@ fun tradeCommand() = commandTree("trade") {
                         error("befindet sich bereits in einem Handel.")
                     }
 
+                    TradeRequestResult.REQUESTS_DISABLED -> player.sendText {
+                        appendErrorPrefix()
+                        variableValue(tradePartner.name)
+                        appendSpace()
+                        error("nimmt keine Handelsanfragen an.")
+                    }
+
+                    TradeRequestResult.COOLDOWN -> player.sendText {
+                        val seconds = ceil(TradeManager.cooldownRemaining(player) / 1000.0).toInt().coerceAtLeast(1)
+
+                        appendErrorPrefix()
+                        error("Bitte warte noch")
+                        appendSpace()
+                        variableValue("$seconds")
+                        appendSpace()
+                        error(if (seconds == 1) "Sekunde, bevor du die nächste Handelsanfrage sendest." else "Sekunden, bevor du die nächste Handelsanfrage sendest.")
+                    }
+
                     TradeRequestResult.ALREADY_PENDING -> player.sendText {
                         appendErrorPrefix()
                         error("Du hast")
@@ -52,6 +81,15 @@ fun tradeCommand() = commandTree("trade") {
                         variableValue(tradePartner.name)
                         appendSpace()
                         error("bereits eine Handelsanfrage gesendet.")
+                    }
+
+                    TradeRequestResult.LIMIT_REACHED -> player.sendText {
+                        appendErrorPrefix()
+                        error("Du hast bereits")
+                        appendSpace()
+                        variableValue("$MAX_OUTGOING_TRADE_REQUESTS")
+                        appendSpace()
+                        error("offene Handelsanfragen. Ziehe eine mit /trade withdraw zurück.")
                     }
 
                     TradeRequestResult.SENT -> {
@@ -125,27 +163,7 @@ fun tradeCommand() = commandTree("trade") {
 
         entitySelectorArgumentOnePlayer("tradePartner") {
             playerExecutor { player, args ->
-                val receiver = args["tradePartner"] as Player
-
-                if (!TradeManager.withdrawRequest(player, receiver)) {
-                    player.sendText {
-                        appendErrorPrefix()
-                        error("Du hast keine gültige Handelsanfrage an")
-                        appendSpace()
-                        variableValue(receiver.name)
-                        error(".")
-                    }
-                    return@playerExecutor
-                }
-
-                player.sendText {
-                    appendInfoPrefix()
-                    info("Du hast deine Handelsanfrage an")
-                    appendSpace()
-                    variableValue(receiver.name)
-                    appendSpace()
-                    info("zurückgezogen.")
-                }
+                player.withdrawTradeRequest(args["tradePartner"] as Player)
             }
         }
     }
@@ -153,31 +171,7 @@ fun tradeCommand() = commandTree("trade") {
     literalArgument("accept") {
         entitySelectorArgumentOnePlayer("tradePartner") {
             playerExecutor { player, args ->
-                val sender = args["tradePartner"] as Player
-
-                when (TradeManager.accept(player, sender)) {
-                    TradeAcceptResult.STARTED -> Unit
-
-                    TradeAcceptResult.NO_REQUEST -> player.sendText {
-                        appendErrorPrefix()
-                        error("Du hast keine gültige Handelsanfrage von")
-                        appendSpace()
-                        variableValue(sender.name)
-                        error(".")
-                    }
-
-                    TradeAcceptResult.ALREADY_TRADING -> player.sendText {
-                        appendErrorPrefix()
-                        error("Du befindest dich bereits in einem Handel.")
-                    }
-
-                    TradeAcceptResult.PARTNER_BUSY -> player.sendText {
-                        appendErrorPrefix()
-                        variableValue(sender.name)
-                        appendSpace()
-                        error("befindet sich bereits in einem Handel.")
-                    }
-                }
+                player.acceptTradeRequest(args["tradePartner"] as Player)
             }
         }
     }
@@ -185,34 +179,50 @@ fun tradeCommand() = commandTree("trade") {
     literalArgument("decline") {
         entitySelectorArgumentOnePlayer("tradePartner") {
             playerExecutor { player, args ->
-                val sender = args["tradePartner"] as Player
+                player.declineTradeRequest(args["tradePartner"] as Player)
+            }
+        }
+    }
 
-                if (!TradeManager.decline(player, sender)) {
-                    player.sendText {
-                        appendErrorPrefix()
-                        error("Du hast keine gültige Handelsanfrage von")
-                        appendSpace()
-                        variableValue(sender.name)
-                        error(".")
-                    }
-                    return@playerExecutor
-                }
-
+    literalArgument("list") {
+        playerExecutor { player, _ ->
+            if (TradeManager.requestsOf(player).isEmpty()) {
                 player.sendText {
                     appendInfoPrefix()
-                    info("Du hast die Handelsanfrage von")
-                    appendSpace()
-                    variableValue(sender.name)
-                    appendSpace()
-                    info("abgelehnt.")
+                    info("Du hast keine offenen Handelsanfragen.")
                 }
+                return@playerExecutor
+            }
 
-                sender.playNoSound()
-                sender.sendText {
-                    appendInfoPrefix()
-                    variableValue(player.name)
-                    appendSpace()
-                    info("hat deine Handelsanfrage abgelehnt.")
+            tradeListView.open(player)
+        }
+    }
+
+    literalArgument("toggle") {
+        playerExecutor { player, _ ->
+            plugin.launch {
+                try {
+                    val enabled = !TradePreferences.isReceiving(player.uniqueId)
+                    TradePreferences.setReceiving(player.uniqueId, enabled)
+
+                    player.sendText {
+                        appendInfoPrefix()
+                        if (enabled) {
+                            info("Du empfängst jetzt wieder Handelsanfragen.")
+                        } else {
+                            info("Du empfängst keine Handelsanfragen mehr.")
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    plugin.logger.log(Level.SEVERE, "Failed to toggle the trade requests of ${player.name}", e)
+
+                    player.playNoSound()
+                    player.sendText {
+                        appendErrorPrefix()
+                        error("Die Einstellung konnte nicht gespeichert werden.")
+                    }
                 }
             }
         }

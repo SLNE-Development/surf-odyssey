@@ -25,6 +25,7 @@ object OperationTable : AuditableTable("odyssey_operations") {
     /** Why the operation was rejected, or `null` if it was applied. */
     val reason = varchar("reason", ProgressionLimits.MAX_REASON_LENGTH).nullable()
 
+    /** Identifies an operation by its [id], so a repeated operation is stored at most once. */
     override val primaryKey = PrimaryKey(id)
 }
 

@@ -15,5 +15,6 @@ object UnlockedRecipeTable : AuditableTable("odyssey_unlocked_recipes") {
     /** The id of the recipe definition. */
     val recipeId = varchar("recipe_id", ProgressionLimits.MAX_ID_LENGTH)
 
+    /** Identifies an unlocked recipe by player and recipe. */
     override val primaryKey = PrimaryKey(player, recipeId)
 }

@@ -31,5 +31,6 @@ object QuestStateTable : AuditableTable("odyssey_quest_states") {
     /** The epoch milliseconds the quest was completed at, or `null` while not completed. */
     val completedAt = long("completed_at").nullable()
 
+    /** Identifies the state of a quest by player and quest. */
     override val primaryKey = PrimaryKey(player, questId)
 }

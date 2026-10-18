@@ -30,5 +30,6 @@ object QuestCounterTable : AuditableTable("odyssey_quest_counters") {
     /** The current count. */
     val value = integer("value")
 
+    /** Identifies a counter by player, quest, step, step version, objective and period. */
     override val primaryKey = PrimaryKey(player, questId, step, stepVersion, objective, period)
 }

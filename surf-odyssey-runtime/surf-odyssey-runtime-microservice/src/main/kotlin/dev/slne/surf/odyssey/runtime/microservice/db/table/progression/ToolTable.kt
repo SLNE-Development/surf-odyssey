@@ -21,5 +21,6 @@ object ToolTable : AuditableTable("odyssey_tools") {
     /** The epoch milliseconds the tool was last seen at, or `null` if it was never seen. */
     val lastSeenAt = long("last_seen_at").nullable()
 
+    /** Identifies a tool by the [uuid] of its item. */
     override val primaryKey = PrimaryKey(uuid)
 }

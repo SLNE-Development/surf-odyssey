@@ -34,5 +34,6 @@ object StationJobTable : AuditableTable("odyssey_station_jobs") {
     /** The epoch milliseconds the job was collected at, or `null` while it is open. */
     val collectedAt = long("collected_at").nullable()
 
+    /** Identifies a station job by its [id]. */
     override val primaryKey = PrimaryKey(id)
 }

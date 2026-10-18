@@ -34,5 +34,6 @@ object DeliveryTable : AuditableTable("odyssey_deliveries") {
     /** The epoch milliseconds the delivery was claimed at, or `null` while it is open. */
     val claimedAt = long("claimed_at").nullable()
 
+    /** Identifies a delivery by its [id]. */
     override val primaryKey = PrimaryKey(id)
 }

@@ -15,5 +15,6 @@ object TrackedQuestTable : AuditableTable("odyssey_tracked_quests") {
     /** The id of the tracked quest definition. */
     val questId = varchar("quest_id", ProgressionLimits.MAX_ID_LENGTH)
 
+    /** Allows one tracked quest per [player]. */
     override val primaryKey = PrimaryKey(player)
 }

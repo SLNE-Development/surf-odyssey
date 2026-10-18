@@ -18,5 +18,6 @@ object TitleTable : AuditableTable("odyssey_titles") {
     /** Whether the player currently shows this title. */
     val active = bool("active").default(false)
 
+    /** Identifies an unlocked title by player and title. */
     override val primaryKey = PrimaryKey(player, titleId)
 }

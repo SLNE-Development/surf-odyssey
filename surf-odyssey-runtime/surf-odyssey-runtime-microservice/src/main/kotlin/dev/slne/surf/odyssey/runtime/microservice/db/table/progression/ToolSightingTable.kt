@@ -23,5 +23,6 @@ object ToolSightingTable : AuditableTable("odyssey_tool_sightings") {
     /** The epoch milliseconds the tool was seen at. */
     val seenAt = long("seen_at").index()
 
+    /** Identifies a sighting by its [id]. */
     override val primaryKey = PrimaryKey(id)
 }

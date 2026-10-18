@@ -1,7 +1,14 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.menu
 
+import com.github.shynixn.mccoroutine.folia.entityDispatcher
+import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.api.core.messages.Colors
 import dev.slne.surf.api.core.messages.adventure.buildText
+import dev.slne.surf.odyssey.runtime.paper.progression.Progression
+import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMessages
+import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
+import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
+import dev.slne.surf.odyssey.runtime.paper.progression.operation.StashResult
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import net.momirealms.craftengine.bukkit.api.CraftEngineItems
@@ -10,6 +17,8 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import net.momirealms.craftengine.core.util.Key as CraftEngineKey
 
 /** An inventory move a player can try with an item. */
@@ -131,20 +140,71 @@ object OdysseyBook {
     }
 
     /**
-     * Does what [placeIfFree] does and, if another item occupies [BookRules.BOOK_SLOT], moves that item into a free
-     * storage slot and puts the book into its place. When no storage slot is free, the item stays where it is and
-     * the player gets no book.
+     * Does what [placeIfFree] does and, if another item occupies [BookRules.BOOK_SLOT], makes room for the book:
+     * the item moves into a free storage slot, or, when none is free, into the pickup box through
+     * [OperationRunner.stash].
      *
-     * @return `true` if the slot now holds the book
+     * Once the pickup box stored the item, the book is put into the slot if it is still empty and the player is told.
+     * When the pickup box failed and the item was dropped at the player's feet, the slot stays empty so that the item
+     * can be picked up again. When the item was lost, it is put back into the slot if that is still empty. Only one
+     * stash per player runs at a time; nothing happens while no engine is installed.
      */
-    fun ensure(player: Player): Boolean {
-        if (placeIfFree(player)) return true
+    fun ensure(player: Player) {
+        if (placeIfFree(player)) return
         val inventory = player.inventory
         val free = inventory.storageContents.indices.firstOrNull { slot ->
             slot != BookRules.BOOK_SLOT && inventory.getItem(slot).let { it == null || it.isEmpty }
-        } ?: return false
+        }
+        if (free == null) {
+            stashOccupant(player)
+            return
+        }
         inventory.setItem(free, inventory.getItem(BookRules.BOOK_SLOT))
         inventory.setItem(BookRules.BOOK_SLOT, create())
-        return true
     }
+
+    /** The players whose book slot item is being put into the pickup box. */
+    private val stashing: MutableSet<UUID> = ConcurrentHashMap.newKeySet()
+
+    /** The source stored with the deliveries of book slot items. */
+    private const val STASH_SOURCE = "book_slot"
+
+    /** Takes the item out of the book slot of [player] and puts it into the pickup box, as described in [ensure]. */
+    private fun stashOccupant(player: Player) {
+        val runtime = Progression.runtimeOrNull ?: return
+        if (!stashing.add(player.uniqueId)) return
+        val inventory = player.inventory
+        val occupant = inventory.getItem(BookRules.BOOK_SLOT)?.takeUnless { it.isEmpty }?.clone()
+        if (occupant == null) {
+            stashing.remove(player.uniqueId)
+            return
+        }
+        inventory.setItem(BookRules.BOOK_SLOT, null)
+        val plugin = ProgressionModule.plugin
+        plugin.launch(plugin.entityDispatcher(player)) {
+            try {
+                when (runtime.operations.stash(player, listOf(occupant), STASH_SOURCE)) {
+                    StashResult.STORED -> if (slotEmpty(player)) {
+                        inventory.setItem(BookRules.BOOK_SLOT, create())
+                        ProgressionMessages.bookSlotStashed(player)
+                    }
+                    StashResult.DROPPED -> plugin.logger.warning(
+                        "Dropped the book slot item ${occupant.type.name} of ${player.uniqueId} at their feet"
+                    )
+                    StashResult.LOST -> if (slotEmpty(player)) {
+                        inventory.setItem(BookRules.BOOK_SLOT, occupant)
+                        plugin.logger.warning("Put the book slot item of ${player.uniqueId} back after a failed stash")
+                    } else {
+                        plugin.logger.severe("Lost the book slot item ${occupant.type.name} of ${player.uniqueId}")
+                    }
+                }
+            } finally {
+                stashing.remove(player.uniqueId)
+            }
+        }
+    }
+
+    /** Returns whether the book slot of [player] is empty. */
+    private fun slotEmpty(player: Player): Boolean =
+        player.inventory.getItem(BookRules.BOOK_SLOT).let { it == null || it.isEmpty }
 }

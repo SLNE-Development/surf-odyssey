@@ -135,4 +135,10 @@ object ProgressionMessages {
         appendErrorPrefix()
         error("Diesen Titel hast du nicht verdient.")
     }
+
+    /** Tells [player] that the item of the last hotbar slot was put into the pickup box to make room for the book. */
+    fun bookSlotStashed(player: Player) = player.sendText {
+        appendInfoPrefix()
+        info("Ein Gegenstand aus deinem letzten Hotbar-Slot liegt jetzt in deinem Abholfach.")
+    }
 }

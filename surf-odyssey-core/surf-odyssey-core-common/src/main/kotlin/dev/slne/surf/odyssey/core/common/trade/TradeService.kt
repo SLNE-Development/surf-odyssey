@@ -15,6 +15,9 @@ interface TradeService {
     /** Stores a finished trade with the items both players offered. Saving the same trade twice changes nothing. */
     suspend fun saveTrade(record: TradeRecord)
 
+    /** The newest [limit] trades [playerUuid] took part in, newest first, each with the items of both players. */
+    suspend fun listTrades(playerUuid: SerializableUUID, limit: Int): List<TradeRecord>
+
     /** Stores a resolved trade request. Saving the same request twice changes nothing. */
     suspend fun saveRequest(record: TradeRequestRecord)
 }

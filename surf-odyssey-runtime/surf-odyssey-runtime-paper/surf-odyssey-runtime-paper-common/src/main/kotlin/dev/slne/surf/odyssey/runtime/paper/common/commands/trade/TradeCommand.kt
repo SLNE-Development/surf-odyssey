@@ -9,6 +9,8 @@ import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.core.messages.adventure.playSound
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.api.paper.inventory.framework.open
+import dev.slne.surf.odyssey.core.common.trade.TradeBridge
+import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.openTradeHistory
 import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playNoSound
 import dev.slne.surf.odyssey.runtime.paper.common.plugin
@@ -27,7 +29,9 @@ import org.bukkit.entity.Player
 import java.util.logging.Level
 import kotlin.math.ceil
 
-fun tradeCommand() = commandTree("trade") {
+private const val TRADE_HISTORY_LIMIT = 200
+
+fun tradeCommand() =commandTree("trade") {
     withPermission(OdysseyBasePermissionRegistry.TRADE_COMMAND)
 
     literalArgument("request") {
@@ -195,6 +199,36 @@ fun tradeCommand() = commandTree("trade") {
             }
 
             tradeListView.open(player)
+        }
+    }
+
+    literalArgument("history") {
+        playerExecutor { player, _ ->
+            plugin.launch {
+                try {
+                    val trades = TradeBridge.listTrades(player.uniqueId, TRADE_HISTORY_LIMIT)
+
+                    if (trades.isEmpty()) {
+                        player.sendText {
+                            appendInfoPrefix()
+                            info("Du hast noch keine Handel durchgeführt.")
+                        }
+                        return@launch
+                    }
+
+                    player.scheduler.run(plugin, { openTradeHistory(player, trades) }, null)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    plugin.logger.log(Level.SEVERE, "Failed to load the trade history of ${player.name}", e)
+
+                    player.playNoSound()
+                    player.sendText {
+                        appendErrorPrefix()
+                        error("Dein Handelsverlauf konnte nicht geladen werden.")
+                    }
+                }
+            }
         }
     }
 

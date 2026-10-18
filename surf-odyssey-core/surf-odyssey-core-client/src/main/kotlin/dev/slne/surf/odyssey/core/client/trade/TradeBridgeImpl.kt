@@ -27,6 +27,10 @@ class TradeBridgeImpl : TradeBridge {
         proxy.saveTrade(record)
     }
 
+    override suspend fun listTrades(playerUuid: UUID, limit: Int): List<TradeRecord> {
+        return proxy.listTrades(playerUuid, limit)
+    }
+
     override suspend fun saveRequest(record: TradeRequestRecord) {
         proxy.saveRequest(record)
     }

@@ -6,6 +6,8 @@ import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.home.view.homeView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.skill.view.skillDetailView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.skill.view.skillView
+import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeDetailView
+import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeHistoryView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeListView
 import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.tradeView
 
@@ -18,4 +20,6 @@ internal fun registerViews() {
     skillDetailView.register()
     tradeView.register()
     tradeListView.register()
+    tradeHistoryView.register()
+    tradeDetailView.register()
 }

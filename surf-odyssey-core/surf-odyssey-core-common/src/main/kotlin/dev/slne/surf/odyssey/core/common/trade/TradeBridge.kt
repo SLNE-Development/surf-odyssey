@@ -16,6 +16,9 @@ interface TradeBridge {
     /** Stores a finished trade with the items both players offered. */
     suspend fun saveTrade(record: TradeRecord)
 
+    /** The newest [limit] trades [playerUuid] took part in, newest first, each with the items of both players. */
+    suspend fun listTrades(playerUuid: UUID, limit: Int): List<TradeRecord>
+
     /** Stores a resolved trade request. */
     suspend fun saveRequest(record: TradeRequestRecord)
 

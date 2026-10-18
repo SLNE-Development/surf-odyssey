@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.common.listener
 
+import dev.slne.surf.odyssey.runtime.paper.common.menu.trade.view.forgetTradeHistory
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playNoSound
 import dev.slne.surf.odyssey.runtime.paper.common.plugin
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeManager
@@ -73,5 +74,6 @@ object TradeListener : Listener {
     fun onPlayerQuit(event: PlayerQuitEvent) {
         TradeManager.forget(event.player)
         TradePreferences.evict(event.player.uniqueId)
+        forgetTradeHistory(event.player.uniqueId)
     }
 }

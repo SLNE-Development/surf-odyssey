@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.operation
 
+import dev.slne.surf.odyssey.core.common.progression.OperationDto
 import dev.slne.surf.odyssey.core.common.progression.OperationResultDto
 import dev.slne.surf.odyssey.core.common.progression.StateChange
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredient
@@ -8,6 +9,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemRew
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import java.util.*
@@ -102,14 +104,108 @@ class EscrowTest {
     }
 
     @Test
-    fun `a commit that times out returns the items`() = runTest {
+    fun `a commit that times out twice returns the items`() = runTest {
         val inv = FakeInventory(mapOf(TestItems.ink to 12))
-        val runner = TestRunner(commit = { awaitCancellation() })
+        var calls = 0
+        val runner = TestRunner(commit = { calls++; awaitCancellation() })
 
         val outcome = runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), emptyList(), emptyList(), "t"))
 
         assertEquals(OperationOutcome.Unavailable, outcome)
         assertEquals(12, inv.count(TestItems.ink))
+        assertEquals(2, calls)
+    }
+
+    @Test
+    fun `a commit that times out is retried once with the same operation`() = runTest {
+        val inv = FakeInventory(mapOf(TestItems.ink to 12))
+        val sent = mutableListOf<OperationDto>()
+        val runner = TestRunner(commit = {
+            sent += it
+            if (sent.size == 1) awaitCancellation() else OperationResultDto.AlreadyApplied(emptyList())
+        })
+
+        val outcome = runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), emptyList(), emptyList(), "t"))
+
+        assertEquals(OperationOutcome.Success, outcome)
+        assertEquals(0, inv.count(TestItems.ink))
+        assertEquals(2, sent.size)
+        assertEquals(sent[0], sent[1])
+    }
+
+    @Test
+    fun `a failed commit is retried even after the service was marked unavailable`() = runTest {
+        val inv = FakeInventory(mapOf(TestItems.ink to 12))
+        var calls = 0
+        val runner = TestRunner(commit = {
+            if (calls++ == 0) error("connection lost") else OperationResultDto.Applied(emptyList())
+        })
+
+        val outcome = runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), emptyList(), emptyList(), "t"))
+
+        assertEquals(OperationOutcome.Success, outcome)
+        assertEquals(0, inv.count(TestItems.ink))
+        assertEquals(1, runner.serviceFailures)
+    }
+
+    @Test
+    fun `a cancelled operation retries its commit and keeps the escrow when it was stored`() = runTest {
+        val inv = FakeInventory(mapOf(TestItems.ink to 12))
+        val sent = mutableListOf<OperationDto>()
+        val runner = TestRunner(commit = {
+            sent += it
+            if (sent.size == 1) awaitCancellation() else OperationResultDto.AlreadyApplied(emptyList())
+        })
+        val change = StateChange.QuestCompleted("q", fromStep = 0)
+
+        val job = launch {
+            runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), listOf(change), emptyList(), "t"))
+        }
+        runCurrent()
+        job.cancel()
+        job.join()
+
+        assertEquals(0, inv.count(TestItems.ink))
+        assertEquals(listOf(listOf<StateChange>(change)), runner.appliedChanges)
+        assertEquals(sent[0], sent[1])
+    }
+
+    @Test
+    fun `a cancelled operation gives the escrow back when the retry fails too`() = runTest {
+        val inv = FakeInventory(mapOf(TestItems.ink to 12))
+        var calls = 0
+        val runner = TestRunner(commit = { if (calls++ == 0) awaitCancellation() else error("service down") })
+
+        val job = launch {
+            runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), emptyList(), emptyList(), "t"))
+        }
+        runCurrent()
+        job.cancel()
+        job.join()
+
+        assertEquals(12, inv.count(TestItems.ink))
+        assertTrue(runner.appliedChanges.isEmpty())
+    }
+
+    @Test
+    fun `a pickup box stash that times out is retried once`() = runTest {
+        val inv = FakeInventory(mapOf(TestItems.ink to 12), freeSlots = 0)
+        val sent = mutableListOf<OperationDto>()
+        val runner = TestRunner(commit = {
+            sent += it
+            when (sent.size) {
+                1 -> OperationResultDto.Rejected("stale")
+                2 -> awaitCancellation()
+                else -> OperationResultDto.Applied(listOf(UUID.randomUUID()))
+            }
+        })
+
+        runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), emptyList(), emptyList(), "t"))
+
+        assertEquals(3, sent.size)
+        assertEquals(sent[1], sent[2])
+        assertEquals(1, runner.unclaimedDeliveries)
+        assertTrue(runner.droppedAtFeet.isEmpty())
     }
 
     @Test

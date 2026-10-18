@@ -9,6 +9,8 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredien
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.Deliveries
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.bukkit.inventory.ItemStack
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -102,7 +104,8 @@ interface OperationHooks {
 
 /**
  * Runs operations: holds the items to consume in escrow, commits the operation and then either hands out the rewards
- * or gives the escrow back.
+ * or gives the escrow back. A commit that fails, times out or is interrupted by cancellation is sent once more with
+ * the same operation id before the escrow is given back.
  *
  * Only one operation per player runs at a time. Items that do not fit into the inventory go to the pickup box, and
  * items the pickup box cannot take either are dropped at the player's feet.
@@ -151,9 +154,9 @@ class OperationFlow(
         val operation = OperationDto(UUID.randomUUID(), player, plan.changes + rewardChanges, newDeliveries)
 
         val result = try {
-            deliveries.commit(operation)
+            deliveries.commitWithRetry(operation)
         } catch (e: CancellationException) {
-            inventory.give(escrow).takeIf { it.isNotEmpty() }?.let { hooks.dropAtFeet(player, it) }
+            withContext(NonCancellable) { settleCancelled(player, inventory, plan, operation, escrow) }
             throw e
         }
 
@@ -169,6 +172,28 @@ class OperationFlow(
                 OperationOutcome.Unavailable
             }
         }
+    }
+
+    /**
+     * Settles an operation whose coroutine was cancelled while its commit was running: the same operation is
+     * committed once more to learn whether it was stored. If it was, the stored changes are reported, currencies are
+     * paid and the deliveries stay in the pickup box; otherwise the escrow is given back.
+     */
+    private suspend fun settleCancelled(
+        player: UUID,
+        inventory: EscrowInventory,
+        plan: OperationPlan,
+        operation: OperationDto,
+        escrow: List<ItemStack>
+    ) {
+        val deliveryIds = when (val retry = deliveries.commit(operation)) {
+            is OperationResultDto.Applied -> retry.deliveryIds
+            is OperationResultDto.AlreadyApplied -> retry.deliveryIds
+            is OperationResultDto.Rejected, null -> return giveBack(player, inventory, escrow, plan.source)
+        }
+        hooks.onCommitted(player, operation.changes)
+        RewardPlanner.currencies(plan.rewards).forEach { currency.grant(player, it.currencyId, it.amount) }
+        if (deliveryIds.isNotEmpty()) hooks.onLeftInPickupBox(player)
     }
 
     /** Reports the stored operation, pays its currencies and hands out its deliveries. */

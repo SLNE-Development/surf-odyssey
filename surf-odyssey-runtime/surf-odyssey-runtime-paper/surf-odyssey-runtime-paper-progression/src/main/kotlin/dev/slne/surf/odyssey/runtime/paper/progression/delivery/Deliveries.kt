@@ -58,6 +58,15 @@ class Deliveries(
     }
 
     /**
+     * Commits [operation] and, if the first attempt fails or times out, commits the same operation once more. The
+     * second attempt runs even while the service is marked unavailable; a repeated operation id is stored at most
+     * once, so the retry learns whether the first attempt was stored.
+     *
+     * @return the outcome, or `null` if both attempts failed or timed out
+     */
+    suspend fun commitWithRetry(operation: OperationDto): OperationResultDto? = commit(operation) ?: commit(operation)
+
+    /**
      * Claims each delivery and gives its item to [inventory]. Items that do not fit are put back into the pickup box;
      * deliveries that cannot be claimed because the service fails stay there. The player is told once if anything
      * is left in the pickup box.
@@ -120,7 +129,7 @@ class Deliveries(
         val operation = OperationDto(
             UUID.randomUUID(), player, emptyList(), items.map { NewDeliveryDto(codec.encode(it), source) }
         )
-        val stored = when (commit(operation)) {
+        val stored = when (commitWithRetry(operation)) {
             is OperationResultDto.Applied, is OperationResultDto.AlreadyApplied -> true
             is OperationResultDto.Rejected, null -> false
         }

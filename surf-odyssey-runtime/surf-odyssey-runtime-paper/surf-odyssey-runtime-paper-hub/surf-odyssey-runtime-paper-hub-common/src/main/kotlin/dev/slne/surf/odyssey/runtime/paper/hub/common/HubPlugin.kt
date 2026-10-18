@@ -104,11 +104,11 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Builds the region index and the world's protection settings, collects the portals, connects the
-     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, removes vanilla recipes and loot except the code loot of mob regions, installs the progression engine
-     * with [content] and the [placements], registers the
-     * gate, protection, world change, fishing, mob kill, portal, arrival and region wand listeners and the
-     * `/hubregion` command, starts the editor preview, the region ticker and the gate enforcer, registers the placeholder tags, then calls
-     * [onHubEnabled].
+     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world,
+     * removes vanilla recipes and loot except the code loot of mob regions, installs the progression engine
+     * with [content] and the [placements], registers the gate, protection, world change, fishing, mob kill,
+     * portal, arrival and region wand listeners and the `/hubregion` command, starts the editor preview, the
+     * region ticker and the gate enforcer, registers the placeholder tags, then calls [onHubEnabled].
      *
      * @throws IllegalStateException if two regions share an id or a block; nothing else is set up then
      */
@@ -138,10 +138,10 @@ abstract class HubPlugin : OdysseyPaperMain() {
     }
 
     /**
-     * Calls [onHubDisabled], then despawns the progression NPCs and sends the buffered progress, restores every block waiting to regenerate, unregisters the
-     * placeholder tags, stops ticking and enforcing gates, removes the mobs of every mob spawn region, stops the reconnect
-     * service and disconnects from Redis. Each step runs even if an earlier one throws; the first
-     * failure is thrown once all steps have run.
+     * Calls [onHubDisabled], then despawns the progression NPCs and sends the buffered progress, restores
+     * every block waiting to regenerate, unregisters the placeholder tags, stops ticking and enforcing gates,
+     * removes the mobs of every mob spawn region, stops the reconnect service and disconnects from Redis.
+     * Each step runs even if an earlier one throws; the first failure is thrown once all steps have run.
      */
     final override suspend fun onDisabled() {
         val steps = ShutdownSteps()

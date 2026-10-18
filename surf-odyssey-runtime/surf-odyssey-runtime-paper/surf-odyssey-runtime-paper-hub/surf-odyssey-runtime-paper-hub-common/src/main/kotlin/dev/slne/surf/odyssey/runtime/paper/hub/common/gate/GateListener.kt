@@ -20,9 +20,9 @@ import org.bukkit.event.player.PlayerQuitEvent
 
 /**
  * Cancels what players do in regions whose gate locks them out: breaking and placing blocks, interacting with blocks
- * and entities, fishing, attacking and picking up items. An action counts as inside a locked region if the player stands in one or the
- * block, entity or hook it targets lies in one. The player is reminded in the action bar, except when stepping on
- * blocks, clicking into the air or picking up items.
+ * and entities, fishing, attacking and picking up items. An action counts as inside a locked region if the player
+ * stands in one or the block, entity, hook or item it targets lies in one. The player is reminded in the action bar,
+ * except when stepping on blocks, clicking into the air or picking up items.
  *
  * Every handler runs first, so cancelled actions give no drops, quest progress or tool usage.
  */

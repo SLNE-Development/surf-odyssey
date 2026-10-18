@@ -73,6 +73,9 @@ class MobSpawnRegion(
         lastSpawnAt = now
     }
 
+    /** Returns whether this region spawned the mob with [id] and still counts it as alive. */
+    fun hasSpawned(id: UUID): Boolean = id in alive
+
     /** Removes every mob this region spawned that is still in the world and stops counting them. */
     internal fun removeMobs() {
         val world = HubPlugin.instance.hubWorld

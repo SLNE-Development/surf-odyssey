@@ -2,6 +2,8 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.mobs
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** Checks how [AliveMobs] counts, prunes and removes the mobs of a spawn region. */
 class AliveMobsTest {
@@ -38,5 +40,15 @@ class AliveMobsTest {
         assertEquals(0, MobSpawnPlanner.toSpawn(mobs.count, 2, 0, 10_000, 1_000))
         mobs.prune { it == 1 }
         assertEquals(1, MobSpawnPlanner.toSpawn(mobs.count, 2, 0, 10_000, 1_000))
+    }
+
+    @Test
+    fun `tracked mobs are known until they are pruned`() {
+        val mobs = AliveMobs<Int>()
+        mobs.add(1)
+        assertTrue(1 in mobs)
+        assertFalse(2 in mobs)
+        mobs.prune { false }
+        assertFalse(1 in mobs)
     }
 }

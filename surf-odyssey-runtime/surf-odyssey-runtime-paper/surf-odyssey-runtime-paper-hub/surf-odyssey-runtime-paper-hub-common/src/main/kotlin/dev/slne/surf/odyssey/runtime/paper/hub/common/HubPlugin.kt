@@ -10,6 +10,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateEnforcer
 import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobKillListener
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobRegionLoot
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.placeholder.HubPlaceholders
 import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.HubProgression
@@ -31,7 +32,6 @@ import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionPlacements
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
-import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.MobLootProvider
 import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.VanillaLockdown
 import net.kyori.adventure.text.Component
 import org.bukkit.World
@@ -104,7 +104,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
 
     /**
      * Builds the region index and the world's protection settings, collects the portals, connects the
-     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, removes vanilla recipes and loot, installs the progression engine
+     * arrival and reconnect caches to Redis, starts the reconnect service, turns off saving for every world, removes vanilla recipes and loot except the code loot of mob regions, installs the progression engine
      * with [content] and the [placements], registers the
      * gate, protection, world change, fishing, mob kill, portal, arrival and region wand listeners and the
      * `/hubregion` command, starts the editor preview, the region ticker and the gate enforcer, registers the placeholder tags, then calls
@@ -119,7 +119,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         HubRedis.connect(name)
         ReconnectService.start(this)
         server.worlds.forEach { it.isAutoSave = false }
-        VanillaLockdown.install(this, MobLootProvider.NONE)
+        VanillaLockdown.install(this, MobRegionLoot)
         HubProgression.install(this, content, ProgressionPlacements().apply { placements() })
         GateListener.register()
         HubProtectionListener.register()

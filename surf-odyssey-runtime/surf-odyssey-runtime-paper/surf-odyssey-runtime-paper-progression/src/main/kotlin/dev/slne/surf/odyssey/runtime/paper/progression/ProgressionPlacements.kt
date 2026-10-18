@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.npc.NpcDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.StationDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.npc.NpcPlacement
+import dev.slne.surf.odyssey.runtime.paper.progression.station.StationPlacement
 
 /**
  * A position with a view direction in the main world of a server.
@@ -23,14 +24,6 @@ data class SpawnPoint(val x: Double, val y: Double, val z: Double, val yaw: Floa
  * @property z the z coordinate
  */
 data class BlockPos(val x: Int, val y: Int, val z: Int)
-
-/**
- * A station kind placed on a block.
- *
- * @property station the station kind
- * @property position the block that opens the station
- */
-data class StationPlacement(val station: StationDefinition, val position: BlockPos)
 
 /**
  * Collects where the NPCs and stations of a server stand. Each call adds one placement; the same definition may be
@@ -68,6 +61,6 @@ class ProgressionPlacements {
      * @param at the block that opens the station
      */
     fun station(definition: StationDefinition, at: BlockPos) {
-        stationPlacements += StationPlacement(definition, at)
+        stationPlacements += StationPlacement(definition, at.x, at.y, at.z)
     }
 }

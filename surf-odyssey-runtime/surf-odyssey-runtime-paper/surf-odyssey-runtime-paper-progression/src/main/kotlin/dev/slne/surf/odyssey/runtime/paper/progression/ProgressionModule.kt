@@ -11,12 +11,17 @@ import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.RewardPlanner
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.ToolRewardFactory
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
+import dev.slne.surf.odyssey.runtime.paper.progression.dialog.ConversationHooks
+import dev.slne.surf.odyssey.runtime.paper.progression.station.StationBlocks
+import dev.slne.surf.odyssey.runtime.paper.progression.station.StationView
 import dev.slne.surf.odyssey.runtime.paper.progression.station.recipeBrowserView
+import dev.slne.surf.odyssey.runtime.paper.progression.trade.TradeView
 import dev.slne.surf.odyssey.runtime.paper.progression.station.stationView
 import dev.slne.surf.odyssey.runtime.paper.progression.trade.tradeView
 import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolItems
 import dev.slne.surf.odyssey.runtime.paper.progression.tool.accessoryView
 import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolModule
+import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
 import java.time.Clock
 
@@ -41,13 +46,15 @@ object ProgressionModule {
     /**
      * Builds the registry from [pack], starts loading and saving the players' progression, sets
      * [Progression.runtime] and lets tool rewards create tool items. In [ProgressionMode.FULL] it also installs the
-     * tool listeners with [ToolModule.install].
+     * tool listeners with [ToolModule.install], makes the placed station blocks of the main world open their
+     * stations, connects the "Handeln" and "Herstellen" answers of conversations to the trade and station menus and
+     * spawns the placed NPCs.
      *
      * @param plugin the plugin that owns the listeners, coroutines and log
      * @param pack the content of this server
      * @param mode which parts of the engine run
      * @param serverName returns the name of this server, as sent with every tool sighting
-     * @param placements where the NPCs and stations of this server stand; NPCs are spawned only in
+     * @param placements where the NPCs and stations of this server stand, in the main world; used only in
      *        [ProgressionMode.FULL]
      * @param clock the clock every time of the engine comes from
      * @return the installed engine
@@ -76,6 +83,9 @@ object ProgressionModule {
         store.start()
         if (mode == ProgressionMode.FULL) {
             ToolModule.install(plugin, runtime, serverName)
+            StationBlocks.install(plugin, Bukkit.getWorlds().first(), placements.stations)
+            ConversationHooks.openTrade = { player, npc -> TradeView.open(player, npc) }
+            ConversationHooks.openStation = { player, npc -> npc.station?.let { StationView.open(player, it) } }
             Conversations.register(plugin)
             ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = Conversations::open)
         }

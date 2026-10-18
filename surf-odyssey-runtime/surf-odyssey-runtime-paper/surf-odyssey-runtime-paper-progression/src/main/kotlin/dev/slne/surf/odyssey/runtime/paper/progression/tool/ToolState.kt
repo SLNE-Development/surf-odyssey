@@ -89,14 +89,4 @@ object AccessoryRules {
         OperationOutcome.Busy, OperationOutcome.MissingItems, is OperationOutcome.Rejected -> RemovalResult.REATTACH
         OperationOutcome.Unavailable -> RemovalResult.PENDING
     }
-
-    /**
-     * Returns whether an accessory that is given back to a player goes straight into the pickup box: when the player
-     * is offline and the operation that gives it back did not run yet ([outcome] `null`) or did not succeed.
-     *
-     * @param online whether the player is online
-     * @param outcome the outcome of the operation that gives the accessory back, or `null` if it did not run
-     */
-    fun returnsToPickupBox(online: Boolean, outcome: OperationOutcome?): Boolean =
-        !online && outcome != OperationOutcome.Success
 }

@@ -12,9 +12,7 @@ import org.bukkit.Material
 import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Tests for attaching accessories to and detaching them from tool slots. */
 class AccessoryRulesTest {
@@ -97,18 +95,5 @@ class AccessoryRulesTest {
     @Test
     fun `a removal with an unreachable service leaves the slot empty`() {
         assertEquals(RemovalResult.PENDING, AccessoryRules.afterRemoval(OperationOutcome.Unavailable))
-    }
-
-    @Test
-    fun `an accessory for a player who left goes to the pickup box directly`() {
-        assertTrue(AccessoryRules.returnsToPickupBox(online = false, outcome = null))
-        assertTrue(AccessoryRules.returnsToPickupBox(online = false, outcome = OperationOutcome.Unavailable))
-    }
-
-    @Test
-    fun `an accessory for an online player is returned by the operation`() {
-        assertFalse(AccessoryRules.returnsToPickupBox(online = true, outcome = null))
-        assertFalse(AccessoryRules.returnsToPickupBox(online = true, outcome = OperationOutcome.Unavailable))
-        assertFalse(AccessoryRules.returnsToPickupBox(online = false, outcome = OperationOutcome.Success))
     }
 }

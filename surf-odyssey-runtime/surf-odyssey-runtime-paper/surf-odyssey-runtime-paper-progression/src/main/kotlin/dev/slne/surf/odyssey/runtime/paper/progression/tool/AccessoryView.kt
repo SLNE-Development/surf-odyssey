@@ -33,6 +33,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.Accessory
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationOutcome
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationPlan
+import dev.slne.surf.odyssey.runtime.paper.progression.operation.StashResult
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
@@ -166,7 +167,7 @@ private fun store(player: Player, held: HeldTool, state: ToolState) {
 /**
  * Takes one [accessory] from the inventory of [player] into escrow, commits the operation and attaches the accessory
  * to the slot [slot] of the tool item [toolUuid]. If the player left or the tool cannot take it after the commit, the
- * accessory is given back with [returnAccessory]. The view is opened again afterwards.
+ * accessory is put into the pickup box with [returnAccessory]. The view is opened again after a successful insert.
  */
 private fun insertAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot, accessory: AccessoryDefinition) {
     val plugin = ProgressionModule.plugin
@@ -254,26 +255,21 @@ private fun removeAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot)
 }
 
 /**
- * Gives one [accessory] back to [player] in the background. An online player gets it through an operation that
- * delivers it into the inventory or the pickup box. For a player who left, or whose operation could not run because
- * the player left meanwhile, it is put into the pickup box with a delivery commit of its own. A return that fails is
- * logged as lost.
+ * Puts one [accessory] for [player] into the pickup box in the background with a delivery commit of its own, whether
+ * or not the player is online, and tells an online player where it is. A stash that fails is logged with whether the
+ * accessory was dropped at the player's feet or lost.
  */
 private fun returnAccessory(player: Player, accessory: AccessoryDefinition) {
     val plugin = ProgressionModule.plugin
-    val runtime = Progression.runtime
     plugin.launch {
-        val outcome = if (player.isOnline) {
-            val plan = OperationPlan(emptyList(), emptyList(), listOf(ItemReward(accessory.item.ref, 1)), ACCESSORY_SOURCE)
-            runtime.operations.run(player, plan)
-        } else {
-            null
-        }
-        if (AccessoryRules.returnsToPickupBox(player.isOnline, outcome)) {
-            val stored = runtime.operations.stash(player.uniqueId, listOf(accessory.item.create(1)), ACCESSORY_SOURCE)
-            if (!stored) plugin.logger.severe("Could not put accessory ${accessory.id} into the pickup box of ${player.uniqueId}")
-        } else if (outcome != OperationOutcome.Success) {
-            plugin.logger.severe("Could not return accessory ${accessory.id} to ${player.uniqueId}: $outcome")
+        when (Progression.runtime.operations.stash(player, listOf(accessory.item.create(1)), ACCESSORY_SOURCE)) {
+            StashResult.STORED -> if (player.isOnline) ToolMessages.accessoryInPickupBox(player)
+            StashResult.DROPPED -> plugin.logger.severe(
+                "Could not put accessory ${accessory.id} into the pickup box of ${player.uniqueId}; dropped it at the feet"
+            )
+            StashResult.LOST -> plugin.logger.severe(
+                "Could not put accessory ${accessory.id} into the pickup box of ${player.uniqueId}; it is lost"
+            )
         }
     }
 }
@@ -336,6 +332,12 @@ object ToolMessages {
     fun noFittingAccessory(player: Player) = player.sendText {
         appendErrorPrefix()
         error("Du hast kein passendes Zubehör dabei.")
+    }
+
+    /** Tells [player] that an accessory that could not be inserted waits in the pickup box. */
+    fun accessoryInPickupBox(player: Player) = player.sendText {
+        appendInfoPrefix()
+        info("Das Zubehör liegt in deinem Abholfach.")
     }
 
     /** Tells [player] that a removed accessory is delivered once the progression service can be reached again. */

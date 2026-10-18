@@ -101,16 +101,24 @@ class OperationRunner(
 
     /**
      * Puts [items] into the pickup box of [player] with a delivery operation of their own, which is committed once
-     * more if the first attempt fails; works whether or not the player is online. When both attempts fail, the
-     * items are dropped at the player's feet, or logged as lost when the player is not known here.
+     * more with the same operation id if the first attempt fails. Works whether or not the player is online; for an
+     * online player it runs on the player's thread. When both attempts fail, the items are dropped at the feet of a
+     * player known here, otherwise they are logged as lost.
      *
      * @param player the owner of the pickup box
      * @param items the stacks to deliver
      * @param source the source stored with the deliveries
-     * @return `true` if the items are in the pickup box
+     * @return how the stash ended
      */
-    suspend fun stash(player: UUID, items: List<ItemStack>, source: String): Boolean =
-        flow.deliveries.stash(player, items, source)
+    suspend fun stash(player: Player, items: List<ItemStack>, source: String): StashResult {
+        val id = player.uniqueId
+        if (player.isOnline) {
+            val stored = onPlayerThread(player) { flow.deliveries.stash(id, items, source) }
+            return StashResult.of(stored, holderPresent = true)
+        }
+        val holderPresent = players.containsKey(id)
+        return StashResult.of(flow.deliveries.stash(id, items, source), holderPresent)
+    }
 
     /** Runs [block] on the thread of [player] while the player is registered in [players]. */
     private suspend fun <T> onPlayerThread(player: Player, block: suspend () -> T): T {
@@ -150,4 +158,29 @@ private class BridgeBackend(private val bridge: ProgressionBridge) : OperationBa
 
     /** Claims the delivery at the progression service. */
     override suspend fun claim(player: UUID, deliveryId: UUID): String? = bridge.claimDelivery(player, deliveryId)
+}
+
+/** How a direct pickup box stash ended. */
+enum class StashResult {
+    /** The items are in the pickup box. */
+    STORED,
+
+    /** The pickup box could not take the items, so they were dropped at the feet of the player. */
+    DROPPED,
+
+    /** The pickup box could not take the items and no player was known to drop them at, so they are lost. */
+    LOST;
+
+    /** Derives the result of a stash. */
+    companion object {
+        /**
+         * Returns the result of a stash that was [stored] or not, where [holderPresent] tells whether the player was
+         * known here to drop the items at.
+         */
+        fun of(stored: Boolean, holderPresent: Boolean): StashResult = when {
+            stored -> STORED
+            holderPresent -> DROPPED
+            else -> LOST
+        }
+    }
 }

@@ -8,6 +8,7 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
@@ -20,7 +21,8 @@ import org.bukkit.event.player.PlayerQuitEvent
 /**
  * Cancels what players do in regions whose gate locks them out: breaking and placing blocks, interacting with blocks
  * and entities, fishing, attacking and picking up items. An action counts as inside a locked region if the player stands in one or the
- * block, entity or hook it targets lies in one. The player is reminded in the action bar.
+ * block, entity or hook it targets lies in one. The player is reminded in the action bar, except when stepping on
+ * blocks, clicking into the air or picking up items.
  *
  * Every handler runs first, so cancelled actions give no drops, quest progress or tool usage.
  */
@@ -37,13 +39,25 @@ object GateListener : Listener {
         if (blocks(event.player, event.block.location)) event.isCancelled = true
     }
 
-    /** Denies using a block or the held item in a locked region. */
+    /**
+     * Denies using a block or the held item in a locked region. Also handles interactions that arrive cancelled, since
+     * clicks into the air always do.
+     */
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInteract(event: PlayerInteractEvent) {
-        if (!blocks(event.player, event.clickedBlock?.location)) return
+        if (!isLockedOut(event.player, event.clickedBlock?.location)) return
         event.setUseInteractedBlock(Event.Result.DENY)
         event.setUseItemInHand(Event.Result.DENY)
+        if (remindsOn(event.action)) GateAccess.tellRegionLocked(event.player)
     }
+
+    /**
+     * Returns whether a denied interaction of kind [action] reminds the player of the locked region: only clicks on
+     * blocks do.
+     *
+     * @param action the kind of interaction
+     */
+    fun remindsOn(action: Action): Boolean = action == Action.LEFT_CLICK_BLOCK || action == Action.RIGHT_CLICK_BLOCK
 
     /** Cancels interacting with an entity in a locked region. */
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

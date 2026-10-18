@@ -1,11 +1,16 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.north
 
+import dev.slne.surf.odyssey.runtime.paper.content.Npcs
 import dev.slne.surf.odyssey.runtime.paper.content.OdysseyContent
+import dev.slne.surf.odyssey.runtime.paper.content.quests.Quests
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.RegionRegistry
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.WorldPosition
+import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionPlacements
+import dev.slne.surf.odyssey.runtime.paper.progression.SpawnPoint
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirements
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
@@ -26,9 +31,25 @@ class NorthHubPlugin : HubPlugin() {
 
     /** Declares North's portals. */
     override fun portals() = northPortals()
+
+    /** Places Olek and Mira. */
+    override fun ProgressionPlacements.placements() = northPlacements()
 }
 
-/** Declares the regions of North: three forests, two mines, a lake, the ruins and a wolf area. Coordinates are placeholders until the map is in place. */
+/**
+ * Places the NPCs of North on the grass outside the regions: Olek at the south shore of the lake `north_lake`,
+ * facing the water, and Mira in front of the ruins `north_ruins`, facing them.
+ */
+fun ProgressionPlacements.northPlacements() {
+    npc(Npcs.OLEK, SpawnPoint(426.5, 64.0, 98.5, 0f, 0f))
+    npc(Npcs.MIRA, SpawnPoint(516.5, 64.0, 497.5, 0f, 0f))
+}
+
+/**
+ * Declares the regions of North: three forests, two mines, a lake, the ruins and a wolf area. The ridge mine opens at
+ * the third step of the lighthouse questline, and wolves drop a bone, leather or nothing. Coordinates are placeholders
+ * until the map is in place.
+ */
 fun RegionRegistry.northRegions() {
     forest("north_forest_spruce") {
         displayName = Component.text("Fichtenhain")
@@ -56,6 +77,7 @@ fun RegionRegistry.northRegions() {
         shape { cuboid(100, 20, 300, 140, 63, 340) }
         breakable(Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE, Material.COAL_ORE)
         regenerateAfter = 5.minutes
+        gate = Requirements.questStepReached(Quests.LEUCHTFEUER_ID, 2)
     }
     mine("north_mine_deep") {
         displayName = Component.text("Tiefe Grube")
@@ -80,6 +102,11 @@ fun RegionRegistry.northRegions() {
         spawnPoint(630, 64, 130)
         maxAlive = 4
         respawnInterval = 30.seconds
+        drops {
+            entry(60) { ItemStack(Material.BONE) }
+            entry(30) { ItemStack(Material.LEATHER) }
+            nothing(10)
+        }
     }
 }
 

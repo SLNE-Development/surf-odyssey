@@ -16,6 +16,7 @@ import kotlin.test.assertEquals
 /** Tests for claiming single deliveries from the pickup box. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClaimTest {
+    /** Creates a delivery of three ink sacs that is not stored at the fake service. */
     private fun delivery() = DeliveryDto(UUID.randomUUID(), FakeCodec.encode(FakeStacks.of(TestItems.ink, 3)), "t", 0)
 
     @Test

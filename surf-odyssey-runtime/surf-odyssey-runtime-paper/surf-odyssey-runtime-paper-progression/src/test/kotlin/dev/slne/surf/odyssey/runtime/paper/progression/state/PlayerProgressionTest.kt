@@ -17,8 +17,10 @@ import kotlin.test.assertTrue
 
 /** Tests for the cached progression of one player and how changes and counter deltas apply to it. */
 class PlayerProgressionTest {
+    /** A clock fixed at one second after the epoch. */
     private val clock = Clock.fixed(Instant.ofEpochMilli(1_000), ZoneOffset.UTC)
 
+    /** Creates the state of a player without any progression. */
     private fun empty() = ProgressionStateDto(
         UUID.randomUUID(), emptyList(), emptyList(), emptySet(), emptySet(), null, null, emptyList(), emptyList()
     )

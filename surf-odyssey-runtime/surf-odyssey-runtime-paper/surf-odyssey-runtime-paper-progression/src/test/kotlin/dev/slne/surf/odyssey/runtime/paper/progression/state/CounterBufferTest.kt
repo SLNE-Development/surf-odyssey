@@ -7,6 +7,7 @@ import kotlin.test.assertTrue
 
 /** Tests for summing, draining and re-queueing buffered counter deltas. */
 class CounterBufferTest {
+    /** Creates a delta of [amount] for objective [objective] of step 0, version 1, period 0 of [questId]. */
     private fun delta(objective: Int, amount: Int, questId: String = "q") =
         CounterDeltaDto(questId, step = 0, stepVersion = 1, objective = objective, period = 0, delta = amount)
 

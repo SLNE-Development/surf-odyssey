@@ -140,23 +140,30 @@ class TestRunner(
 
     /** Records each change of the service's state that the flow reports. */
     private val hooks = object : OperationHooks {
+        /** Always reports the service as reachable. */
         override fun isAvailable(): Boolean = true
+
+        /** Counts the failure in [serviceFailures]. */
         override fun onServiceFailure(action: String, error: Throwable) {
             serviceFailures++
         }
 
+        /** Records the changes in [appliedChanges]. */
         override fun onCommitted(player: UUID, changes: List<StateChange>) {
             appliedChanges += changes
         }
 
+        /** Counts the notice in [pickupNotices]. */
         override fun onLeftInPickupBox(player: UUID) {
             pickupNotices++
         }
 
+        /** Records the stacks in [droppedAtFeet]. */
         override fun dropAtFeet(player: UUID, items: List<ItemStack>) {
             droppedAtFeet += items
         }
 
+        /** Records the delivery in [brokenDeliveries]. */
         override fun onBrokenDelivery(player: UUID, deliveryId: UUID, error: Throwable) {
             brokenDeliveries += deliveryId
         }
@@ -164,6 +171,7 @@ class TestRunner(
 
     /** Stores the deliveries of applied commits and hands each one out once. */
     private val backend = object : OperationBackend {
+        /** Answers with [commit] and stores the deliveries of an applied operation as unclaimed. */
         override suspend fun commit(operation: OperationDto): OperationResultDto {
             val result = this@TestRunner.commit(operation)
             if (result is OperationResultDto.Applied) {
@@ -173,6 +181,10 @@ class TestRunner(
             return result
         }
 
+        /**
+         * Hands out the item of an unclaimed delivery once; throws when [claimFails] and returns an undecodable
+         * item for the first claim when [corruptFirstClaim] is set.
+         */
         override suspend fun claim(player: UUID, deliveryId: UUID): String? {
             if (claimFails) error("claim failed")
             if (deliveries[deliveryId] != false) return null
@@ -195,6 +207,7 @@ class TestRunner(
         planRewards = { rewards, owner -> RewardPlanner.plan(rewards, owner, FakeStacks::factory) },
         hooks = hooks,
         currency = object : CurrencyGateway {
+            /** Records the payment in [grants]. */
             override fun grant(player: UUID, currencyId: String, amount: Double) {
                 grants += currencyId to amount
             }

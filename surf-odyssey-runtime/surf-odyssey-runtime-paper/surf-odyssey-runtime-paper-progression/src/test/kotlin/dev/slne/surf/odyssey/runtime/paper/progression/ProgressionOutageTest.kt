@@ -13,17 +13,23 @@ import kotlin.test.assertNull
 
 /** Tests that failures of the progression service are logged once per outage. */
 class ProgressionOutageTest {
+    /** Every record written to [logger]. */
     private val records = mutableListOf<LogRecord>()
 
+    /** A logger that writes every level into [records] only. */
     private val logger = Logger.getAnonymousLogger().apply {
         useParentHandlers = false
         level = Level.ALL
         addHandler(object : Handler() {
+            /** Adds the record to [records]. */
             override fun publish(record: LogRecord) {
                 records += record
             }
 
+            /** Does nothing, as nothing is buffered. */
             override fun flush() = Unit
+
+            /** Does nothing, as nothing is held open. */
             override fun close() = Unit
         })
     }

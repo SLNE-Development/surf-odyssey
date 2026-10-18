@@ -24,14 +24,17 @@ import kotlin.test.assertTrue
 
 /** Tests for turning quest rewards into state changes, item stacks and currency payments. */
 class RewardPlannerTest {
+    /** The player who receives the planned rewards. */
     private val owner = UUID.randomUUID()
 
+    /** A pickaxe definition used for tool rewards. */
     private val pick = tool("pick", ToolType.PICKAXE) {
         name = text("Hacke")
         material = Material.IRON_PICKAXE
         curve = Curves.PICKAXE
     }
 
+    /** Removes an installed tool factory so that the other tests see none. */
     @AfterTest
     fun uninstallTools() {
         RewardPlanner.toolRewards = null
@@ -90,6 +93,7 @@ class RewardPlannerTest {
     @Test
     fun `unknown reward types are rejected`() {
         val unknown = object : QuestReward {
+            /** A type the planner does not know. */
             override val typeKey: String = "mystery"
         }
 

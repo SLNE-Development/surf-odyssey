@@ -9,6 +9,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
 import dev.slne.surf.odyssey.runtime.paper.progression.station.recipeBrowserView
 import dev.slne.surf.odyssey.runtime.paper.progression.station.stationView
+import dev.slne.surf.odyssey.runtime.paper.progression.trade.tradeView
 import org.bukkit.plugin.Plugin
 import java.time.Clock
 
@@ -26,6 +27,7 @@ object ProgressionModule {
         pickupBoxView.register()
         stationView.register()
         recipeBrowserView.register()
+        tradeView.register()
     }
 
     /**

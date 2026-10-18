@@ -95,4 +95,18 @@ object ProgressionMessages {
         success("Abgeholt: ")
         append(name)
     }
+
+    /** Tells [player] that the item named [name] was bought. */
+    fun bought(player: Player, name: Component) = player.sendText {
+        appendSuccessPrefix()
+        success("Gekauft: ")
+        append(name)
+    }
+
+    /** Tells [player] that the recipe for the item named [name] was learned. */
+    fun recipeLearned(player: Player, name: Component) = player.sendText {
+        appendSuccessPrefix()
+        success("Rezept gelernt: ")
+        append(name)
+    }
 }

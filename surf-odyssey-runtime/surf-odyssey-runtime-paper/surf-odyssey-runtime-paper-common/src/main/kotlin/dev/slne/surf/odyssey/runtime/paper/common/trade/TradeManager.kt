@@ -42,6 +42,24 @@ internal object TradeManager {
         return TradeRequestResult.SENT
     }
 
+    fun withdrawRequest(sender: Player, receiver: Player): Boolean {
+        val expiresAt = requests.remove(RequestKey(sender.uniqueId, receiver.uniqueId))
+        return expiresAt != null && expiresAt > System.currentTimeMillis()
+    }
+
+    fun withdrawAllRequests(sender: Player): Int {
+        val now = System.currentTimeMillis()
+        var withdrawn = 0
+
+        requests.entries.removeIf { (key, expiresAt) ->
+            val ownedBySender = key.from == sender.uniqueId
+            if (ownedBySender && expiresAt > now) withdrawn++
+            ownedBySender
+        }
+
+        return withdrawn
+    }
+
     fun accept(accepter: Player, sender: Player): TradeAcceptResult {
         val session: TradeSession
 

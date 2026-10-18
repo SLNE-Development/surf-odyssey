@@ -102,6 +102,54 @@ fun tradeCommand() = commandTree("trade") {
         }
     }
 
+    literalArgument("withdraw") {
+        playerExecutor { player, _ ->
+            val withdrawn = TradeManager.withdrawAllRequests(player)
+
+            if (withdrawn == 0) {
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Du hast keine gültige Handelsanfrage.")
+                }
+                return@playerExecutor
+            }
+
+            player.sendText {
+                appendInfoPrefix()
+                info(
+                    if (withdrawn == 1) "Du hast deine Handelsanfrage zurückgezogen."
+                    else "Du hast deine $withdrawn Handelsanfragen zurückgezogen."
+                )
+            }
+        }
+
+        entitySelectorArgumentOnePlayer("tradePartner") {
+            playerExecutor { player, args ->
+                val receiver = args["tradePartner"] as Player
+
+                if (!TradeManager.withdrawRequest(player, receiver)) {
+                    player.sendText {
+                        appendErrorPrefix()
+                        error("Du hast keine gültige Handelsanfrage an")
+                        appendSpace()
+                        variableValue(receiver.name)
+                        error(".")
+                    }
+                    return@playerExecutor
+                }
+
+                player.sendText {
+                    appendInfoPrefix()
+                    info("Du hast deine Handelsanfrage an")
+                    appendSpace()
+                    variableValue(receiver.name)
+                    appendSpace()
+                    info("zurückgezogen.")
+                }
+            }
+        }
+    }
+
     literalArgument("accept") {
         entitySelectorArgumentOnePlayer("tradePartner") {
             playerExecutor { player, args ->

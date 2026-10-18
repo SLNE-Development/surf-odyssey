@@ -254,16 +254,25 @@ private fun removeAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot)
 }
 
 /**
- * Gives one [accessory] back to [player] in the background through an operation that delivers it into the inventory
- * or the pickup box. If that operation is not stored, for example because the player left, the loss is logged.
+ * Gives one [accessory] back to [player] in the background. An online player gets it through an operation that
+ * delivers it into the inventory or the pickup box. For a player who left, or whose operation could not run because
+ * the player left meanwhile, it is put into the pickup box with a delivery commit of its own. A return that fails is
+ * logged as lost.
  */
 private fun returnAccessory(player: Player, accessory: AccessoryDefinition) {
     val plugin = ProgressionModule.plugin
     val runtime = Progression.runtime
     plugin.launch {
-        val plan = OperationPlan(emptyList(), emptyList(), listOf(ItemReward(accessory.item.ref, 1)), ACCESSORY_SOURCE)
-        val outcome = runtime.operations.run(player, plan)
-        if (outcome != OperationOutcome.Success) {
+        val outcome = if (player.isOnline) {
+            val plan = OperationPlan(emptyList(), emptyList(), listOf(ItemReward(accessory.item.ref, 1)), ACCESSORY_SOURCE)
+            runtime.operations.run(player, plan)
+        } else {
+            null
+        }
+        if (AccessoryRules.returnsToPickupBox(player.isOnline, outcome)) {
+            val stored = runtime.operations.stash(player.uniqueId, listOf(accessory.item.create(1)), ACCESSORY_SOURCE)
+            if (!stored) plugin.logger.severe("Could not put accessory ${accessory.id} into the pickup box of ${player.uniqueId}")
+        } else if (outcome != OperationOutcome.Success) {
             plugin.logger.severe("Could not return accessory ${accessory.id} to ${player.uniqueId}: $outcome")
         }
     }

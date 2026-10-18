@@ -99,6 +99,19 @@ class OperationRunner(
         flow.claim(player.uniqueId, inventory, delivery, inventory::fits)
     }
 
+    /**
+     * Puts [items] into the pickup box of [player] with a delivery operation of their own, which is committed once
+     * more if the first attempt fails; works whether or not the player is online. When both attempts fail, the
+     * items are dropped at the player's feet, or logged as lost when the player is not known here.
+     *
+     * @param player the owner of the pickup box
+     * @param items the stacks to deliver
+     * @param source the source stored with the deliveries
+     * @return `true` if the items are in the pickup box
+     */
+    suspend fun stash(player: UUID, items: List<ItemStack>, source: String): Boolean =
+        flow.deliveries.stash(player, items, source)
+
     /** Runs [block] on the thread of [player] while the player is registered in [players]. */
     private suspend fun <T> onPlayerThread(player: Player, block: suspend () -> T): T {
         players.compute(player.uniqueId) { _, entry -> player to ((entry?.second ?: 0) + 1) }

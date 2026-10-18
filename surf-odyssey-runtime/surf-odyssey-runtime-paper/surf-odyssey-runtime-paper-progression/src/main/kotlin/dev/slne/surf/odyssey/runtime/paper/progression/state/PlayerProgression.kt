@@ -47,8 +47,10 @@ class PlayerProgression(initial: ProgressionStateDto, private val clock: Clock) 
      * @return the value, or `0` if the counter does not exist
      */
     fun counter(questId: String, step: Int, stepVersion: Int, objective: Int, period: Long): Int =
-        state.counters.find { CounterKey.of(it) == CounterKey(questId, step, stepVersion, objective, period) }?.value
-            ?: 0
+        state.counters.find {
+            it.objective == objective && it.step == step && it.stepVersion == stepVersion && it.period == period &&
+                it.questId == questId
+        }?.value ?: 0
 
     /**
      * Applies the changes of a committed operation to the cached state, in order. A change that does not fit the

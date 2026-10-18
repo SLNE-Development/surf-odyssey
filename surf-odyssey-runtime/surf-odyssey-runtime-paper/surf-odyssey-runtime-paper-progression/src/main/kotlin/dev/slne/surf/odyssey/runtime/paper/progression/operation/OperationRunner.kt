@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.logging.Level
 
 /**
@@ -74,6 +75,9 @@ class OperationRunner(
         }
     }
 
+    /** The listeners called after each successful operation. */
+    private val successListeners = CopyOnWriteArrayList<(Player) -> Unit>()
+
     /** The flow every operation runs through. */
     private val flow = OperationFlow(BridgeBackend(bridge), ItemCodec, { rewards, owner -> RewardPlanner.plan(rewards, owner) }, hooks, currency)
 
@@ -85,7 +89,30 @@ class OperationRunner(
      */
     suspend fun run(player: Player, plan: OperationPlan): OperationOutcome {
         if (!store.isAvailableFor(player.uniqueId)) return OperationOutcome.Unavailable
-        return onPlayerThread(player) { flow.run(player.uniqueId, PlayerEscrowInventory(player), plan) }
+        val outcome = onPlayerThread(player) { flow.run(player.uniqueId, PlayerEscrowInventory(player), plan) }
+        if (outcome == OperationOutcome.Success) notifySuccess(player)
+        return outcome
+    }
+
+    /**
+     * Adds a listener that is called with the player after each operation that ended with
+     * [OperationOutcome.Success]. A failing listener is logged and does not affect the outcome or other listeners.
+     *
+     * @param listener called after a successful operation of the player
+     */
+    fun onSuccess(listener: (Player) -> Unit) {
+        successListeners += listener
+    }
+
+    /** Calls every listener added with [onSuccess] for [player]. */
+    private fun notifySuccess(player: Player) {
+        for (listener in successListeners) {
+            try {
+                listener(player)
+            } catch (e: Exception) {
+                plugin.logger.log(Level.WARNING, "A listener of successful operations failed", e)
+            }
+        }
     }
 
     /**

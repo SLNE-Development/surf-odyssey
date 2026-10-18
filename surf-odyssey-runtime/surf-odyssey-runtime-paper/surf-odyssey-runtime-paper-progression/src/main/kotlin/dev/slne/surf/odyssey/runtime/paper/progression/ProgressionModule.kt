@@ -4,6 +4,7 @@ import dev.slne.surf.api.paper.inventory.framework.register
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.pickupBoxView
+import dev.slne.surf.odyssey.runtime.paper.progression.npc.ProgressionNpcs
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.LoggingCurrencyGateway
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.RewardPlanner
@@ -45,6 +46,8 @@ object ProgressionModule {
      * @param pack the content of this server
      * @param mode which parts of the engine run
      * @param serverName returns the name of this server, as sent with every tool sighting
+     * @param placements where the NPCs and stations of this server stand; NPCs are spawned only in
+     *        [ProgressionMode.FULL]
      * @param clock the clock every time of the engine comes from
      * @return the installed engine
      * @throws dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentValidationException if
@@ -55,6 +58,7 @@ object ProgressionModule {
         pack: ContentPack,
         mode: ProgressionMode,
         serverName: () -> String,
+        placements: ProgressionPlacements = ProgressionPlacements(),
         clock: Clock = Clock.systemUTC(),
     ): ProgressionRuntime {
         val registry = ProgressionRegistry.build(pack)
@@ -62,13 +66,17 @@ object ProgressionModule {
         val store = ProgressionStore(plugin, clock, onLoaded = { player, progression ->
             val waiting = progression.state.deliveries.size
             if (waiting > 0) ProgressionMessages.deliveriesWaiting(player, waiting)
+            ProgressionNpcs.refresh(player)
         })
         val operations = OperationRunner(plugin, store, LoggingCurrencyGateway(plugin.logger))
         val runtime = ProgressionRuntime(registry, mode, store, operations, clock)
         Progression.runtime = runtime
         RewardPlanner.toolRewards = ToolRewardFactory(ToolItems::create)
         store.start()
-        if (mode == ProgressionMode.FULL) ToolModule.install(plugin, runtime, serverName)
+        if (mode == ProgressionMode.FULL) {
+            ToolModule.install(plugin, runtime, serverName)
+            ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = { _, _ -> })
+        }
         return runtime
     }
 }

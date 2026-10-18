@@ -13,6 +13,8 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestDef
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestStepBuilder
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestType
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.quest
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirements
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.CurrencyReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
@@ -33,7 +35,7 @@ object RecurringQuests {
         title = "Kabeljau für den Markt",
         step = "Bring Olek 16 Kabeljau",
         texts = Texts(
-            offer = "Der Markt will heute 16 roher Kabeljau. Meine Knie wollen heute gar nichts. Hilfst du einem alten Mann?",
+            offer = "Der Markt will heute 16 rohe Kabeljau. Meine Knie wollen heute gar nichts. Hilfst du einem alten Mann?",
             accept = "Ich bringe dir den Kabeljau.",
             accepted = "Wunderbar. Ich setz mich solange auf die Kiste hier.",
             progress = "Hast du die 16 Kabeljau?",
@@ -87,7 +89,10 @@ object RecurringQuests {
         kill(EntityType.WOLF, 3, "north_wolves")
     }
 
-    /** Weekly: mine 64 ores in `north_mine_ridge` for the fish platter recipe. */
+    /**
+     * Weekly: mine 64 ores in `north_mine_ridge` for the fish platter recipe. Offered once the lighthouse questline
+     * has reached its third step, which opens the mine.
+     */
     val WEEKLY_ORE: QuestDefinition = recurring(
         id = "weekly_ore",
         type = QuestType.WEEKLY,
@@ -103,6 +108,7 @@ object RecurringQuests {
             done = "Gut. Hier, das Rezept für eine Fischplatte. Frag nicht, woher ich es habe.",
         ),
         mood = "thinking",
+        requirement = Requirements.questStepReached(Quests.LEUCHTFEUER_ID, 2),
         rewards = listOf(RecipeReward(Recipes.FISH_PLATTER)),
     ) {
         harvest(Material.IRON_ORE, 24, "north_mine_ridge")
@@ -152,7 +158,7 @@ object RecurringQuests {
         fish(60, material = Material.SALMON, regionId = "north_lake")
     }
 
-    /** Monthly: make 10 fish platters for the pit pickaxe. */
+    /** Monthly: make 10 fish platters for the pit pickaxe. Offered once the fish platter recipe is unlocked. */
     val MONTHLY_FEAST: QuestDefinition = recurring(
         id = "monthly_feast",
         type = QuestType.MONTHLY,
@@ -168,6 +174,7 @@ object RecurringQuests {
             done = "Das Meer ist satt und still. Nimm diese Hacke, sie hat lange in der Tiefe gelegen.",
         ),
         mood = "mystic",
+        requirement = Requirements.recipeUnlocked(Recipes.FISH_PLATTER),
         rewards = listOf(ToolReward(Tools.PIT_PICKAXE)),
     ) {
         craft(Recipes.FISH_PLATTER, 10)
@@ -216,6 +223,7 @@ private class Texts(
  * @param texts the German lines of the nodes
  * @param delivers whether the step hands items to the giver
  * @param mood the portrait mood of the giver in the offer and done nodes
+ * @param requirement requirement a player must meet to be offered the quest
  * @param rewards the quest rewards
  * @param objectives adds the objectives of the step
  */
@@ -228,12 +236,14 @@ private fun recurring(
     texts: Texts,
     delivers: Boolean = false,
     mood: String = NpcDefinition.NEUTRAL_MOOD,
+    requirement: Requirement = Requirements.ALWAYS,
     rewards: List<QuestReward>,
     objectives: QuestStepBuilder.() -> Unit,
 ): QuestDefinition = quest(id, type, giver) {
     this.title = text(title)
     description = text(step)
     offerNode = "${id}_offer"
+    this.requirement = requirement
 
     step(1, giver, "${id}_progress") {
         description = text(step)

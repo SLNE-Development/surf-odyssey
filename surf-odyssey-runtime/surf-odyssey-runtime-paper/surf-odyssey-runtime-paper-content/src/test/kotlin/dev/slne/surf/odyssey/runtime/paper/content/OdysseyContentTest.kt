@@ -10,8 +10,10 @@ import net.kyori.adventure.text.Component.text
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.dialog.NodeAction
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ref
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.Objective
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestType
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.QuestStepRequirement
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.RecipeUnlockedRequirement
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.CurrencyReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.RecipeReward
@@ -149,27 +151,35 @@ class OdysseyContentTest {
     @Test
     fun `every node of every quest is reachable from its offer or a step entry`() {
         registry.allQuests.forEach { quest ->
-            val reachable = mutableSetOf<String>()
-            val open = ArrayDeque(listOf(quest.offerNode) + quest.steps.map { it.entryNode })
-            while (open.isNotEmpty()) {
-                val id = open.removeFirst()
-                if (!reachable.add(id)) continue
-                registry.node(quest, id).answers.mapNotNullTo(open) { targetOf(it.action) }
-            }
+            val reachable = reachableNodes(quest, listOf(quest.offerNode) + quest.steps.map { it.entryNode }, ::targetOf)
             assertEquals(quest.nodes.map { it.id }.toSet(), reachable, "quest ${quest.id}")
         }
     }
 
     @Test
-    fun `every quest step can be turned in at its npc`() {
+    fun `every quest step can be turned in from its entry node`() {
         registry.allQuests.forEach { quest ->
             quest.steps.forEachIndexed { index, step ->
-                val turnIn = quest.nodes.any { node ->
+                val nodes = reachableNodes(quest, listOf(step.entryNode), ::sameStepTargetOf)
+                val turnIn = nodes.map { registry.node(quest, it) }.any { node ->
                     node.npc.id == step.npc.id && node.answers.any { it.action is NodeAction.TurnIn }
                 }
                 assertTrue(turnIn, "quest ${quest.id} step $index")
             }
         }
+    }
+
+    @Test
+    fun `the weekly ore quest waits for the third chapter and the feast for the platter recipe`() {
+        assertEquals(QuestStepRequirement("leuchtfeuer", 2), registry.quest("weekly_ore")?.requirement)
+        assertEquals(RecipeUnlockedRequirement("fish_platter"), registry.quest("monthly_feast")?.requirement)
+    }
+
+    @Test
+    fun `olek takes the salmon step as caught instead of handed over`() {
+        val quest = assertNotNull(registry.quest("leuchtfeuer"))
+        val turnIn = registry.node(quest, quest.steps[1].entryNode).answers.single { it.action is NodeAction.TurnIn }
+        assertEquals(text("Fünf Lachse, gefangen."), turnIn.text)
     }
 
     @Test
@@ -260,6 +270,32 @@ class OdysseyContentTest {
         is NodeAction.DeliverItems -> action.then
         is NodeAction.TurnIn -> action.then
         NodeAction.OpenTrade, NodeAction.OpenStation, NodeAction.Close -> null
+    }
+
+    /**
+     * Returns the node an answer with [action] leads to while the quest stays at the same step, or `null` if the
+     * answer leaves the conversation or moves the quest on.
+     */
+    private fun sameStepTargetOf(action: NodeAction): String? = when (action) {
+        is NodeAction.Goto -> action.nodeId
+        is NodeAction.CompleteTalk -> action.then
+        is NodeAction.DeliverItems -> action.then
+        is NodeAction.AcceptQuest, is NodeAction.TurnIn, NodeAction.OpenTrade, NodeAction.OpenStation, NodeAction.Close -> null
+    }
+
+    /**
+     * Returns the IDs of the nodes of [quest] reachable from [roots] by following the answers whose target [next]
+     * returns, including the roots.
+     */
+    private fun reachableNodes(quest: QuestDefinition, roots: List<String>, next: (NodeAction) -> String?): Set<String> {
+        val reachable = mutableSetOf<String>()
+        val open = ArrayDeque(roots)
+        while (open.isNotEmpty()) {
+            val id = open.removeFirst()
+            if (!reachable.add(id)) continue
+            registry.node(quest, id).answers.mapNotNullTo(open) { next(it.action) }
+        }
+        return reachable
     }
 
     /** Reads the image IDs defined in the CraftEngine portrait configuration of the repository. */

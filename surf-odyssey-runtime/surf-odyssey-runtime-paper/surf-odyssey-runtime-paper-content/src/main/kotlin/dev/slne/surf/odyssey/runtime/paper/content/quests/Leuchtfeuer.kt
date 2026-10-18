@@ -98,7 +98,7 @@ internal fun leuchtfeuer(): QuestDefinition = quest(Quests.LEUCHTFEUER_ID, Quest
     }
     node("o5", Npcs.OLEK) {
         say("Und? Beißen sie? Fünf Lachse, nicht einer weniger.")
-        reply("Hier sind deine Lachse.", "Abgeben", NodeAction.TurnIn("o6"))
+        reply("Fünf Lachse, gefangen.", "Abschließen", NodeAction.TurnIn("o6"))
         leave("Ich bin noch dabei.")
     }
     node("o6", Npcs.OLEK) {

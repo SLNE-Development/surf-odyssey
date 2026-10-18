@@ -91,15 +91,13 @@ class OperationRunner(
 
     /**
      * Claims one delivery from the pickup box of [player] and puts its item into the inventory, on the player's
-     * thread. Nothing is claimed while the item does not fit.
+     * thread. Nothing is claimed while an operation of the player runs or while the item does not fit.
      *
      * @param delivery the delivery to claim
-     * @return the result, or `null` if the item does not fit into the inventory
      */
-    suspend fun claim(player: Player, delivery: DeliveryDto): ClaimResult? = onPlayerThread(player) {
+    suspend fun claim(player: Player, delivery: DeliveryDto): ClaimResult = onPlayerThread(player) {
         val inventory = PlayerEscrowInventory(player)
-        if (!inventory.fits(ItemCodec.decode(delivery.itemBase64))) return@onPlayerThread null
-        flow.deliveries.claim(player.uniqueId, inventory, delivery.id, delivery.source)
+        flow.claim(player.uniqueId, inventory, delivery, inventory::fits)
     }
 
     /** Runs [block] on the thread of [player] while the player is registered in [players]. */

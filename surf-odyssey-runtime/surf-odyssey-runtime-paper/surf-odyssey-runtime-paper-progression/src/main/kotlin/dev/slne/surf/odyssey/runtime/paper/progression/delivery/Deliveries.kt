@@ -25,8 +25,14 @@ enum class ClaimResult {
     /** The progression service could not be reached; the delivery stays in the pickup box. */
     FAILED,
 
-    /** The delivery was claimed, but its item could not be decoded and is lost. */
-    BROKEN
+    /** The item of the delivery cannot be decoded; it is lost if the delivery was claimed. */
+    BROKEN,
+
+    /** Another operation or claim of the player was running, so nothing was claimed. */
+    BUSY,
+
+    /** The item does not fit into the inventory, so nothing was claimed. */
+    NO_ROOM
 }
 
 /**
@@ -125,11 +131,11 @@ class Deliveries(
     }
 
     /**
-     * Decodes the item of a claimed delivery, reporting a failure to [OperationHooks.onBrokenDelivery].
+     * Decodes the item of a delivery, reporting a failure to [OperationHooks.onBrokenDelivery].
      *
      * @return the item, or `null` if it cannot be decoded
      */
-    private fun decode(player: UUID, deliveryId: UUID, encoded: String): ItemStack? = try {
+    fun decode(player: UUID, deliveryId: UUID, encoded: String): ItemStack? = try {
         codec.decode(encoded)
     } catch (e: Exception) {
         hooks.onBrokenDelivery(player, deliveryId, e)

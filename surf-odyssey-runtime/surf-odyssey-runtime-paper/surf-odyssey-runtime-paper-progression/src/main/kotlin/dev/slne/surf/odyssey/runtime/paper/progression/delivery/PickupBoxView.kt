@@ -113,10 +113,11 @@ private fun claimFromBox(player: Player, delivery: DeliveryDto) {
         val result = Progression.runtime.operations.claim(player, delivery)
         withContext(plugin.entityDispatcher(player)) {
             when (result) {
-                null -> {
+                ClaimResult.NO_ROOM -> {
                     player.playNoSound()
                     ProgressionMessages.inventoryFull(player)
                 }
+                ClaimResult.BUSY -> return@withContext
                 ClaimResult.CLAIMED -> player.playYesSound()
                 ClaimResult.GONE -> {
                     player.playNoSound()

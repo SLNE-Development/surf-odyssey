@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.operation
 
+import dev.slne.surf.odyssey.core.common.progression.DeliveryDto
 import dev.slne.surf.odyssey.core.common.progression.NewDeliveryDto
 import dev.slne.surf.odyssey.core.common.progression.OperationDto
 import dev.slne.surf.odyssey.core.common.progression.OperationResultDto
@@ -7,6 +8,7 @@ import dev.slne.surf.odyssey.core.common.progression.StateChange
 import dev.slne.surf.odyssey.runtime.paper.progression.StackCodec
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredient
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
+import dev.slne.surf.odyssey.runtime.paper.progression.delivery.ClaimResult
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.Deliveries
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -115,7 +117,7 @@ interface OperationHooks {
  * or gives the escrow back. A commit that fails, times out or is interrupted by cancellation is sent once more with
  * the same operation id before the escrow is given back.
  *
- * Only one operation per player runs at a time. Items that do not fit into the inventory go to the pickup box, and
+ * Only one operation or pickup box claim per player runs at a time. Items that do not fit into the inventory go to the pickup box, and
  * items the pickup box cannot take either are dropped at the player's feet.
  *
  * @param backend the progression service
@@ -149,6 +151,29 @@ class OperationFlow(
         if (!running.add(player)) return OperationOutcome.Busy
         try {
             return execute(player, inventory, plan)
+        } finally {
+            running.remove(player)
+        }
+    }
+
+    /**
+     * Claims one delivery of [player] from the pickup box into [inventory]. Nothing is claimed while another
+     * operation or claim of the player runs, while the item cannot be decoded or while [fits] says it has no room.
+     *
+     * @param delivery the delivery to claim
+     * @param fits checks whether the decoded item fits into [inventory]
+     */
+    suspend fun claim(
+        player: UUID,
+        inventory: EscrowInventory,
+        delivery: DeliveryDto,
+        fits: (ItemStack) -> Boolean
+    ): ClaimResult {
+        if (!running.add(player)) return ClaimResult.BUSY
+        try {
+            val stack = deliveries.decode(player, delivery.id, delivery.itemBase64) ?: return ClaimResult.BROKEN
+            if (!fits(stack)) return ClaimResult.NO_ROOM
+            return deliveries.claim(player, inventory, delivery.id, delivery.source)
         } finally {
             running.remove(player)
         }

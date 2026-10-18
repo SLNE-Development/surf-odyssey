@@ -7,6 +7,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredien
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.CurrencyReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.ItemReward
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
@@ -19,6 +20,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /** Tests for escrow handling around progression operations. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class EscrowTest {
     @Test
     fun `items are returned when the commit is rejected`() = runTest {

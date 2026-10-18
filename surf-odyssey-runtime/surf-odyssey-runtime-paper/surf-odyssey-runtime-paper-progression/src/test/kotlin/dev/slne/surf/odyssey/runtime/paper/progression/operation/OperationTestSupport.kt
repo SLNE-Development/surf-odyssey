@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.operation
 
+import dev.slne.surf.odyssey.core.common.progression.DeliveryDto
 import dev.slne.surf.odyssey.core.common.progression.OperationDto
 import dev.slne.surf.odyssey.core.common.progression.OperationResultDto
 import dev.slne.surf.odyssey.core.common.progression.StateChange
@@ -200,6 +201,10 @@ class TestRunner(
         },
         commitTimeout = commitTimeout,
     )
+
+    /** Claims [delivery] for [player] into [inventory], with [fits] deciding whether its item has room. */
+    suspend fun claim(inventory: EscrowInventory, delivery: DeliveryDto, fits: (ItemStack) -> Boolean = { true }) =
+        flow.claim(player, inventory, delivery, fits)
 
     /** Runs [plan] for [player] against [inventory]. */
     suspend fun run(inventory: EscrowInventory, plan: OperationPlan): OperationOutcome =

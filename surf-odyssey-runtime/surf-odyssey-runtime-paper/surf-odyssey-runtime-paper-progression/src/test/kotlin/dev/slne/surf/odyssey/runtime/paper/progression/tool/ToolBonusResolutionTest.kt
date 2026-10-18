@@ -86,4 +86,15 @@ class ToolBonusResolutionTest {
         val capped = ToolBonuses.resolve(rod, level = 5, accessories = List(30) { worm })
         assertEquals(1.0, capped.doubleDropChance, 1e-9)
     }
+
+    @Test
+    fun `the maximum damage is the base plus the extra durability`() {
+        assertEquals(84, ToolBonuses.maxDamageFor(base = 64, extra = 20, damage = 10))
+    }
+
+    @Test
+    fun `the maximum damage stays above the current damage`() {
+        assertEquals(71, ToolBonuses.maxDamageFor(base = 64, extra = 0, damage = 70))
+        assertEquals(65, ToolBonuses.maxDamageFor(base = 64, extra = 0, damage = 64))
+    }
 }

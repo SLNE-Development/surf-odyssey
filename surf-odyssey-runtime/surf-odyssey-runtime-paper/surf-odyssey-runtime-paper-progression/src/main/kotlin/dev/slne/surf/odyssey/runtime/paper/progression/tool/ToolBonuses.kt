@@ -84,7 +84,8 @@ object ToolBonuses {
     /**
      * Writes [bonuses] onto [item]: the attribute modifiers of the bonuses replace every earlier tool bonus modifier
      * and keep all other modifiers of the item, and the maximum damage becomes the default durability of the item
-     * type plus the extra durability. Items without durability keep their maximum damage.
+     * type plus the extra durability, kept above the current damage. Items without durability keep their maximum
+     * damage.
      *
      * @param item the tool item, changed in place
      * @param bonuses the bonuses to apply
@@ -104,9 +105,20 @@ object ToolBonuses {
 
         val baseMaxDamage = item.type.asItemType()?.getDefaultData(DataComponentTypes.MAX_DAMAGE)
         if (baseMaxDamage != null && baseMaxDamage > 0) {
-            item.setData(DataComponentTypes.MAX_DAMAGE, baseMaxDamage + bonuses.extraMaxDamage)
+            val damage = item.getData(DataComponentTypes.DAMAGE) ?: 0
+            item.setData(DataComponentTypes.MAX_DAMAGE, maxDamageFor(baseMaxDamage, bonuses.extraMaxDamage, damage))
         }
     }
+
+    /**
+     * Returns the maximum damage of a tool item: [base] plus [extra], but at least one more than [damage], so that the
+     * item never breaks because its maximum damage was set.
+     *
+     * @param base the default maximum damage of the item type
+     * @param extra the extra durability of the bonuses
+     * @param damage the current damage of the item
+     */
+    fun maxDamageFor(base: Int, extra: Int, damage: Int): Int = maxOf(base + extra, damage + 1)
 
     /** Returns whether [key] is the key of a tool bonus attribute modifier. */
     private fun isToolBonusKey(key: NamespacedKey): Boolean =

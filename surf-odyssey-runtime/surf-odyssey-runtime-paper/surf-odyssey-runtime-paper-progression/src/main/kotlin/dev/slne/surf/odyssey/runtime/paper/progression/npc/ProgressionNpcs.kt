@@ -10,6 +10,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.Plugin
@@ -19,8 +20,8 @@ import kotlin.time.Duration.Companion.milliseconds
  * Spawns the placed NPCs of this server and keeps their visibility per player up to date.
  *
  * The NPCs are spawned in the main world on the first tick after [install] and removed by [despawnAll]. A player's
- * visibility is recomputed when they join, when their progression is loaded and after each of their successful
- * operations. Interactions are passed on at most once per [INTERACT_COOLDOWN] per player.
+ * visibility is recomputed when they join, when they change worlds, when their progression is loaded and after each
+ * of their successful operations. Interactions are passed on at most once per [INTERACT_COOLDOWN] per player.
  */
 object ProgressionNpcs {
     /** The time after an interaction during which further interactions of the same player are ignored. */
@@ -113,6 +114,12 @@ object ProgressionNpcs {
         /** Shows the joining player the NPCs everyone sees; the rest follow once the progression is loaded. */
         @EventHandler(priority = EventPriority.MONITOR)
         fun onJoin(event: PlayerJoinEvent) {
+            refresh(event.player)
+        }
+
+        /** Shows the player the NPCs of the world they changed to and hides the others. */
+        @EventHandler(priority = EventPriority.MONITOR)
+        fun onWorldChange(event: PlayerChangedWorldEvent) {
             refresh(event.player)
         }
 

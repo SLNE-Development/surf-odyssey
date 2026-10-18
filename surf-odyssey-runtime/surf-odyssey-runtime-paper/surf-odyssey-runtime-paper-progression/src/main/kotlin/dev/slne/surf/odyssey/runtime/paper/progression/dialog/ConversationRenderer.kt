@@ -9,13 +9,12 @@ import dev.slne.surf.api.paper.dialog.type
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.dialog.AnswerKind
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestType
 import io.papermc.paper.dialog.Dialog
-import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.nbt.api.BinaryTagHolder
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.event.ClickCallback
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.entity.Player
-import java.time.Duration
+import java.util.*
 
 /**
  * One answer line of a conversation screen.
@@ -23,13 +22,13 @@ import java.time.Duration
  * @property text the answer text
  * @property tooltip the hover text of the line
  * @property kind how the line is coloured
- * @property onClick called with the player who clicked the line
+ * @property onClick called on the player's thread with the player who clicked the line
  */
 class ConversationLine(
     val text: Component,
     val tooltip: Component,
     val kind: AnswerKind,
-    val onClick: (Player) -> Unit,
+    val onClick: suspend (Player) -> Unit,
 )
 
 /**
@@ -54,12 +53,11 @@ class ConversationScreen(
 /**
  * Builds conversation dialogs: a notice dialog with the portrait, the NPC name, the meta line, the narrated text and
  * the answers as clickable, numbered text lines with a tooltip, and one button "Gespräch beenden" that closes it.
- * Every call builds a new dialog whose answer lines can each be clicked once.
+ *
+ * Answer lines and the button send a custom click with the identifier [AnswerPayload.KEY] and a payload of the
+ * screen token and the line index, [AnswerPayload.CLOSE] for the button.
  */
 object ConversationRenderer {
-    /** How long the answer lines of a shown dialog stay clickable. */
-    private val ANSWER_LIFETIME: Duration = Duration.ofMinutes(15)
-
     /** The width of the narrated text and the answer lines. */
     private const val TEXT_WIDTH = 300
 
@@ -100,9 +98,10 @@ object ConversationRenderer {
      * Builds the dialog of [screen].
      *
      * @param screen the content
+     * @param token the token the clicks of this dialog carry
      * @return a new dialog
      */
-    fun render(screen: ConversationScreen): Dialog = dialog {
+    fun render(screen: ConversationScreen, token: UUID): Dialog = dialog {
         base {
             title(screen.title)
             body {
@@ -110,28 +109,32 @@ object ConversationRenderer {
                 plainMessage(screen.npcName)
                 screen.meta?.let { plainMessage(it.colorIfAbsent(META_COLOR)) }
                 plainMessage(screen.text, TEXT_WIDTH)
-                screen.answers.forEachIndexed { index, line -> plainMessage(answerLine(index + 1, line), TEXT_WIDTH) }
+                screen.answers.forEachIndexed { index, line ->
+                    plainMessage(answerLine(index, line, token), TEXT_WIDTH)
+                }
             }
         }
         type {
             notice {
                 label { text("Gespräch beenden") }
+                action { customClick(AnswerPayload.KEY, payload(token, AnswerPayload.CLOSE)) }
             }
         }
     }
 
     /**
-     * Builds the clickable text of an answer.
+     * Builds the clickable text of an answer, numbered from 1.
      *
-     * @param number the number shown in front of the answer
+     * @param index the index of the answer in the screen
      * @param line the answer
+     * @param token the token of the screen
      */
-    private fun answerLine(number: Int, line: ConversationLine): Component {
-        val options = ClickCallback.Options.builder().uses(1).lifetime(ANSWER_LIFETIME).build()
-        val callback = ClickCallback<Audience> { audience -> if (audience is Player) line.onClick(audience) }
-        return buildText {
-            text("$number. ", NUMBER_COLOR)
-            append(line.text.colorIfAbsent(colorOf(line.kind)))
-        }.hoverEvent(line.tooltip).clickEvent(ClickEvent.callback(callback, options))
-    }
+    private fun answerLine(index: Int, line: ConversationLine, token: UUID): Component = buildText {
+        text("${index + 1}. ", NUMBER_COLOR)
+        append(line.text.colorIfAbsent(colorOf(line.kind)))
+    }.hoverEvent(line.tooltip).clickEvent(ClickEvent.custom(AnswerPayload.KEY, payload(token, index)))
+
+    /** Returns the click payload of line [index] of the screen with [token]. */
+    private fun payload(token: UUID, index: Int): BinaryTagHolder =
+        BinaryTagHolder.binaryTagHolder(AnswerPayload.encode(token, index))
 }

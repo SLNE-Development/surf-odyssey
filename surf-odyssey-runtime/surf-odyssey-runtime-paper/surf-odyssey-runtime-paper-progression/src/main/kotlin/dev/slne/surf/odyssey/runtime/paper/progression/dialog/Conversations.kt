@@ -14,17 +14,44 @@ import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationOutcom
 import dev.slne.surf.odyssey.runtime.paper.progression.quest.QuestAvailability
 import dev.slne.surf.odyssey.runtime.paper.progression.quest.QuestEngine
 import dev.slne.surf.odyssey.runtime.paper.progression.state.PlayerRequirementContext
+import io.papermc.paper.connection.PlayerGameConnection
+import io.papermc.paper.event.player.PlayerCustomClickEvent
 import net.kyori.adventure.text.Component
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.plugin.Plugin
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Runs conversations between players and NPCs.
  *
  * A conversation opens with the greeting of the NPC and continues through the nodes of its quests. Every screen is
- * built from the player's current progression when it is shown. Quest actions run through [QuestEngine]; afterwards
- * the conversation goes on as [ConversationActions] decides.
+ * built from the player's current progression when it is shown. Only the answers of the screen a player currently
+ * sees can be clicked; they stay clickable until another screen is shown or the conversation ends. Quest actions run
+ * through [QuestEngine]; afterwards the conversation goes on as [ConversationActions] decides.
  */
 object Conversations {
+    /** The answer lines of the screen each player currently sees. */
+    private val tokens = AnswerTokens<ConversationLine>()
+
+    /** Whether [register] already ran. */
+    private val registered = AtomicBoolean(false)
+
+    /**
+     * Registers the listener that receives answer clicks. Calling it again has no effect.
+     *
+     * @param plugin the plugin that owns the listener
+     */
+    internal fun register(plugin: Plugin) {
+        if (!registered.compareAndSet(false, true)) return
+        Bukkit.getPluginManager().registerEvents(ClickListener, plugin)
+    }
+
     /**
      * Opens the greeting of [npc] for [player]. Must run on the player's thread. Tells the player that conversations
      * are not available while their progression is not loaded.
@@ -44,16 +71,15 @@ object Conversations {
         val offered = QuestAvailability.offeredBy(npc, progression, context, player.uniqueId, now, runtime.registry)
         val active = QuestAvailability.activeAt(npc, progression, now, runtime.registry)
         val lines = GreetingNode.answers(npc, offered, active).map { greetingLine(npc, it) }
-        player.showDialog(
-            ConversationRenderer.render(
-                ConversationScreen(
-                    title = npc.name,
-                    portrait = Portraits.of(npc, NpcDefinition.NEUTRAL_MOOD),
-                    npcName = npc.name,
-                    meta = null,
-                    text = npc.greeting,
-                    answers = lines,
-                )
+        show(
+            player,
+            ConversationScreen(
+                title = npc.name,
+                portrait = Portraits.of(npc, NpcDefinition.NEUTRAL_MOOD),
+                npcName = npc.name,
+                meta = null,
+                text = npc.greeting,
+                answers = lines,
             )
         )
     }
@@ -61,23 +87,23 @@ object Conversations {
     /** Returns the line of a greeting answer of [npc]. */
     private fun greetingLine(npc: NpcDefinition, answer: GreetingAnswer): ConversationLine = when (answer) {
         is GreetingAnswer.Offer -> ConversationLine(answer.quest.title, Component.text("Quest ansehen"), AnswerKind.NORMAL) {
-            onPlayerThread(it) { showNode(it, npc, answer.quest, answer.quest.offerNode) }
+            showNode(it, npc, answer.quest, answer.quest.offerNode)
         }
 
         is GreetingAnswer.Continue -> ConversationLine(answer.quest.title, Component.text("Quest fortsetzen"), AnswerKind.NORMAL) {
-            onPlayerThread(it) { continueQuest(it, npc, answer.quest) }
+            continueQuest(it, npc, answer.quest)
         }
 
         GreetingAnswer.Trade -> ConversationLine(Component.text("Handeln"), Component.text("Angebote ansehen"), AnswerKind.NORMAL) {
-            onPlayerThread(it) { perform(it, npc, null, NodeAction.OpenTrade) }
+            perform(it, npc, null, NodeAction.OpenTrade)
         }
 
         GreetingAnswer.Craft -> ConversationLine(Component.text("Herstellen"), Component.text("Station öffnen"), AnswerKind.NORMAL) {
-            onPlayerThread(it) { perform(it, npc, null, NodeAction.OpenStation) }
+            perform(it, npc, null, NodeAction.OpenStation)
         }
 
         GreetingAnswer.Leave -> ConversationLine(Component.text("Gespräch beenden"), Component.text("Gespräch beenden"), AnswerKind.LEAVE) {
-            onPlayerThread(it) { it.closeDialog() }
+            close(it)
         }
     }
 
@@ -85,7 +111,7 @@ object Conversations {
     private fun continueQuest(player: Player, npc: NpcDefinition, quest: QuestDefinition) {
         val step = QuestEngine.progressOf(player, quest)?.step
         if (step == null) {
-            player.closeDialog()
+            close(player)
             return
         }
         showNode(player, npc, quest, quest.steps[step].entryNode)
@@ -104,7 +130,7 @@ object Conversations {
         val runtime = Progression.runtimeOrNull
         val progression = runtime?.store?.get(player.uniqueId)
         if (progression == null) {
-            player.closeDialog()
+            close(player)
             ProgressionMessages.unavailable(player)
             return
         }
@@ -113,20 +139,17 @@ object Conversations {
         val lines = node.answers
             .filter { it.visibleWhen?.isMet(context) ?: true }
             .map { answer ->
-                ConversationLine(answer.text, answer.tooltip, answer.kind) {
-                    onPlayerThread(it) { perform(it, npc, quest, answer.action) }
-                }
+                ConversationLine(answer.text, answer.tooltip, answer.kind) { perform(it, npc, quest, answer.action) }
             }
-        player.showDialog(
-            ConversationRenderer.render(
-                ConversationScreen(
-                    title = ConversationRenderer.questTitle(quest.type),
-                    portrait = Portraits.of(node.npc, node.mood),
-                    npcName = node.npc.name,
-                    meta = node.meta,
-                    text = node.text,
-                    answers = lines,
-                )
+        show(
+            player,
+            ConversationScreen(
+                title = ConversationRenderer.questTitle(quest.type),
+                portrait = Portraits.of(node.npc, node.mood),
+                npcName = node.npc.name,
+                meta = node.meta,
+                text = node.text,
+                answers = lines,
             )
         )
     }
@@ -138,15 +161,15 @@ object Conversations {
      */
     private suspend fun perform(player: Player, npc: NpcDefinition, quest: QuestDefinition?, action: NodeAction) {
         when (action) {
-            is NodeAction.Goto -> quest?.let { showNode(player, npc, it, action.nodeId) } ?: player.closeDialog()
-            NodeAction.Close -> player.closeDialog()
+            is NodeAction.Goto -> quest?.let { showNode(player, npc, it, action.nodeId) } ?: close(player)
+            NodeAction.Close -> close(player)
             NodeAction.OpenTrade -> {
-                player.closeDialog()
+                close(player)
                 ConversationHooks.openTrade(player, npc)
             }
 
             NodeAction.OpenStation -> {
-                player.closeDialog()
+                close(player)
                 ConversationHooks.openStation(player, npc)
             }
 
@@ -172,29 +195,69 @@ object Conversations {
         action: suspend (QuestDefinition) -> OperationOutcome,
     ) {
         if (quest == null) {
-            player.closeDialog()
+            close(player)
             return
         }
         when (val step = ConversationActions.after(action(quest), then)) {
             is ConversationStep.ShowNode -> showNode(player, npc, quest, step.nodeId)
-            ConversationStep.Close -> player.closeDialog()
-            is ConversationStep.Hint -> {
-                player.closeDialog()
-                player.sendText {
-                    appendErrorPrefix()
-                    error(step.hint.text)
-                }
-            }
-
+            ConversationStep.Close -> close(player)
+            is ConversationStep.Hint -> refuse(player, step.hint)
             ConversationStep.Ignore -> Unit
         }
     }
 
-    /** Runs [block] for [player] on the player's thread, if the player is still online. */
-    private fun onPlayerThread(player: Player, block: suspend (Player) -> Unit) {
+    /** Ends the conversation of [player] and tells them [hint]. */
+    private fun refuse(player: Player, hint: ConversationHint) {
+        close(player)
+        player.sendText {
+            appendErrorPrefix()
+            error(hint.text)
+        }
+    }
+
+    /** Shows [screen] to [player] and makes its answers the only clickable ones. */
+    private fun show(player: Player, screen: ConversationScreen) {
+        val token = tokens.show(player.uniqueId, screen.answers)
+        player.showDialog(ConversationRenderer.render(screen, token))
+    }
+
+    /** Ends the conversation of [player]: closes the dialog and makes its answers stale. */
+    private fun close(player: Player) {
+        tokens.close(player.uniqueId)
+        player.closeDialog()
+    }
+
+    /**
+     * Handles a click on line [index] of the screen with [token] on the player's thread. Stale tokens and unknown
+     * lines are ignored; [AnswerPayload.CLOSE] ends the conversation.
+     */
+    private fun onAnswer(player: Player, token: UUID, index: Int) {
         val plugin = ProgressionModule.plugin
         plugin.launch(plugin.entityDispatcher(player)) {
-            if (player.isOnline) block(player)
+            if (!player.isOnline) return@launch
+            if (index == AnswerPayload.CLOSE) {
+                tokens.closeIfCurrent(player.uniqueId, token)
+                return@launch
+            }
+            tokens.resolve(player.uniqueId, token, index)?.onClick?.invoke(player)
+        }
+    }
+
+    /** Receives answer clicks and forgets the screens of leaving players. */
+    private object ClickListener : Listener {
+        /** Passes clicks with the identifier [AnswerPayload.KEY] from players in the game to [onAnswer]. */
+        @EventHandler
+        fun onCustomClick(event: PlayerCustomClickEvent) {
+            if (event.identifier != AnswerPayload.KEY) return
+            val player = (event.commonConnection as? PlayerGameConnection)?.player ?: return
+            val (token, index) = AnswerPayload.decode(event.tag?.string()) ?: return
+            onAnswer(player, token, index)
+        }
+
+        /** Forgets the screen of the leaving player. */
+        @EventHandler(priority = EventPriority.MONITOR)
+        fun onQuit(event: PlayerQuitEvent) {
+            tokens.close(event.player.uniqueId)
         }
     }
 }

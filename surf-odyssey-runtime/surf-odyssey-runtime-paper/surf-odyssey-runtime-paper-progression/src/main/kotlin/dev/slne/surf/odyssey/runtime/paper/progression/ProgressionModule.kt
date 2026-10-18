@@ -76,6 +76,7 @@ object ProgressionModule {
         store.start()
         if (mode == ProgressionMode.FULL) {
             ToolModule.install(plugin, runtime, serverName)
+            Conversations.register(plugin)
             ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = Conversations::open)
         }
         return runtime

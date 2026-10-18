@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.Plugin
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -30,6 +31,9 @@ object ProgressionNpcs {
     /** The name of the plugin that provides the NPCs. */
     const val NPC_PLUGIN = "surf-npc-paper"
 
+    /** Whether [install] already ran. */
+    private val installed = AtomicBoolean(false)
+
     /** The plugin that installed the NPCs, or `null` before [install]. */
     @Volatile
     private var plugin: Plugin? = null
@@ -44,7 +48,7 @@ object ProgressionNpcs {
 
     /**
      * Spawns the NPCs of [placements] in the main world on the next tick and starts tracking their visibility.
-     * Does nothing but log a warning if the NPC plugin is not installed.
+     * Does nothing but log a warning if the NPC plugin is not installed. Calling it again has no effect.
      *
      * @param plugin the plugin that owns the listeners and tasks
      * @param runtime the installed engine
@@ -62,6 +66,7 @@ object ProgressionNpcs {
             plugin.logger.warning("$NPC_PLUGIN is not installed, so no progression npcs are spawned")
             return
         }
+        if (!installed.compareAndSet(false, true)) return
         this.plugin = plugin
         val cooldown = InteractCooldown(INTERACT_COOLDOWN)
         val backend = SurfNpcBackend { player, npc ->

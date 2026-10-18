@@ -7,6 +7,8 @@ import dev.slne.surf.odyssey.runtime.paper.progression.delivery.pickupBoxView
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.LoggingCurrencyGateway
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
+import dev.slne.surf.odyssey.runtime.paper.progression.station.recipeBrowserView
+import dev.slne.surf.odyssey.runtime.paper.progression.station.stationView
 import org.bukkit.plugin.Plugin
 import java.time.Clock
 
@@ -22,6 +24,8 @@ object ProgressionModule {
     /** Registers every inventory view of the engine; must run during plugin load. */
     fun registerViews() {
         pickupBoxView.register()
+        stationView.register()
+        recipeBrowserView.register()
     }
 
     /**

@@ -25,6 +25,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestRe
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component.text
 import org.bukkit.Material
+import kotlin.time.Duration
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.quest as questDefinition
 
 /**
@@ -176,6 +177,34 @@ object TestPacks {
         portrait("neutral", Key.key("odyssey", "portrait_${id}_neutral"))
         greeting = text("Hallo!")
         this.visibleWhen = visibleWhen
+    }
+
+    /**
+     * Builds a `sushi` recipe at a `sushi_bar` station that consumes rice and fish items and makes one sushi item.
+     * The items `rice`, `fish` and `sushi` are named by their IDs.
+     *
+     * @param rice how much rice one craft consumes
+     * @param fish how much fish one craft consumes
+     * @param duration how long one craft takes
+     * @param unlockedByDefault whether every player knows the recipe
+     */
+    fun sushiRecipe(
+        rice: Int,
+        fish: Int,
+        duration: Duration = Duration.ZERO,
+        unlockedByDefault: Boolean = false,
+    ): RecipeDefinition {
+        val bar = station("sushi_bar") {
+            displayName = text("Sushi-Bar")
+            icon = Material.SMOKER
+        }
+        return recipe("sushi", bar) {
+            ingredient(CustomItemRef(item("rice", Material.WHEAT)), rice)
+            ingredient(CustomItemRef(item("fish", Material.COD)), fish)
+            result(CustomItemRef(item("sushi", Material.COOKED_COD)), 1)
+            this.duration = duration
+            this.unlockedByDefault = unlockedByDefault
+        }
     }
 
     /** Builds an item definition whose display name is its ID. */

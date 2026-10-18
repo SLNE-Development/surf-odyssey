@@ -100,6 +100,14 @@ interface OperationHooks {
      * @param items the stacks to drop
      */
     fun dropAtFeet(player: UUID, items: List<ItemStack>)
+
+    /**
+     * Called when the item of a claimed delivery of [player] cannot be decoded, so it is lost.
+     *
+     * @param deliveryId the claimed delivery
+     * @param error the decoding failure
+     */
+    fun onBrokenDelivery(player: UUID, deliveryId: UUID, error: Throwable)
 }
 
 /**

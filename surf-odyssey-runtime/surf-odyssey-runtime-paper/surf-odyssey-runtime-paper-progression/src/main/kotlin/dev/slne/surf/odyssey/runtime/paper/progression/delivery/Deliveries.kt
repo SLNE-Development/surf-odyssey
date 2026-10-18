@@ -23,7 +23,10 @@ enum class ClaimResult {
     GONE,
 
     /** The progression service could not be reached; the delivery stays in the pickup box. */
-    FAILED
+    FAILED,
+
+    /** The delivery was claimed, but its item could not be decoded and is lost. */
+    BROKEN
 }
 
 /**
@@ -68,7 +71,8 @@ class Deliveries(
 
     /**
      * Claims each delivery and gives its item to [inventory]. Items that do not fit are put back into the pickup box;
-     * deliveries that cannot be claimed because the service fails stay there. The player is told once if anything
+     * deliveries that cannot be claimed because the service fails stay there. A claimed item that cannot be decoded
+     * is reported and skipped. The player is told once if anything
      * is left in the pickup box.
      *
      * @param player the owner of the deliveries
@@ -89,7 +93,8 @@ class Deliveries(
                 leftInBox = true
                 break
             } ?: continue
-            overflow += inventory.give(listOf(codec.decode(encoded)))
+            val stack = decode(player, id, encoded) ?: continue
+            overflow += inventory.give(listOf(stack))
         }
         if (overflow.isNotEmpty() && stash(player, overflow, source)) leftInBox = true
         if (leftInBox) hooks.onLeftInPickupBox(player)
@@ -113,9 +118,22 @@ class Deliveries(
             hooks.onServiceFailure("claim delivery $deliveryId", e)
             return ClaimResult.FAILED
         } ?: return ClaimResult.GONE
-        val overflow = inventory.give(listOf(codec.decode(encoded)))
+        val stack = decode(player, deliveryId, encoded) ?: return ClaimResult.BROKEN
+        val overflow = inventory.give(listOf(stack))
         if (overflow.isNotEmpty() && stash(player, overflow, source)) hooks.onLeftInPickupBox(player)
         return ClaimResult.CLAIMED
+    }
+
+    /**
+     * Decodes the item of a claimed delivery, reporting a failure to [OperationHooks.onBrokenDelivery].
+     *
+     * @return the item, or `null` if it cannot be decoded
+     */
+    private fun decode(player: UUID, deliveryId: UUID, encoded: String): ItemStack? = try {
+        codec.decode(encoded)
+    } catch (e: Exception) {
+        hooks.onBrokenDelivery(player, deliveryId, e)
+        null
     }
 
     /**

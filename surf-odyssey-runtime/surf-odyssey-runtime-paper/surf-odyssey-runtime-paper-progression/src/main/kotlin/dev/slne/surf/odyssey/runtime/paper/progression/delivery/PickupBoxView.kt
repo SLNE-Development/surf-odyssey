@@ -122,6 +122,10 @@ private fun claimFromBox(player: Player, delivery: DeliveryDto) {
                     player.playNoSound()
                     ProgressionMessages.deliveryGone(player)
                 }
+                ClaimResult.BROKEN -> {
+                    player.playNoSound()
+                    ProgressionMessages.deliveryBroken(player)
+                }
                 ClaimResult.FAILED -> {
                     player.playNoSound()
                     ProgressionMessages.unavailable(player)

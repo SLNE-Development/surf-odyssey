@@ -268,4 +268,20 @@ class EscrowTest {
         assertTrue(runner.appliedChanges.isEmpty())
         assertTrue(runner.grants.isEmpty())
     }
+
+    @Test
+    fun `a delivery that cannot be decoded is skipped and the others are handed out`() = runTest {
+        val inv = FakeInventory(emptyMap())
+        val runner = TestRunner(
+            commit = { op -> OperationResultDto.Applied(op.deliveries.map { UUID.randomUUID() }) },
+            corruptFirstClaim = true,
+        )
+        val rewards = listOf(ItemReward(TestItems.ink, 3), ItemReward(TestItems.ink, 2))
+
+        val outcome = runner.run(inv, OperationPlan(emptyList(), emptyList(), rewards, "t"))
+
+        assertEquals(OperationOutcome.Success, outcome)
+        assertEquals(2, inv.count(TestItems.ink))
+        assertEquals(1, runner.brokenDeliveries.size)
+    }
 }

@@ -68,6 +68,11 @@ class OperationRunner(
             plugin.logger.warning("Dropped ${items.size} stacks at the feet of $player: $listed")
             items.forEach { holder.world.dropItemNaturally(holder.location, it) }
         }
+
+        /** Logs the lost delivery. */
+        override fun onBrokenDelivery(player: UUID, deliveryId: UUID, error: Throwable) {
+            plugin.logger.log(Level.SEVERE, "Could not decode the item of delivery $deliveryId of $player", error)
+        }
     }
 
     /** The flow every operation runs through. */

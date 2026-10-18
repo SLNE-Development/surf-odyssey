@@ -42,4 +42,10 @@ object ProgressionMessages {
         appendErrorPrefix()
         error("Diese Lieferung wurde bereits abgeholt.")
     }
+
+    /** Tells [player] that the item of a delivery could not be restored. */
+    fun deliveryBroken(player: Player) = player.sendText {
+        appendErrorPrefix()
+        error("Diese Lieferung konnte nicht geladen werden.")
+    }
 }

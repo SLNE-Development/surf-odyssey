@@ -98,11 +98,13 @@ class FakeInventory(initial: Map<ItemRef, Int>, private var freeSlots: Int = 36)
  *
  * @param commit answers every commit, including the ones that put items into the pickup box
  * @param claimFails whether claiming a delivery throws
+ * @param corruptFirstClaim whether the first claimed delivery hands out an item that cannot be decoded
  * @param commitTimeout how long a commit may take
  */
 class TestRunner(
     private val commit: suspend (OperationDto) -> OperationResultDto,
     private val claimFails: Boolean = false,
+    private var corruptFirstClaim: Boolean = false,
     commitTimeout: Duration = 10.seconds,
 ) {
     /** The player every operation runs for. */
@@ -120,6 +122,9 @@ class TestRunner(
     /** How often the player was told that items are waiting in the pickup box. */
     var pickupNotices = 0
         private set
+
+    /** The deliveries whose item could not be decoded. */
+    val brokenDeliveries = mutableListOf<UUID>()
 
     /** How often a call to the service failed. */
     var serviceFailures = 0
@@ -150,6 +155,10 @@ class TestRunner(
         override fun dropAtFeet(player: UUID, items: List<ItemStack>) {
             droppedAtFeet += items
         }
+
+        override fun onBrokenDelivery(player: UUID, deliveryId: UUID, error: Throwable) {
+            brokenDeliveries += deliveryId
+        }
     }
 
     /** Stores the deliveries of applied commits and hands each one out once. */
@@ -167,6 +176,10 @@ class TestRunner(
             if (claimFails) error("claim failed")
             if (deliveries[deliveryId] != false) return null
             deliveries[deliveryId] = true
+            if (corruptFirstClaim) {
+                corruptFirstClaim = false
+                return "corrupt"
+            }
             return delivered[deliveryId]
         }
     }

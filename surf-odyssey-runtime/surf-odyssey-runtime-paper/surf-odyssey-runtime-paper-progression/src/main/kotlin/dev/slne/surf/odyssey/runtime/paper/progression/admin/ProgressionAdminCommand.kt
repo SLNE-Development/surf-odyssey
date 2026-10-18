@@ -45,8 +45,9 @@ private const val TARGET_RANGE = 6
  * Registers `/odysseyadmin`, which administers the progression of players.
  *
  * - `quest info <player> <quest>` shows the stored state and the counters of a quest.
- * - `quest give|complete|reset <player> <quest>` accepts a quest without checking its requirement, completes it with
- *   its rewards, or deletes its state and counters.
+ * - `quest give|complete|reset <player> <quest>` accepts a quest without checking its requirement, completes it, or
+ *   deletes its state and counters. Completing gives the rewards of the current step and the final rewards of the
+ *   quest, even when the current step is not the last one; the rewards of the steps in between are not given.
  * - `recipe give|take <player> <recipe>` and `title give|take <player> <title>` unlock or revoke them.
  * - `tool give <player> <tool> [level]` gives a new tool, `tool setlevel <level>` sets the level of the tool in the
  *   main hand and `tool lookup <uuid>` shows the registration of a tool.
@@ -267,7 +268,11 @@ private fun questGive(sender: CommandSender, args: CommandArguments) {
     runPlan(sender, target, adminPlan(listOf(change)), AdminMessages.questGiven(quest.id, target.name))
 }
 
-/** Completes the active quest named in [args] for the player named in [args] and gives its rewards. */
+/**
+ * Completes the active quest named in [args] for the player named in [args] at its current step and gives the rewards
+ * of that step and the final rewards of the quest. The final rewards are given even when the current step is not the
+ * last one; the rewards of the skipped steps are not.
+ */
 private fun questComplete(sender: CommandSender, args: CommandArguments) {
     val target = args["player"] as Player
     val quest = questOf(sender, args) ?: return

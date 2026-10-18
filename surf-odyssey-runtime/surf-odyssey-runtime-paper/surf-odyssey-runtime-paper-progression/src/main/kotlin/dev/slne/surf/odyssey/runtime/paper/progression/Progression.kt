@@ -7,6 +7,10 @@ package dev.slne.surf.odyssey.runtime.paper.progression
  * answers. Features that need the service check it and tell the player that they are not available.
  */
 object Progression {
+    /** The engine installed by [ProgressionModule.install]. */
+    lateinit var runtime: ProgressionRuntime
+        internal set
+
     /** Whether the progression service answered the last call. */
     @Volatile
     var isAvailable: Boolean = true

@@ -102,12 +102,12 @@ object RecipeBrowserView {
     }
 
     /**
-     * Builds the item shown for [icon]: the result of [recipe] for an unlocked icon, a gray named item otherwise, with
-     * the styled lore lines of the icon.
+     * Builds the item shown for [icon]: the result of [recipe] for an unlocked icon, with the icon amount capped at
+     * the item's maximum stack size, or a gray named item otherwise, with the styled lore lines of the icon.
      */
     fun itemOf(icon: RecipeIcon, recipe: RecipeDefinition): ItemStack {
         val stack = if (icon.unlocked) {
-            recipe.result.create(icon.amount)
+            recipe.result.create(1).also { it.amount = icon.amount.coerceIn(1, it.maxStackSize) }
         } else {
             buildItem(icon.material, icon.amount) { displayName { gray(icon.name) } }
         }

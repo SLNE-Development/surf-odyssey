@@ -6,6 +6,8 @@ plugins {
 
 surfPaperPluginApi {
     mainClass("dev.slne.surf.odyssey.runtime.paper.home.HomePaperMain")
+    // Registers the Odyssey menu as quick action
+    bootstrapper("dev.slne.surf.odyssey.runtime.paper.progression.menu.OdysseyBootstrap")
 
     serverDependencies {
         // The odyssey client talks to the microservice through RabbitMQ

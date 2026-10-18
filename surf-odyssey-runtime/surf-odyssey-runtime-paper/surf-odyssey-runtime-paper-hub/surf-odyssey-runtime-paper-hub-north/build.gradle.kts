@@ -6,6 +6,8 @@ plugins {
 
 surfPaperPluginApi {
     mainClass("dev.slne.surf.odyssey.runtime.paper.hub.north.NorthHubPlugin")
+    // Registers the Odyssey menu as quick action
+    bootstrapper("dev.slne.surf.odyssey.runtime.paper.progression.menu.OdysseyBootstrap")
     withCorePaper()
     withSurfRedis()
 

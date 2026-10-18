@@ -6,6 +6,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.Progr
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.pickupBoxView
 import dev.slne.surf.odyssey.runtime.paper.progression.dialog.Conversations
 import dev.slne.surf.odyssey.runtime.paper.progression.npc.ProgressionNpcs
+import dev.slne.surf.odyssey.runtime.paper.progression.menu.MenuModule
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.LoggingCurrencyGateway
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.RewardPlanner
@@ -48,7 +49,7 @@ object ProgressionModule {
      * [Progression.runtime] and lets tool rewards create tool items. In [ProgressionMode.FULL] it also installs the
      * tool listeners with [ToolModule.install], makes the placed station blocks of the main world open their
      * stations, connects the "Handeln" and "Herstellen" answers of conversations to the trade and station menus and
-     * spawns the placed NPCs.
+     * spawns the placed NPCs. In every mode it installs the player menus.
      *
      * @param plugin the plugin that owns the listeners, coroutines and log
      * @param pack the content of this server
@@ -89,6 +90,7 @@ object ProgressionModule {
             Conversations.register(plugin)
             ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = Conversations::open)
         }
+        MenuModule.install(plugin, runtime)
         return runtime
     }
 }

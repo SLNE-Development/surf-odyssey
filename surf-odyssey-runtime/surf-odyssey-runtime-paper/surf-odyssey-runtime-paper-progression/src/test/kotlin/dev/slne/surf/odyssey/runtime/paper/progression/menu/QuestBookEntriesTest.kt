@@ -22,15 +22,19 @@ import kotlin.test.assertTrue
 
 /** Tests for building the sections of the quest book from the registry, the player's state and the time. */
 class QuestBookEntriesTest {
+    /** The player whose quest book is built; the recurring draws depend on this UUID. */
     private val player = UUID.fromString("3f1e9c2a-7b44-4d0e-9a51-2c6d8e0f4b17")
 
     /** Sunday 2026-10-18, 10:00 in Berlin (UTC+2). */
     private val now = Instant.parse("2026-10-18T08:00:00Z")
+    /** The daily period index of [now]. */
     private val today = Periods.index(QuestType.DAILY, now)
 
+    /** Builds the progression of [player] with the given quest states, counters and tracked quest. */
     private fun state(quests: List<QuestStateDto>, counters: List<CounterDto> = emptyList(), tracked: String? = null) =
         ProgressionStateDto(player, quests, counters, emptySet(), emptySet(), null, tracked, emptyList(), emptyList())
 
+    /** Builds a pack of [count] side quests `side_1` to `side_<count>` without recurring draws. */
     private fun sideQuests(count: Int) = TestPacks.TestPack(
         npcs = listOf(TestPacks.brina),
         quests = (1..count).map { TestPacks.quest("side_$it", QuestType.SIDE) },

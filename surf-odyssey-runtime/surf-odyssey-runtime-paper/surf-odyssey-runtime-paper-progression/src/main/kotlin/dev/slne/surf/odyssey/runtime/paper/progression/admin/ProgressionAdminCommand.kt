@@ -193,7 +193,7 @@ private fun refuse(sender: CommandSender, text: String) = sender.sendText {
 private fun questOf(sender: CommandSender, args: CommandArguments): QuestDefinition? {
     val id = args["quest"] as String
     return Progression.runtime.registry.quest(id) ?: run {
-        refuse(sender, "Unbekannte Quest: $id")
+        refuse(sender, AdminMessages.unknownQuest(id))
         null
     }
 }
@@ -203,10 +203,10 @@ private fun runPlan(sender: CommandSender, target: Player, plan: OperationPlan, 
     ProgressionModule.plugin.launch {
         when (val outcome = Progression.runtime.operations.run(target, plan)) {
             OperationOutcome.Success -> reply(sender, done)
-            OperationOutcome.Busy -> refuse(sender, "${target.name} führt gerade einen anderen Vorgang aus.")
-            OperationOutcome.MissingItems -> refuse(sender, "${target.name} fehlen Gegenstände.")
-            OperationOutcome.Unavailable -> refuse(sender, "Der Fortschrittsdienst ist gerade nicht verfügbar.")
-            is OperationOutcome.Rejected -> refuse(sender, "Abgelehnt: ${outcome.reason}")
+            OperationOutcome.Busy -> refuse(sender, AdminMessages.busy(target.name))
+            OperationOutcome.MissingItems -> refuse(sender, AdminMessages.missingItems(target.name))
+            OperationOutcome.Unavailable -> refuse(sender, AdminMessages.serviceUnavailable())
+            is OperationOutcome.Rejected -> refuse(sender, AdminMessages.rejected(outcome.reason))
         }
     }
 }
@@ -221,7 +221,7 @@ private fun runChange(
 ) {
     ProgressionModule.plugin.launch {
         if (Progression.runtime.store.change(target.uniqueId, discardedQuest, call)) reply(sender, done)
-        else refuse(sender, "Der Fortschrittsdienst ist gerade nicht verfügbar.")
+        else refuse(sender, AdminMessages.serviceUnavailable())
     }
 }
 
@@ -231,9 +231,9 @@ private fun questInfo(sender: CommandSender, args: CommandArguments) {
     val quest = questOf(sender, args) ?: return
     val runtime = Progression.runtime
     val state = runtime.store[target.uniqueId]?.state
-        ?: return refuse(sender, "Der Zustand von ${target.name} ist nicht geladen.")
+        ?: return refuse(sender, AdminMessages.stateNotLoaded(target.name))
     val stored = state.quests.find { it.questId == quest.id }
-        ?: return reply(sender, "${target.name} hat ${quest.id} nicht angenommen.")
+        ?: return reply(sender, AdminMessages.questNotAccepted(target.name, quest.id))
     val period = QuestProgressView.periodOf(quest, runtime.clock.instant())
     val progress = QuestProgressView.compute(quest, stored, state.counters, period)
     sender.sendText {
@@ -263,7 +263,7 @@ private fun questGive(sender: CommandSender, args: CommandArguments) {
     val quest = questOf(sender, args) ?: return
     val period = QuestProgressView.periodOf(quest, Progression.runtime.clock.instant())
     val change = StateChange.QuestAccepted(quest.id, quest.steps.first().version, period)
-    runPlan(sender, target, adminPlan(listOf(change)), "${quest.id} wurde an ${target.name} vergeben.")
+    runPlan(sender, target, adminPlan(listOf(change)), AdminMessages.questGiven(quest.id, target.name))
 }
 
 /** Completes the active quest named in [args] for the player named in [args] and gives its rewards. */
@@ -272,22 +272,22 @@ private fun questComplete(sender: CommandSender, args: CommandArguments) {
     val quest = questOf(sender, args) ?: return
     val runtime = Progression.runtime
     val state = runtime.store[target.uniqueId]?.state
-        ?: return refuse(sender, "Der Zustand von ${target.name} ist nicht geladen.")
+        ?: return refuse(sender, AdminMessages.stateNotLoaded(target.name))
     val stored = state.quests.find { it.questId == quest.id }
     val period = QuestProgressView.periodOf(quest, runtime.clock.instant())
     if (stored == null || !QuestProgressView.isCurrent(quest, stored, period)) {
-        return refuse(sender, "${quest.id} ist bei ${target.name} nicht aktiv.")
+        return refuse(sender, AdminMessages.questNotActive(target.name, quest.id))
     }
     val step = quest.steps[stored.step]
     val plan = adminPlan(listOf(StateChange.QuestCompleted(quest.id, stored.step)), step.rewards + quest.rewards)
-    runPlan(sender, target, plan, "${quest.id} wurde für ${target.name} abgeschlossen.")
+    runPlan(sender, target, plan, AdminMessages.questCompleted(quest.id, target.name))
 }
 
 /** Deletes the state and counters of the quest named in [args] for the player named in [args]. */
 private fun questReset(sender: CommandSender, args: CommandArguments) {
     val target = args["player"] as Player
     val quest = questOf(sender, args) ?: return
-    runChange(sender, target, quest.id, "${quest.id} wurde für ${target.name} zurückgesetzt.") {
+    runChange(sender, target, quest.id, AdminMessages.questReset(quest.id, target.name)) {
         it.resetQuest(target.uniqueId, quest.id)
     }
 }
@@ -296,17 +296,17 @@ private fun questReset(sender: CommandSender, args: CommandArguments) {
 private fun recipeGive(sender: CommandSender, args: CommandArguments) {
     val target = args["player"] as Player
     val id = args["recipe"] as String
-    val recipe = Progression.runtime.registry.recipe(id) ?: return refuse(sender, "Unbekanntes Rezept: $id")
+    val recipe = Progression.runtime.registry.recipe(id) ?: return refuse(sender, AdminMessages.unknownRecipe(id))
     val plan = adminPlan(rewards = listOf(RecipeReward(recipe)))
-    runPlan(sender, target, plan, "${recipe.id} wurde für ${target.name} freigeschaltet.")
+    runPlan(sender, target, plan, AdminMessages.recipeGiven(recipe.id, target.name))
 }
 
 /** Locks the recipe named in [args] again for the player named in [args]. */
 private fun recipeTake(sender: CommandSender, args: CommandArguments) {
     val target = args["player"] as Player
     val id = args["recipe"] as String
-    val recipe = Progression.runtime.registry.recipe(id) ?: return refuse(sender, "Unbekanntes Rezept: $id")
-    runChange(sender, target, null, "${recipe.id} wurde ${target.name} entzogen.") {
+    val recipe = Progression.runtime.registry.recipe(id) ?: return refuse(sender, AdminMessages.unknownRecipe(id))
+    runChange(sender, target, null, AdminMessages.recipeTaken(recipe.id, target.name)) {
         it.revokeRecipe(target.uniqueId, recipe.id)
     }
 }
@@ -315,17 +315,17 @@ private fun recipeTake(sender: CommandSender, args: CommandArguments) {
 private fun titleGive(sender: CommandSender, args: CommandArguments) {
     val target = args["player"] as Player
     val id = args["title"] as String
-    val title = Progression.runtime.registry.title(id) ?: return refuse(sender, "Unbekannter Titel: $id")
+    val title = Progression.runtime.registry.title(id) ?: return refuse(sender, AdminMessages.unknownTitle(id))
     val plan = adminPlan(rewards = listOf(TitleReward(title)))
-    runPlan(sender, target, plan, "${title.id} wurde an ${target.name} vergeben.")
+    runPlan(sender, target, plan, AdminMessages.titleGiven(title.id, target.name))
 }
 
 /** Takes the title named in [args] away from the player named in [args]. */
 private fun titleTake(sender: CommandSender, args: CommandArguments) {
     val target = args["player"] as Player
     val id = args["title"] as String
-    val title = Progression.runtime.registry.title(id) ?: return refuse(sender, "Unbekannter Titel: $id")
-    runChange(sender, target, null, "${title.id} wurde ${target.name} entzogen.") {
+    val title = Progression.runtime.registry.title(id) ?: return refuse(sender, AdminMessages.unknownTitle(id))
+    runChange(sender, target, null, AdminMessages.titleTaken(title.id, target.name)) {
         it.revokeTitle(target.uniqueId, title.id)
     }
 }
@@ -334,10 +334,10 @@ private fun titleTake(sender: CommandSender, args: CommandArguments) {
 private fun toolGive(sender: CommandSender, args: CommandArguments, level: Int) {
     val target = args["player"] as Player
     val id = args["tool"] as String
-    val tool = Progression.runtime.registry.tool(id) ?: return refuse(sender, "Unbekanntes Werkzeug: $id")
-    if (level > tool.maxLevel) return refuse(sender, "${tool.id} hat höchstens Level ${tool.maxLevel}.")
+    val tool = Progression.runtime.registry.tool(id) ?: return refuse(sender, AdminMessages.unknownTool(id))
+    if (level > tool.maxLevel) return refuse(sender, AdminMessages.maxLevel(tool.id, tool.maxLevel))
     val plan = adminPlan(rewards = listOf(LeveledToolReward(tool, level)))
-    runPlan(sender, target, plan, "${tool.id} (Level $level) wurde an ${target.name} gegeben.")
+    runPlan(sender, target, plan, AdminMessages.toolGiven(tool.id, level, target.name))
 }
 
 /** Sets the level of the tool in the main hand of [player] to [level]. */
@@ -345,14 +345,14 @@ private fun toolSetLevel(player: Player, level: Int) {
     val plugin = ProgressionModule.plugin
     plugin.launch(plugin.entityDispatcher(player)) {
         val item = player.inventory.itemInMainHand
-        val state = ToolItems.read(item) ?: return@launch refuse(player, "Du hältst kein Werkzeug in der Hand.")
+        val state = ToolItems.read(item) ?: return@launch refuse(player, AdminMessages.noToolInHand())
         val tool = ToolItems.definitionOf(state)
-            ?: return@launch refuse(player, "Dieses Werkzeug ist nicht bekannt: ${state.toolId}")
-        if (level > tool.maxLevel) return@launch refuse(player, "${tool.id} hat höchstens Level ${tool.maxLevel}.")
+            ?: return@launch refuse(player, AdminMessages.toolNotKnown(state.toolId))
+        if (level > tool.maxLevel) return@launch refuse(player, AdminMessages.maxLevel(tool.id, tool.maxLevel))
         ToolUsage.writeInto(player.uniqueId, item)
         AdminTools.setLevel(item, tool, level)
         player.inventory.setItemInMainHand(item)
-        reply(player, "${tool.id} ist jetzt Level $level.")
+        reply(player, AdminMessages.levelSet(tool.id, level))
     }
 }
 
@@ -364,8 +364,8 @@ private fun toolLookup(sender: CommandSender, tool: UUID) {
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            return@launch refuse(sender, "Der Fortschrittsdienst ist gerade nicht verfügbar.")
-        } ?: return@launch refuse(sender, "Kein Werkzeug mit dieser ID registriert.")
+            return@launch refuse(sender, AdminMessages.serviceUnavailable())
+        } ?: return@launch refuse(sender, AdminMessages.toolNotRegistered())
         sender.sendText {
             appendInfoPrefix()
             variableValue(record.toolId)
@@ -381,26 +381,26 @@ private fun toolLookup(sender: CommandSender, tool: UUID) {
 
 /** Writes the statement that places the NPC named by [id] at the position of [player]. */
 private fun placeNpc(player: Player, id: String) {
-    if (Progression.runtime.registry.npc(id) == null) return refuse(player, "Unbekannter NPC: $id")
+    if (Progression.runtime.registry.npc(id) == null) return refuse(player, AdminMessages.unknownNpc(id))
     val at = player.location
     save(player, id, PlacementWriter.npc(id, at.x, at.y, at.z, at.yaw, at.pitch))
 }
 
 /** Writes the statement that places the station named by [id] on the block [player] looks at. */
 private fun placeStation(player: Player, id: String) {
-    if (Progression.runtime.registry.station(id) == null) return refuse(player, "Unbekannte Station: $id")
-    val block = player.getTargetBlockExact(TARGET_RANGE) ?: return refuse(player, "Du schaust keinen Block an.")
+    if (Progression.runtime.registry.station(id) == null) return refuse(player, AdminMessages.unknownStation(id))
+    val block = player.getTargetBlockExact(TARGET_RANGE) ?: return refuse(player, AdminMessages.noBlockTargeted())
     save(player, id, PlacementWriter.station(id, block.x, block.y, block.z))
 }
 
 /** Saves [text] as the placement file of [id] and tells [player] the path or the reason it failed. */
 private fun save(player: Player, id: String, text: String) {
     when (val result = PlacementFile.save(ProgressionModule.plugin.dataFolder.toPath(), id, text)) {
-        is PlacementFile.Result.Saved -> reply(player, "Gespeichert in ${result.file.toAbsolutePath()}.")
+        is PlacementFile.Result.Saved -> reply(player, AdminMessages.saved(result.file.toAbsolutePath()))
         is PlacementFile.Result.Exists ->
-            refuse(player, "${result.file.toAbsolutePath()} existiert bereits und wird nicht überschrieben.")
+            refuse(player, AdminMessages.fileExists(result.file.toAbsolutePath()))
         is PlacementFile.Result.Failed ->
-            refuse(player, "Speichern in ${result.file.toAbsolutePath()} fehlgeschlagen: ${result.error.message}")
+            refuse(player, AdminMessages.saveFailed(result.file.toAbsolutePath(), result.error.message))
     }
 }
 

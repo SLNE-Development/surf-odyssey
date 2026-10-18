@@ -4,6 +4,7 @@ import dev.slne.surf.api.paper.inventory.framework.register
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.pickupBoxView
+import dev.slne.surf.odyssey.runtime.paper.progression.dialog.Conversations
 import dev.slne.surf.odyssey.runtime.paper.progression.npc.ProgressionNpcs
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.LoggingCurrencyGateway
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
@@ -75,7 +76,7 @@ object ProgressionModule {
         store.start()
         if (mode == ProgressionMode.FULL) {
             ToolModule.install(plugin, runtime, serverName)
-            ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = { _, _ -> })
+            ProgressionNpcs.install(plugin, runtime, placements.npcs, onInteract = Conversations::open)
         }
         return runtime
     }

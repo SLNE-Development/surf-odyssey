@@ -13,6 +13,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerItemHeldEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.Plugin
@@ -20,7 +21,8 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Writes buffered tool usage to the tool items when they could leave the player's hand or inventory: on a switch of
- * the held item, a drop, opening or closing an inventory, death and quit.
+ * the held item, a drop, an interaction with an entity such as an item frame or armour stand, opening or closing an
+ * inventory, death and quit.
  *
  * @param plugin the plugin whose log records dropped changes
  */
@@ -37,6 +39,13 @@ class ToolWriteListener(private val plugin: Plugin) : Listener {
     fun onDrop(event: PlayerDropItemEvent) {
         val stack = event.itemDrop.itemStack
         if (ToolUsage.writeInto(event.player.uniqueId, stack)) event.itemDrop.itemStack = stack
+    }
+
+    /** Writes the tool in the main hand before an entity such as an item frame or armour stand can take it. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun onInteractEntity(event: PlayerInteractEntityEvent) {
+        val tool = ToolItems.uuidOf(event.player.inventory.itemInMainHand) ?: return
+        ToolUsage.flushTool(event.player, tool)
     }
 
     /** Writes every tool of a player who opens an inventory, before items can be moved into it. */

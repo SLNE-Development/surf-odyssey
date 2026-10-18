@@ -11,7 +11,8 @@ object RecurringDraw {
      * Draws [count] distinct quests from [pool] for [player] in [period].
      *
      * The result depends only on the player, the quest type, the period and the set of pool IDs, never on the order of
-     * [pool] or on the moment of the call. If the pool holds fewer than [count] quests, all of them are returned.
+     * [pool] or on the moment of the call. The IDs in [pool] must be unique. If the pool holds fewer than [count]
+     * quests, all of them are returned.
      *
      * @param player the player the draw belongs to
      * @param type the recurring quest type
@@ -19,6 +20,7 @@ object RecurringDraw {
      * @param pool the candidate quests
      * @param count how many quests to draw
      * @return the drawn quests
+     * @throws IllegalArgumentException if [count] is negative
      */
     fun draw(
         player: UUID,
@@ -27,6 +29,7 @@ object RecurringDraw {
         pool: List<QuestDefinition>,
         count: Int,
     ): List<QuestDefinition> {
+        require(count >= 0) { "count must not be negative: $count" }
         val seed = player.mostSignificantBits xor player.leastSignificantBits xor (period * 31 + type.ordinal)
         return pool.sortedBy { it.id }.shuffled(Random(seed)).take(count)
     }

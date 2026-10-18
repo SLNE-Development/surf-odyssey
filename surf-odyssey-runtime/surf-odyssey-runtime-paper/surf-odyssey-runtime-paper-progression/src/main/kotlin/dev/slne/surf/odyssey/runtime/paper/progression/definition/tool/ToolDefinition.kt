@@ -8,6 +8,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ItemDefin
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
 
@@ -100,6 +101,12 @@ class ToolDefinition(
 ) : Definition {
     /** Returns [id] for log and validation messages. */
     override fun toString(): String = "ToolDefinition($id)"
+
+    /** Holds the persistent data key that marks tool item stacks. */
+    companion object {
+        /** Persistent data key `odyssey:tool_id` holding the ID of the tool definition of a tool item stack. */
+        val TOOL_ID_KEY: NamespacedKey = NamespacedKey("odyssey", "tool_id")
+    }
 }
 
 /**

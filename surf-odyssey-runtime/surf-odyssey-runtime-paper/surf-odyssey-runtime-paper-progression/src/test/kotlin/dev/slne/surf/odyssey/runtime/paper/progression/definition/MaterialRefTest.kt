@@ -2,7 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression.definition
 
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ItemDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.MaterialRef
-import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolItems
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
 import io.mockk.every
 import io.mockk.mockk
 import org.bukkit.Material
@@ -19,7 +19,7 @@ class MaterialRefTest {
     private fun stack(material: Material, tool: Boolean = false): ItemStack {
         val pdc = mockk<PersistentDataContainer>()
         every { pdc.get(ItemDefinition.ITEM_ID_KEY, PersistentDataType.STRING) } returns null
-        every { pdc.has(ToolItems.TOOL_ID_KEY, PersistentDataType.STRING) } returns tool
+        every { pdc.has(ToolDefinition.TOOL_ID_KEY, PersistentDataType.STRING) } returns tool
         val stack = mockk<ItemStack>()
         every { stack.type } returns material
         every { stack.isEmpty } returns false

@@ -28,8 +28,8 @@ import net.momirealms.craftengine.core.util.Key as CraftEngineKey
  * [TOOL_ID_KEY], [TOOL_UUID_KEY], [TOOL_USAGE_KEY], [TOOL_CHRONICLE_KEY] (JSON) and [TOOL_ACCESSORIES_KEY] (JSON).
  */
 object ToolItems {
-    /** Persistent data key `odyssey:tool_id` holding the ID of the tool definition. */
-    val TOOL_ID_KEY: NamespacedKey = NamespacedKey("odyssey", "tool_id")
+    /** Persistent data key `odyssey:tool_id` holding the ID of the tool definition; see [ToolDefinition.TOOL_ID_KEY]. */
+    val TOOL_ID_KEY: NamespacedKey = ToolDefinition.TOOL_ID_KEY
 
     /** Persistent data key `odyssey:tool_uuid` holding the unique ID of the item. */
     val TOOL_UUID_KEY: NamespacedKey = NamespacedKey("odyssey", "tool_uuid")

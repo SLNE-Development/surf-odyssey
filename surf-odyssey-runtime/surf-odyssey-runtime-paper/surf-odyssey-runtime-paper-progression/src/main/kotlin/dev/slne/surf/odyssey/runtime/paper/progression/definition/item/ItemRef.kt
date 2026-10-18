@@ -2,7 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression.definition.item
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
-import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolItems
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
@@ -56,7 +56,7 @@ data class MaterialRef(val material: Material) : ItemRef {
     /** Matches stacks of [material] that are neither custom items nor tool items. */
     override fun matches(stack: ItemStack?): Boolean =
         stack != null && stack.type == material && ItemDefinition.itemIdOf(stack) == null &&
-            !stack.persistentDataContainer.has(ToolItems.TOOL_ID_KEY, PersistentDataType.STRING)
+            !stack.persistentDataContainer.has(ToolDefinition.TOOL_ID_KEY, PersistentDataType.STRING)
 
     /** Creates a plain stack of [material]. */
     override fun create(amount: Int): ItemStack = ItemStack.of(material, amount)

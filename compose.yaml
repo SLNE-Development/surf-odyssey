@@ -1,6 +1,8 @@
-# Local development stack: PostgreSQL, RabbitMQ, Valkey, a Velocity proxy and the hub and home Paper servers, which run
-# from the run folders of their runtime modules. The microservices of the developmentStack extension in
-# build.gradle.kts are added through a compose file generated into build/development-stack.
+# Local development stack: PostgreSQL, RabbitMQ, Valkey, SeaweedFS with its admin UI, a Velocity proxy and the hub, home
+# and pack Paper servers, which run from the run folders of their runtime modules. The pack server builds the resource
+# pack and uploads it to SeaweedFS, every other server sends it to players from there. The microservices of the
+# developmentStack extension in build.gradle.kts are added through a compose file generated into
+# build/development-stack.
 #
 # Use the Gradle tasks in the "developmentStack" group to build, start, stop and clean it.
 # Every value below can be overridden in a .env file next to this one (see .env.example).
@@ -28,6 +30,14 @@ x-luckperms-environment: &luckperms-environment
   LUCKPERMS_DATA_PASSWORD: ${POSTGRES_PASSWORD:-surf}
   LUCKPERMS_DATA_POOL_SETTINGS_PROPERTIES: currentSchema=luckperms
 
+# Credentials for docker/paper/plugins/HuskSync/config.yml, which keeps player data in the husksync schema and
+# syncs it between the servers through Valkey
+x-husksync-environment: &husksync-environment
+  CFG_POSTGRES_DATABASE: ${POSTGRES_DATABASE:-surf}
+  CFG_POSTGRES_USERNAME: ${POSTGRES_USERNAME:-surf}
+  CFG_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-surf}
+  CFG_VALKEY_PASSWORD: ${VALKEY_PASSWORD:-surf}
+
 # Docker's default seccomp profile blocks io_uring, which Netty would otherwise pick for the RabbitMQ client.
 # surf-rabbitmq and surf-redis shade Netty and read relocated property names.
 x-java-tool-options: &java-tool-options >-
@@ -38,7 +48,7 @@ x-java-tool-options: &java-tool-options >-
 x-paper: &paper
   image: itzg/minecraft-server:2026.9.2-java25
   environment: &paper-environment
-    <<: [ *rabbitmq-environment, *valkey-environment, *luckperms-environment ]
+    <<: [ *rabbitmq-environment, *valkey-environment, *luckperms-environment, *husksync-environment ]
     JVM_OPTS: *java-tool-options
     EULA: "TRUE"
     TYPE: PAPER
@@ -48,6 +58,10 @@ x-paper: &paper
     ONLINE_MODE: "false"
     REPLACE_ENV_DURING_SYNC: "true"
     CFG_VELOCITY_SECRET: ${VELOCITY_FORWARDING_SECRET:-surf-odyssey-development}
+    # S3 access for the CraftEngine configs; clients download the pack from the public host
+    CFG_S3_ACCESS_KEY: ${S3_ACCESS_KEY:-odyssey}
+    CFG_S3_SECRET_KEY: ${S3_SECRET_KEY:-odyssey-dev-secret}
+    CFG_S3_PUBLIC_HOST: ${S3_PUBLIC_HOST:-localhost:8333}
     # Lets the console be attached with "docker compose attach" (detach with Ctrl+P, Ctrl+Q)
     CREATE_CONSOLE_IN_PIPE: "true"
   stdin_open: true
@@ -58,10 +72,20 @@ x-paper: &paper
     valkey:
       condition: service_healthy
 
+# Every hub server copies its world from docker/worlds on each start, so the map always matches the repository.
+# FORCE_WORLD_COPY deletes the world folder of the run folder before the copy, so nothing built or changed on a hub
+# survives a restart. docker/paper/hub/plugins holds the CraftEngine config that only sends the pack to players.
+x-hub-environment: &hub-environment
+  <<: *paper-environment
+  FORCE_WORLD_COPY: "TRUE"
+  COPY_PLUGINS_SRC: /plugins,/plugins-hub
+
 services:
   postgres:
     image: postgres:17.6-alpine
-    # One database for all microservices, each one uses its own schema
+    # One database for all microservices, each one uses its own schema. Every Paper server opens two
+    # connection pools (LuckPerms and HuskSync), which exceed the default limit of 100 connections.
+    command: [ "postgres", "-c", "max_connections=300" ]
     environment:
       POSTGRES_DB: ${POSTGRES_DATABASE:-surf}
       POSTGRES_USER: ${POSTGRES_USERNAME:-surf}
@@ -107,6 +131,29 @@ services:
     environment:
       VALKEY_PASSWORD: ${VALKEY_PASSWORD:-surf}
 
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    # Master, volume, filer and S3 gateway in one process; the S3 port is published for the Minecraft client.
+    # The servers sign presigned URLs for seaweedfs:8333 and hand them to clients with the public host, so the
+    # gateway checks signatures against seaweedfs:8333 first and against the requested host after that.
+    command: [ "server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json", "-s3.externalUrl=http://seaweedfs:8333", "-master.telemetry=false" ]
+    ports:
+      - "${SEAWEEDFS_S3_PORT:-8333}:8333"
+    volumes:
+      - seaweedfs-data:/data
+      # SeaweedFS does not substitute environment variables, the keys in it are the defaults from .env.example
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+  seaweedfs-admin:
+    image: chrislusf/seaweedfs:4.48
+    # The admin UI only listens on all interfaces when a password is set; the user is "admin"
+    command: [ "admin", "-ip=0.0.0.0", "-port=23646", "-master=seaweedfs:9333" ]
+    environment:
+      WEED_ADMIN_PASSWORD: ${SEAWEEDFS_ADMIN_PASSWORD:-surf}
+    ports:
+      - "${SEAWEEDFS_ADMIN_PORT:-23646}:23646"
+    depends_on: [ seaweedfs ]
+
   proxy:
     image: itzg/mc-proxy:java25-2026.9.0
     environment:
@@ -131,25 +178,79 @@ services:
         condition: service_healthy
       valkey:
         condition: service_healthy
-      hub:
+      hub-lobby-01:
+        condition: service_started
+      hub-north-01:
+        condition: service_started
+      hub-north-02:
+        condition: service_started
+      hub-south-01:
         condition: service_started
       home:
         condition: service_started
 
-  hub:
+  hub-lobby-01:
     <<: *paper
     environment:
-      <<: *paper-environment
-      LUCKPERMS_SERVER: hub
-      CFG_SURF_SERVER_NAME: hub
-      CFG_SURF_SERVER_DISPLAY_NAME: Hub
-      CFG_SURF_SERVER_CATEGORY: hub
-      # docker/paper/hub/plugins holds the configs only the hub needs, e.g. surf-polar-paper
-      COPY_PLUGINS_SRC: /plugins,/plugins-hub
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-lobby-01
+      CFG_SURF_SERVER_NAME: hub-lobby-01
+      CFG_SURF_SERVER_DISPLAY_NAME: Lobby
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-lobby
+      WORLD: /worlds/lobby
     volumes:
-      # Server files, plugins and plugin configs all live in the run folder. docker/paper/config and
-      # docker/paper/plugins are synced into its config and plugins folders on start.
-      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/run:/data
+      # Server files, plugins and plugin configs all live in the run folder. docker/paper/config, docker/paper/plugins
+      # and docker/paper/hub/plugins are synced into its config and plugins folders on start.
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-01:/data
+      - ./docker/worlds/lobby:/worlds/lobby:ro
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
+
+  hub-north-01:
+    <<: *paper
+    environment:
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-north-01
+      CFG_SURF_SERVER_NAME: hub-north-01
+      CFG_SURF_SERVER_DISPLAY_NAME: Norden
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-north
+      WORLD: /worlds/north
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-01:/data
+      - ./docker/worlds/north:/worlds/north:ro
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
+
+  hub-north-02:
+    <<: *paper
+    environment:
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-north-02
+      CFG_SURF_SERVER_NAME: hub-north-02
+      CFG_SURF_SERVER_DISPLAY_NAME: Norden
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-north
+      WORLD: /worlds/north
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-02:/data
+      - ./docker/worlds/north:/worlds/north:ro
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/hub/plugins:/plugins-hub:ro
+
+  hub-south-01:
+    <<: *paper
+    environment:
+      <<: *hub-environment
+      LUCKPERMS_SERVER: hub-south-01
+      CFG_SURF_SERVER_NAME: hub-south-01
+      CFG_SURF_SERVER_DISPLAY_NAME: Süden
+      CFG_SURF_SERVER_CATEGORY: odyssey-hub-south
+      WORLD: /worlds/south
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-south/run/hub-south-01:/data
+      - ./docker/worlds/south:/worlds/south:ro
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
       - ./docker/paper/hub/plugins:/plugins-hub:ro
@@ -162,15 +263,41 @@ services:
       CFG_SURF_SERVER_NAME: home
       CFG_SURF_SERVER_DISPLAY_NAME: Home
       CFG_SURF_SERVER_CATEGORY: home
-      # docker/paper/home/plugins holds the configs only the home server needs, e.g. surf-polar-paper
-      COPY_PLUGINS_SRC: /plugins,/plugins-home
+      # docker/paper/home/plugins holds the configs only the home server needs, e.g. surf-polar-paper, and
+      # docker/paper/hub/plugins the CraftEngine config that only sends the pack to players
+      COPY_PLUGINS_SRC: /plugins,/plugins-home,/plugins-home-ce
     volumes:
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run:/data
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
       - ./docker/paper/home/plugins:/plugins-home:ro
+      - ./docker/paper/hub/plugins:/plugins-home-ce:ro
+
+  pack-01:
+    <<: *paper
+    environment:
+      <<: *paper-environment
+      LUCKPERMS_SERVER: pack-01
+      CFG_SURF_SERVER_NAME: pack-01
+      CFG_SURF_SERVER_DISPLAY_NAME: Pack
+      CFG_SURF_SERVER_CATEGORY: odyssey-pack
+      # docker/paper/pack/plugins holds the CraftEngine config that builds the pack and uploads it to SeaweedFS
+      COPY_PLUGINS_SRC: /plugins,/plugins-pack
+    volumes:
+      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-pack/run/pack-01:/data
+      - ./docker/paper/config:/config:ro
+      - ./docker/paper/plugins:/plugins:ro
+      - ./docker/paper/pack/plugins:/plugins-pack:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_started
 
 volumes:
   postgres-data:
   rabbitmq-data:
   valkey-data:
+  seaweedfs-data:

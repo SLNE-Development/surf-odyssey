@@ -3,11 +3,8 @@ package dev.slne.surf.odyssey.runtime.paper.common
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.odyssey.core.client.OdysseyClientInstance
 import dev.slne.surf.odyssey.runtime.paper.common.commands.home.homeCommand
-import dev.slne.surf.odyssey.runtime.paper.common.commands.skill.skillCommand
 import dev.slne.surf.odyssey.runtime.paper.common.listener.PlayerConnectionListener
-import dev.slne.surf.odyssey.runtime.paper.common.listener.SkillConnectionListener
 import dev.slne.surf.odyssey.runtime.paper.common.menu.registerViews
-import dev.slne.surf.odyssey.runtime.paper.common.skill.SkillRuntime
 
 abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
     init {
@@ -28,18 +25,14 @@ abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
         OdysseyClientInstance.INSTANCE.onEnable()
 
         server.pluginManager.registerEvents(PlayerConnectionListener, this)
-        server.pluginManager.registerEvents(SkillConnectionListener, this)
-        SkillRuntime.start()
 
         onEnabled()
 
         homeCommand()
-        skillCommand()
     }
 
     final override suspend fun onDisableAsync() {
         onDisabled()
-        SkillRuntime.stop()
         OdysseyClientInstance.INSTANCE.onDisable()
     }
 

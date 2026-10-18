@@ -1,0 +1,40 @@
+# Synced into the plugins folder of the hub and home dev servers on start, the CFG_ placeholders are set in
+# compose.yaml. HuskSync fills in every setting left out here with its default.
+language: de-de
+check_for_updates: false
+# All servers sharing player data use the same cluster
+cluster_id: odyssey
+database:
+  type: POSTGRES
+  credentials:
+    host: postgres
+    port: 5432
+    database: ${CFG_POSTGRES_DATABASE}
+    username: ${CFG_POSTGRES_USERNAME}
+    password: ${CFG_POSTGRES_PASSWORD}
+    # Keeps the HuskSync tables in their own schema of the shared database
+    parameters: ?currentSchema=husksync
+  create_tables: true
+redis:
+  credentials:
+    host: valkey
+    port: 6379
+    password: ${CFG_VALKEY_PASSWORD}
+    use_ssl: false
+synchronization:
+  mode: LOCKSTEP
+  # Hub worlds and home worlds are different maps, so the position stays on each server
+  features:
+    inventory: true
+    ender_chest: true
+    health: true
+    hunger: true
+    experience: true
+    potion_effects: true
+    advancements: true
+    statistics: true
+    game_mode: true
+    persistent_data: true
+    attributes: true
+    flight_status: true
+    location: false

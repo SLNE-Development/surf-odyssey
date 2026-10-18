@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "odyssey",
+      "credentials": [{ "accessKey": "odyssey", "secretKey": "odyssey-dev-secret" }],
+      "actions": ["Admin", "Read", "Write", "List"]
+    }
+  ]
+}

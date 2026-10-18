@@ -6,6 +6,7 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.SortOrder
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.and
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.eq
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.greaterEq
+import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.inList
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.isNull
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.less
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.plus
@@ -95,7 +96,8 @@ class ProgressionServiceImpl(private val clock: Clock) : ProgressionService {
         lockPlayer(operation.player)
         storedResult(operation.id)?.let { return@suspendTransaction it }
 
-        when (val decision = OperationApplier.decide(selectState(operation.player), operation)) {
+        val knownJobIds = existingJobIds(operation.changes.filterIsInstance<StateChange.JobStarted>().map { it.job.id })
+        when (val decision = OperationApplier.decide(selectState(operation.player), operation, knownJobIds)) {
             is Decision.Reject -> {
                 insertOperation(operation, OperationOutcome.REJECTED, decision.reason)
                 OperationResultDto.Rejected(decision.reason)
@@ -310,13 +312,26 @@ class ProgressionServiceImpl(private val clock: Clock) : ProgressionService {
         }
     }
 
+    /**
+     * Returns which of [jobIds] are already stored, for any player and whether collected or not. Must run inside a
+     * transaction.
+     */
+    private suspend fun existingJobIds(jobIds: List<UUID>): Set<UUID> {
+        if (jobIds.isEmpty()) return emptySet()
+        return StationJobTable.select(StationJobTable.id)
+            .where { StationJobTable.id inList jobIds }
+            .map { it[StationJobTable.id] }
+            .toList()
+            .toSet()
+    }
+
     /** Records that [operation] was committed with [outcome]. Must run inside a transaction. */
     private suspend fun insertOperation(operation: OperationDto, outcome: OperationOutcome, reason: String?) {
         OperationTable.insert {
             it[id] = operation.id
             it[player] = operation.player
             it[result] = outcome
-            it[OperationTable.reason] = reason?.take(255)
+            it[OperationTable.reason] = reason
             it[createdAt] = OffsetDateTime.now(clock)
         }
     }

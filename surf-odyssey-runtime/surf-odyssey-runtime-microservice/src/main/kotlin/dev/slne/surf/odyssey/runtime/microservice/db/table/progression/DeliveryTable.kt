@@ -4,6 +4,7 @@ import dev.slne.surf.database.columns.nativeUuid
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.ReferenceOption
 import dev.slne.surf.database.table.AuditableTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.OdysseyPlayerTable
+import dev.slne.surf.odyssey.runtime.microservice.progression.ProgressionLimits
 
 /**
  * The items in the players' pickup boxes. A delivery is open until [claimedAt] is set; [AuditableTable.createdAt] is
@@ -28,7 +29,7 @@ object DeliveryTable : AuditableTable("odyssey_deliveries") {
     val item = text("item")
 
     /** A short identifier of what created the delivery. */
-    val deliverySource = varchar("source", 64)
+    val deliverySource = varchar("source", ProgressionLimits.MAX_ID_LENGTH)
 
     /** The epoch milliseconds the delivery was claimed at, or `null` while it is open. */
     val claimedAt = long("claimed_at").nullable()

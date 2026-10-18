@@ -4,6 +4,7 @@ import dev.slne.surf.database.columns.nativeUuid
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.ReferenceOption
 import dev.slne.surf.database.table.AuditableTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.OdysseyPlayerTable
+import dev.slne.surf.odyssey.runtime.microservice.progression.ProgressionLimits
 
 /** The timed station jobs of all players. A job is open until [collectedAt] is set. */
 object StationJobTable : AuditableTable("odyssey_station_jobs") {
@@ -16,10 +17,10 @@ object StationJobTable : AuditableTable("odyssey_station_jobs") {
         .index()
 
     /** The station type the job runs at. */
-    val stationType = varchar("station_type", 64)
+    val stationType = varchar("station_type", ProgressionLimits.MAX_ID_LENGTH)
 
     /** The id of the recipe being crafted. */
-    val recipeId = varchar("recipe_id", 64)
+    val recipeId = varchar("recipe_id", ProgressionLimits.MAX_ID_LENGTH)
 
     /** How many times the recipe is crafted. */
     val amount = integer("amount")

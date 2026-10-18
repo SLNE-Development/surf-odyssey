@@ -4,6 +4,7 @@ import dev.slne.surf.database.columns.nativeUuid
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.ReferenceOption
 import dev.slne.surf.database.table.AuditableTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.OdysseyPlayerTable
+import dev.slne.surf.odyssey.runtime.microservice.progression.ProgressionLimits
 
 /** The objective counters of the players' quests, one row per objective of a step version and period. */
 object QuestCounterTable : AuditableTable("odyssey_quest_counters") {
@@ -12,7 +13,7 @@ object QuestCounterTable : AuditableTable("odyssey_quest_counters") {
         .references(OdysseyPlayerTable.uuid, onDelete = ReferenceOption.CASCADE)
 
     /** The id of the quest definition. */
-    val questId = varchar("quest_id", 64)
+    val questId = varchar("quest_id", ProgressionLimits.MAX_ID_LENGTH)
 
     /** The index of the step the objective belongs to. */
     val step = integer("step")

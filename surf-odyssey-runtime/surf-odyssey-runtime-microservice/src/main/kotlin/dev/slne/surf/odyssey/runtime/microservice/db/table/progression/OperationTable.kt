@@ -4,6 +4,7 @@ import dev.slne.surf.database.columns.nativeUuid
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.core.ReferenceOption
 import dev.slne.surf.database.table.AuditableTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.OdysseyPlayerTable
+import dev.slne.surf.odyssey.runtime.microservice.progression.ProgressionLimits
 
 /**
  * Every committed operation and its outcome, so a repeated commit returns the same outcome.
@@ -22,7 +23,7 @@ object OperationTable : AuditableTable("odyssey_operations") {
     val result = enumerationByName("result", 16, OperationOutcome::class)
 
     /** Why the operation was rejected, or `null` if it was applied. */
-    val reason = varchar("reason", 255).nullable()
+    val reason = varchar("reason", ProgressionLimits.MAX_REASON_LENGTH).nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

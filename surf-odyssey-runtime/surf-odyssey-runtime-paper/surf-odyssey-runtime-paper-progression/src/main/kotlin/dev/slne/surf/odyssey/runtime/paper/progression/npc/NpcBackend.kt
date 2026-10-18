@@ -8,6 +8,9 @@ import org.bukkit.entity.Player
 interface SpawnedNpc {
     /** The definition the NPC was spawned from. */
     val definition: NpcDefinition
+
+    /** Where the NPC stands. */
+    val location: Location
 }
 
 /**

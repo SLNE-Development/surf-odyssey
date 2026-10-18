@@ -37,8 +37,13 @@ class SurfNpcBackend(private val onInteract: (Player, SpawnedNpc) -> Unit) : Npc
      *
      * @property definition the definition the NPC was spawned from
      * @property uniqueName the unique surf-npc name of the NPC
+     * @property location where the NPC stands
      */
-    private class SurfSpawnedNpc(override val definition: NpcDefinition, val uniqueName: String) : SpawnedNpc
+    private class SurfSpawnedNpc(
+        override val definition: NpcDefinition,
+        val uniqueName: String,
+        override val location: Location,
+    ) : SpawnedNpc
 
     /** Spawns a non-persistent mannequin with the definition's name and skin that looks at each viewer. */
     override fun spawn(definition: NpcDefinition, location: Location): SpawnedNpc {
@@ -54,7 +59,7 @@ class SurfNpcBackend(private val onInteract: (Player, SpawnedNpc) -> Unit) : Npc
             persistent = false,
             skin = NpcSkin(definition.id, definition.skin.value, definition.skin.signature, NpcSkinPart.entries.toObjectSet()),
         )
-        return SurfSpawnedNpc(definition, uniqueName).also { spawned[uniqueName] = it }
+        return SurfSpawnedNpc(definition, uniqueName, location.clone()).also { spawned[uniqueName] = it }
     }
 
     /** Adds [player] to or removes them from the viewers of [npc] when that changes anything. */

@@ -48,13 +48,14 @@ object ProgressionNpcs {
      * @param plugin the plugin that owns the listeners and tasks
      * @param runtime the installed engine
      * @param placements where the NPCs stand
-     * @param onInteract called on the player's thread when a player interacts with an NPC
+     * @param onInteract called on the player's thread with the player, the NPC and where it stands when a player
+     *        interacts with an NPC
      */
     internal fun install(
         plugin: Plugin,
         runtime: ProgressionRuntime,
         placements: List<NpcPlacement>,
-        onInteract: (Player, NpcDefinition) -> Unit,
+        onInteract: (Player, NpcDefinition, Location) -> Unit,
     ) {
         if (Bukkit.getPluginManager().getPlugin(NPC_PLUGIN) == null) {
             plugin.logger.warning("$NPC_PLUGIN is not installed, so no progression npcs are spawned")
@@ -63,7 +64,7 @@ object ProgressionNpcs {
         this.plugin = plugin
         val cooldown = InteractCooldown(INTERACT_COOLDOWN)
         val backend = SurfNpcBackend { player, npc ->
-            if (cooldown.tryAcquire(player.uniqueId)) onInteract(player, npc.definition)
+            if (cooldown.tryAcquire(player.uniqueId)) onInteract(player, npc.definition, npc.location)
         }
         Bukkit.getPluginManager().registerEvents(backend, plugin)
         this.backend = backend

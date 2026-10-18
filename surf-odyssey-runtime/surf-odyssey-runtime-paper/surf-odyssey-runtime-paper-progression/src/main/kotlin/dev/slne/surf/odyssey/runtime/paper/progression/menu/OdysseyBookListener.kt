@@ -2,7 +2,6 @@ package dev.slne.surf.odyssey.runtime.paper.progression.menu
 
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMessages
 import io.papermc.paper.event.player.PlayerPickItemEvent
-import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -28,7 +27,7 @@ import org.bukkit.plugin.Plugin
  * Keeps the [OdysseyBook] in the last hotbar slot of every player and opens the Odyssey menu with it.
  *
  * The book is put back on join, shortly after the join, on respawn and on a world change. It cannot be dropped,
- * moved, picked over, put into containers, item frames, armor stands or the off hand. Shift and right click opens the
+ * moved, picked over, handed to entities, put into containers or the off hand. Shift and right click opens the
  * [OdysseyMenuDialog]; a plain right click tells the player that research follows soon.
  *
  * @param plugin the plugin whose scheduler runs the delayed checks
@@ -111,10 +110,13 @@ class OdysseyBookListener(private val plugin: Plugin) : Listener {
         if (protected) event.isCancelled = true
     }
 
-    /** Cancels putting the book into an item frame. */
+    /**
+     * Cancels every interaction with an entity while the used hand holds the book, so that it cannot be handed to
+     * item frames, allays, armor stands or other entities. Covers [org.bukkit.event.player.PlayerInteractAtEntityEvent]
+     * too, which is a subclass.
+     */
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     fun onInteractEntity(event: PlayerInteractEntityEvent) {
-        if (event.rightClicked !is ItemFrame) return
         if (OdysseyBook.isBook(event.player.inventory.getItem(event.hand))) event.isCancelled = true
     }
 

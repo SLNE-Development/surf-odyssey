@@ -31,20 +31,8 @@ object GateEnforcer {
     /** How long each refresh of the darkness lasts, in ticks; longer than the check interval. */
     private const val DARKNESS_TICKS = 60
 
-    /**
-     * The locked region a player is in.
-     *
-     * @property regionId the region
-     * @property enteredAt when the player entered it, in epoch milliseconds
-     * @property lastDamageAt when the player last took damage in it, or `null` if not yet
-     */
-    private class Inside(val regionId: String, val enteredAt: Long, var lastDamageAt: Long? = null)
-
-    /** The locked region each player is in. */
-    private val inside = ConcurrentHashMap<UUID, Inside>()
-
-    /** The players this enforcer darkened. */
-    private val darkened = ConcurrentHashMap.newKeySet<UUID>()
+    /** The locked region each player is in and whether this enforcer darkened them. */
+    private val tracker = GateTracker()
 
     /** The players whose world gate was checked since they joined. */
     private val worldChecked = ConcurrentHashMap.newKeySet<UUID>()
@@ -77,8 +65,7 @@ object GateEnforcer {
      * @param player the leaving player
      */
     fun forget(player: Player) {
-        inside.remove(player.uniqueId)
-        darkened.remove(player.uniqueId)
+        tracker.release(player.uniqueId)
         worldChecked.remove(player.uniqueId)
     }
 
@@ -95,21 +82,15 @@ object GateEnforcer {
 
     /** Darkens [player] inside the locked [region], reminds them and deals damage when due. */
     private fun punish(player: Player, region: Region, now: Long) {
-        val state = inside[player.uniqueId]?.takeIf { it.regionId == region.id }
-            ?: Inside(region.id, now).also { inside[player.uniqueId] = it }
+        val damageDue = tracker.inLockedRegion(player.uniqueId, region.id, region.gateDamage, now)
         player.addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, DARKNESS_TICKS, 0, false, false, false))
-        darkened += player.uniqueId
         GateAccess.tellRegionLocked(player)
-        if (GatePlan.damageDue(state.enteredAt, state.lastDamageAt, now, region.gateDamage)) {
-            player.damage(region.gateDamage.damage)
-            state.lastDamageAt = now
-        }
+        if (damageDue) player.damage(region.gateDamage.damage)
     }
 
     /** Ends the effects of a locked region on [player]. */
     private fun release(player: Player) {
-        inside.remove(player.uniqueId)
-        if (darkened.remove(player.uniqueId)) player.removePotionEffect(PotionEffectType.DARKNESS)
+        if (tracker.release(player.uniqueId)) player.removePotionEffect(PotionEffectType.DARKNESS)
     }
 
     /**

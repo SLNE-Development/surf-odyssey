@@ -57,13 +57,37 @@ class ProgressionRegistry private constructor(private val pack: ContentPack) {
     val pools: RecurringPools
         get() = pack.pools
 
-    /** All quests of the pack. */
+    /** All items of the pack, in pack order. */
+    val allItems: List<ItemDefinition>
+        get() = pack.items
+
+    /** All stations of the pack, in pack order. */
+    val allStations: List<StationDefinition>
+        get() = pack.stations
+
+    /** All recipes of the pack, in pack order. */
+    val allRecipes: List<RecipeDefinition>
+        get() = pack.recipes
+
+    /** All titles of the pack, in pack order. */
+    val allTitles: List<TitleDefinition>
+        get() = pack.titles
+
+    /** All NPCs of the pack, in pack order. */
+    val allNpcs: List<NpcDefinition>
+        get() = pack.npcs
+
+    /** All quests of the pack, in pack order. */
     val allQuests: List<QuestDefinition>
         get() = pack.quests
 
-    /** All NPCs of the pack. */
-    val allNpcs: List<NpcDefinition>
-        get() = pack.npcs
+    /** All tools of the pack, in pack order. */
+    val allTools: List<ToolDefinition>
+        get() = pack.tools
+
+    /** All accessories of the pack, in pack order. */
+    val allAccessories: List<AccessoryDefinition>
+        get() = pack.accessories
 
     /** Returns the item with [id], or `null`. */
     fun item(id: String): ItemDefinition? = items[id]

@@ -1,7 +1,9 @@
 package dev.slne.surf.odyssey.runtime.paper.progression
 
+import dev.slne.surf.api.paper.inventory.framework.register
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
+import dev.slne.surf.odyssey.runtime.paper.progression.delivery.pickupBoxView
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.LoggingCurrencyGateway
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
@@ -16,6 +18,11 @@ object ProgressionModule {
     /** The plugin the engine was installed by. */
     internal lateinit var plugin: Plugin
         private set
+
+    /** Registers every inventory view of the engine; must run during plugin load. */
+    fun registerViews() {
+        pickupBoxView.register()
+    }
 
     /**
      * Builds the registry from [pack], starts loading and saving the players' progression and sets

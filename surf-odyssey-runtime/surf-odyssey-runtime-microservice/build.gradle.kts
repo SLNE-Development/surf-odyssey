@@ -16,4 +16,5 @@ surfMicroservice {
 
 dependencies {
     api(projects.surfOdysseyCore.surfOdysseyCoreCommon)
+    testImplementation(kotlin("test"))
 }

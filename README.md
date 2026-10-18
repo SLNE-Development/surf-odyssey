@@ -8,7 +8,7 @@ The development stack runs the whole network locally in Docker:
 |---------------------|--------------------------------------------------------------------------------------------|
 | `proxy`             | Velocity proxy, the only server players connect to                                         |
 | `hub-lobby-01`      | Paper server of the lobby hub world                                                        |
-| `hub-north-01`, `hub-north-02` | Paper servers of the north hub world                                            |
+| `hub-north-01`      | Paper server of the north hub world                                                        |
 | `hub-south-01`      | Paper server of the south hub world                                                        |
 | `home`              | Paper server of the player homes                                                           |
 | `pack-01`           | Paper server that builds the CraftEngine resource pack and uploads it to SeaweedFS         |
@@ -35,7 +35,6 @@ The development stack runs the whole network locally in Docker:
    | `proxy`        | `surf-odyssey-runtime/surf-odyssey-runtime-velocity/run/plugins`                                                   |
    | `hub-lobby-01` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-01/plugins` |
    | `hub-north-01` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-01/plugins` |
-   | `hub-north-02` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-02/plugins` |
    | `hub-south-01` | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-south/run/hub-south-01/plugins` |
    | `home`         | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run/plugins`                      |
    | `pack-01`      | `surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-pack/run/pack-01/plugins`              |
@@ -85,7 +84,7 @@ The development stack runs the whole network locally in Docker:
 ./gradlew cleanDevelopmentStack    # stop the stack and delete the database, RabbitMQ and Valkey data
 ```
 
-Consoles are attached with `docker compose attach proxy` (or `hub-lobby-01`, `hub-north-01`, `hub-north-02`,
+Consoles are attached with `docker compose attach proxy` (or `hub-lobby-01`, `hub-north-01`,
 `hub-south-01`, `home`, `pack-01`, `odyssey`, `core`, `polar-paper`) and
 detached with Ctrl+P, Ctrl+Q. Logs: `docker compose logs -f <service>`. For the microservices, run these through the
 Gradle tasks or set `COMPOSE_FILE` as described below, since they live in a generated compose file.

@@ -8,4 +8,7 @@ object HubPermissions : PermissionRegistry() {
 
     /** Allows using the region editor. */
     val REGION_EDITOR = create("$PREFIX.region.editor")
+
+    /** Exempts from region, portal and world gates. */
+    val GATE_BYPASS = create("surf.odyssey.progression.gate.bypass")
 }

@@ -7,6 +7,9 @@ class AliveMobs<K> {
     /** Number of mobs counted as alive. */
     val count: Int get() = alive.size
 
+    /** Returns whether the mob identified by [key] is counted as alive. */
+    operator fun contains(key: K): Boolean = key in alive
+
     /** Counts the mob identified by [key] as alive. */
     fun add(key: K) {
         alive += key

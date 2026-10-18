@@ -1,7 +1,9 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateDamage
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -28,6 +30,15 @@ abstract class Region(
     init {
         require(ID_PATTERN.matches(id)) { "Invalid region id '$id', use lowercase letters, digits and underscores" }
     }
+
+    /**
+     * The requirement a player must meet to act in this region, or `null` if the region is open to everyone. Players
+     * who do not meet it are darkened and hurt inside, and their actions here are cancelled.
+     */
+    open val gate: Requirement? = null
+
+    /** How this region hurts players its [gate] locks out. */
+    open val gateDamage: GateDamage = GateDamage()
 
     /** Returns whether a player may break a block of [material] in this region. */
     open fun canBreak(material: Material): Boolean = false

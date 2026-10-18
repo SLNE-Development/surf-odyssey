@@ -1,0 +1,58 @@
+items:
+  odyssey:odyssey_book:
+    material: book
+    data:
+      item_name: <!i><white>Odyssey-Buch
+    texture: odyssey:item/odyssey_book
+  odyssey:sushi:
+    material: cooked_cod
+    data:
+      item_name: <!i><white>Sushi
+    texture: odyssey:item/sushi
+  odyssey:smoked_fish:
+    material: cooked_cod
+    data:
+      item_name: <!i><white>Räucherfisch
+    texture: odyssey:item/smoked_fish
+  odyssey:fish_soup:
+    material: cooked_cod
+    data:
+      item_name: <!i><white>Fischsuppe
+    texture: odyssey:item/fish_soup
+  odyssey:fish_platter:
+    material: cooked_cod
+    data:
+      item_name: <!i><white>Fischplatte
+    texture: odyssey:item/fish_platter
+  odyssey:copper_sheet:
+    material: paper
+    data:
+      item_name: <!i><white>Kupferblech
+    texture: odyssey:item/copper_sheet
+  odyssey:lantern_oil:
+    material: paper
+    data:
+      item_name: <!i><white>Lampenöl
+    texture: odyssey:item/lantern_oil
+  odyssey:bait_worm:
+    material: paper
+    data:
+      item_name: <!i><white>Köderwurm
+    texture: odyssey:item/bait_worm
+  odyssey:drill_bit:
+    material: paper
+    data:
+      item_name: <!i><white>Bohrkopf
+    texture: odyssey:item/drill_bit
+  odyssey:harbor_rod:
+    material: fishing_rod
+    data:
+      item_name: <!i><white>Hafenangel
+    textures:
+      - odyssey:item/harbor_rod
+      - odyssey:item/harbor_rod_cast
+  odyssey:pit_pickaxe:
+    material: iron_pickaxe
+    data:
+      item_name: <!i><white>Grubenhacke
+    texture: odyssey:item/pit_pickaxe

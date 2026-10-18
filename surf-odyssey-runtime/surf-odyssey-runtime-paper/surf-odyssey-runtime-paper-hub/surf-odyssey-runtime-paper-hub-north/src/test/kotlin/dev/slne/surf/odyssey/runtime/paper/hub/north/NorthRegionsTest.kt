@@ -35,4 +35,13 @@ class NorthRegionsTest {
         assertTrue(oak.shape.contains(365, 68, 130))
         assertTrue(oak.shape.contains(361, 65, 130))
     }
+
+    /** Ink sacs for the lighthouse questline can be fished in the lake at any time. */
+    @Test
+    fun `the lake yields ink sacs at any time`() {
+        val lake = RegionIndex(RegionRegistry().apply { northRegions() }.build()).byId("north_lake") as FishingRegion
+        val ink = lake.table.entries.single { it.id == "ink_sac" }
+        assertEquals(20, ink.weight)
+        assertTrue(ink.conditions.isEmpty())
+    }
 }

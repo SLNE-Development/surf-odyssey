@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.fishing.FishingRegionBuilder
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateDamage
 import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegionBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
@@ -8,6 +9,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.protectionSetti
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.block.Block
@@ -65,6 +67,12 @@ class HarvestRegionBuilder(private val id: String, defaultPlaceholder: Material)
     /** Time until a broken block returns. */
     var regenerateAfter: Duration = 5.minutes
 
+    /** Requirement a player must meet to act in the region, or `null` to open it to everyone. */
+    var gate: Requirement? = null
+
+    /** How the region hurts players its [gate] locks out. */
+    var gateDamage: GateDamage = GateDamage()
+
     private var shape: Shape? = null
     private val breakable = mutableSetOf<Material>()
     private var drops: ((Block) -> Collection<ItemStack>)? = null
@@ -91,10 +99,10 @@ class HarvestRegionBuilder(private val id: String, defaultPlaceholder: Material)
     }
 
     /** Creates the mine from the collected settings. */
-    internal fun buildMine() = MineRegion(id, displayName, requireShape(), breakable.toSet(), placeholder, regenerateAfter, drops, settings)
+    internal fun buildMine() = MineRegion(id, displayName, requireShape(), breakable.toSet(), placeholder, regenerateAfter, drops, settings, gate, gateDamage)
 
     /** Creates the forest from the collected settings. */
-    internal fun buildForest() = ForestRegion(id, displayName, requireShape(), breakable.toSet(), regenerateAfter, drops, settings)
+    internal fun buildForest() = ForestRegion(id, displayName, requireShape(), breakable.toSet(), regenerateAfter, drops, settings, gate, gateDamage)
 
     /** Returns the configured shape or fails when none was set. */
     private fun requireShape(): Shape = requireNotNull(shape) { "Region '$id' has no shape" }

@@ -1,0 +1,56 @@
+images:
+  odyssey:portrait_brina_neutral:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/brina_neutral.png
+  odyssey:portrait_brina_worried:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/brina_worried.png
+  odyssey:portrait_brina_happy:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/brina_happy.png
+  odyssey:portrait_olek_neutral:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/olek_neutral.png
+  odyssey:portrait_olek_happy:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/olek_happy.png
+  odyssey:portrait_mira_neutral:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/mira_neutral.png
+  odyssey:portrait_mira_thinking:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/mira_thinking.png
+  odyssey:portrait_ysa_neutral:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/ysa_neutral.png
+  odyssey:portrait_ysa_mystic:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/ysa_mystic.png
+  odyssey:portrait_koch_neutral:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/koch_neutral.png
+  odyssey:portrait_koch_happy:
+    height: 48
+    ascent: 40
+    font: odyssey:portraits
+    file: odyssey:font/portrait/koch_happy.png

@@ -25,6 +25,16 @@ fun interface ToolRewardFactory {
     fun create(tool: ToolDefinition, owner: UUID): ItemStack
 }
 
+/** A reward that creates its own item stacks. */
+interface ItemProducingReward : QuestReward {
+    /**
+     * Creates the stacks given to [owner].
+     *
+     * @param owner the player who receives the reward
+     */
+    fun produce(owner: UUID): List<ItemStack>
+}
+
 /** Pays currency amounts to players. */
 interface CurrencyGateway {
     /**
@@ -81,6 +91,7 @@ object RewardPlanner {
                 is ToolReward -> items += checkNotNull(toolRewards) { "tool rewards are not installed" }
                     .create(reward.tool, owner)
                 is CurrencyReward -> Unit
+                is ItemProducingReward -> items += reward.produce(owner)
                 else -> throw IllegalArgumentException("unknown reward type ${reward.typeKey}")
             }
         }

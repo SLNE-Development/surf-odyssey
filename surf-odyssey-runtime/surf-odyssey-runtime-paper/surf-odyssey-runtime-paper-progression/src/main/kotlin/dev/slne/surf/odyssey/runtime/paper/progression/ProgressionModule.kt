@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.progression
 
 import dev.slne.surf.api.paper.inventory.framework.register
+import dev.slne.surf.odyssey.runtime.paper.progression.admin.progressionAdminCommand
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
 import dev.slne.surf.odyssey.runtime.paper.progression.delivery.pickupBoxView
@@ -49,7 +50,8 @@ object ProgressionModule {
      * [Progression.runtime] and lets tool rewards create tool items. In [ProgressionMode.FULL] it also installs the
      * tool listeners with [ToolModule.install], makes the placed station blocks of the main world open their
      * stations, connects the "Handeln" and "Herstellen" answers of conversations to the trade and station menus and
-     * spawns the placed NPCs. In every mode it installs the player menus.
+     * spawns the placed NPCs. In every mode it installs the player menus and registers `/odysseyadmin`, which
+     * offers only `quest info` in [ProgressionMode.VIEW_ONLY].
      *
      * @param plugin the plugin that owns the listeners, coroutines and log
      * @param pack the content of this server
@@ -84,6 +86,7 @@ object ProgressionModule {
         Progression.runtime = runtime
         RewardPlanner.toolRewards = ToolRewardFactory(ToolItems::create)
         store.start()
+        progressionAdminCommand(mode)
         if (mode == ProgressionMode.FULL) {
             ToolModule.install(plugin, runtime, serverName)
             StationBlocks.install(plugin, Bukkit.getWorlds().first(), placements.stations)

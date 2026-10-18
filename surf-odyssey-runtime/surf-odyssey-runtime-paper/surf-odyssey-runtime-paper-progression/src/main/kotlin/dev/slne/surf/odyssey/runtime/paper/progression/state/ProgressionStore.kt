@@ -158,6 +158,32 @@ class ProgressionStore(
         return set
     }
 
+    /**
+     * Runs [call] against the progression service under the lock of [player], then loads the state of [player] again.
+     * The buffered deltas of [discardedQuest] are dropped first, so that they cannot bring a reset quest back.
+     *
+     * @param player the player whose stored progression [call] changes
+     * @param discardedQuest the id of a quest whose buffered deltas are dropped, or `null` for none
+     * @param call the change to send to the service
+     * @return `false` if the call failed and nothing was reloaded
+     */
+    suspend fun change(player: UUID, discardedQuest: String?, call: suspend (ProgressionBridge) -> Unit): Boolean {
+        try {
+            lockOf(player).withLock {
+                call(bridge)
+                Progression.markAvailable()
+                if (discardedQuest != null) bufferOf(player).discard(discardedQuest)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            fail("change the progression of $player", e)
+            return false
+        }
+        reload(player)
+        return true
+    }
+
     /** Registers the join and quit listener, loads the players already online and starts the flush and ping loops. */
     fun start() {
         Bukkit.getPluginManager().registerEvents(this, plugin)

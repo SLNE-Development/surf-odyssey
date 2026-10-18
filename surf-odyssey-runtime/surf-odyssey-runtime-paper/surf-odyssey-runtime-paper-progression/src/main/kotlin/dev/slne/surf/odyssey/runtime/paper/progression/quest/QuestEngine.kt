@@ -111,17 +111,18 @@ object QuestEngine {
     }
 
     /**
-     * Fulfils the open `TalkTo` objectives of the current step of [quest].
+     * Fulfils the open `TalkTo` objectives of the current step of [quest] that target [npc].
      *
+     * @param npc the NPC the player talks to
      * @return the outcome of the operation; [OperationOutcome.Rejected] without an operation if the quest is not
-     *         active or has no open `TalkTo` objective
+     *         active or has no open `TalkTo` objective at [npc]
      */
-    suspend fun completeTalk(player: Player, quest: QuestDefinition): OperationOutcome =
+    suspend fun completeTalk(player: Player, quest: QuestDefinition, npc: NpcDefinition): OperationOutcome =
         guarded(player) { runtime, progression ->
             val (state, progress) = currentOf(runtime, progression, quest)
                 ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} is not active")
-            val plan = QuestPlans.completeTalk(quest, state, progress)
-                ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} has no open talk objective")
+            val plan = QuestPlans.completeTalk(quest, state, progress, npc)
+                ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} has no open talk objective at ${npc.id}")
             runtime.operations.run(player, plan).also {
                 if (it == OperationOutcome.Success) announceStep(player, quest, state.step)
             }
@@ -147,23 +148,26 @@ object QuestEngine {
 
     /**
      * Turns in the current step of [quest] when all of its objectives are met: advances to the next step with the
-     * step's rewards, or completes the quest after its last step with the step's and the quest's rewards.
+     * step's rewards, or completes the quest after its last step with the step's and the quest's rewards. The step is
+     * turned in only at its own NPC.
      *
+     * @param npc the NPC the player turns the step in at
      * @return the outcome of the operation; [OperationOutcome.Rejected] without an operation if the quest is not
-     *         active or an objective is still open
+     *         active, [npc] is not the NPC of the current step or an objective is still open
      */
-    suspend fun turnIn(player: Player, quest: QuestDefinition): OperationOutcome = guarded(player) { runtime, progression ->
-        val (state, progress) = currentOf(runtime, progression, quest)
-            ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} is not active")
-        val plan = QuestPlans.turnIn(quest, state, progress)
-            ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} has open objectives")
-        val outcome = runtime.operations.run(player, plan)
-        if (outcome == OperationOutcome.Success && state.step == quest.steps.lastIndex) {
-            ProgressionMessages.questCompleted(player, quest.title)
-            if (progression.state.trackedQuest == quest.id) trackNext(player, runtime, progression)
+    suspend fun turnIn(player: Player, quest: QuestDefinition, npc: NpcDefinition): OperationOutcome =
+        guarded(player) { runtime, progression ->
+            val (state, progress) = currentOf(runtime, progression, quest)
+                ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} is not active")
+            val plan = QuestPlans.turnIn(quest, state, progress, npc)
+                ?: return@guarded OperationOutcome.Rejected("quest ${quest.id} cannot be turned in at ${npc.id}")
+            val outcome = runtime.operations.run(player, plan)
+            if (outcome == OperationOutcome.Success && state.step == quest.steps.lastIndex) {
+                ProgressionMessages.questCompleted(player, quest.title)
+                if (progression.state.trackedQuest == quest.id) trackNext(player, runtime, progression)
+            }
+            outcome
         }
-        outcome
-    }
 
     /**
      * Abandons [quest] for [player] and discards its progress; items already handed in are not returned. Only
@@ -305,17 +309,19 @@ internal object QuestPlans {
     )
 
     /**
-     * Plans meeting the open `TalkTo` objectives of the current step.
+     * Plans meeting the open `TalkTo` objectives of the current step that target [npc].
      *
      * @param quest the quest
      * @param state the stored state of the active quest
      * @param progress the progress computed from [state]
-     * @return the plan, or `null` if no `TalkTo` objective is open
+     * @param npc the NPC the player talks to
+     * @return the plan, or `null` if no `TalkTo` objective at [npc] is open
      */
-    fun completeTalk(quest: QuestDefinition, state: QuestStateDto, progress: QuestProgress): OperationPlan? {
+    fun completeTalk(quest: QuestDefinition, state: QuestStateDto, progress: QuestProgress, npc: NpcDefinition): OperationPlan? {
         val step = quest.steps[progress.step]
-        val open = step.objectives.withIndex()
-            .filter { (index, objective) -> objective is Objective.TalkTo && progress.counts[index] < objective.amount }
+        val open = step.objectives.withIndex().filter { (index, objective) ->
+            objective is Objective.TalkTo && objective.npc.id == npc.id && progress.counts[index] < objective.amount
+        }
         if (open.isEmpty()) return null
         val changes = open.map { (index, objective) -> counterSet(quest, state, progress.step, index, objective.amount) }
         return OperationPlan(emptyList(), changes, emptyList(), SOURCE)
@@ -354,11 +360,13 @@ internal object QuestPlans {
      * @param quest the quest
      * @param state the stored state of the active quest
      * @param progress the progress computed from [state]
-     * @return the plan, or `null` if an objective of the step is still open
+     * @param npc the NPC the step is turned in at
+     * @return the plan, or `null` if an objective of the step is still open or [npc] is not the NPC of the step
      */
-    fun turnIn(quest: QuestDefinition, state: QuestStateDto, progress: QuestProgress): OperationPlan? {
+    fun turnIn(quest: QuestDefinition, state: QuestStateDto, progress: QuestProgress, npc: NpcDefinition): OperationPlan? {
         if (!progress.complete) return null
         val step = quest.steps[progress.step]
+        if (step.npc.id != npc.id) return null
         val next = progress.step + 1
         return if (next < quest.steps.size) {
             OperationPlan(

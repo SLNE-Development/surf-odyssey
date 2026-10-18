@@ -65,15 +65,15 @@ class QuestPlansTest {
 
     @Test
     fun `talking completes the open talk objectives`() {
-        val plan = assertNotNull(QuestPlans.completeTalk(quest, state(0), QuestProgress(0, listOf(0, 0, 0), false)))
+        val plan = assertNotNull(QuestPlans.completeTalk(quest, state(0), QuestProgress(0, listOf(0, 0, 0), false), TestPacks.brina))
 
         assertEquals(listOf<StateChange>(StateChange.CounterSet(quest.id, 0, 4, 2, 0, 1)), plan.changes)
-        assertNull(QuestPlans.completeTalk(quest, state(0), QuestProgress(0, listOf(0, 0, 1), false)))
+        assertNull(QuestPlans.completeTalk(quest, state(0), QuestProgress(0, listOf(0, 0, 1), false), TestPacks.brina))
     }
 
     @Test
     fun `turning in a step advances with the step rewards`() {
-        val plan = assertNotNull(QuestPlans.turnIn(quest, state(0), QuestProgress(0, listOf(10, 2, 1), true)))
+        val plan = assertNotNull(QuestPlans.turnIn(quest, state(0), QuestProgress(0, listOf(10, 2, 1), true), TestPacks.brina))
 
         assertEquals(listOf<StateChange>(StateChange.QuestStepAdvanced(quest.id, 0, 1, 2)), plan.changes)
         assertEquals(listOf(stepReward), plan.rewards)
@@ -81,7 +81,7 @@ class QuestPlansTest {
 
     @Test
     fun `turning in the last step completes with step and quest rewards`() {
-        val plan = assertNotNull(QuestPlans.turnIn(quest, state(1), QuestProgress(1, listOf(3), true)))
+        val plan = assertNotNull(QuestPlans.turnIn(quest, state(1), QuestProgress(1, listOf(3), true), TestPacks.brina))
 
         assertEquals(listOf<StateChange>(StateChange.QuestCompleted(quest.id, 1)), plan.changes)
         assertEquals(listOf(stepReward, questReward), plan.rewards)
@@ -89,6 +89,16 @@ class QuestPlansTest {
 
     @Test
     fun `turning in with open objectives plans nothing`() {
-        assertNull(QuestPlans.turnIn(quest, state(1), QuestProgress(1, listOf(2), false)))
+        assertNull(QuestPlans.turnIn(quest, state(1), QuestProgress(1, listOf(2), false), TestPacks.brina))
+    }
+
+    @Test
+    fun `talking at another npc plans nothing`() {
+        assertNull(QuestPlans.completeTalk(quest, state(0), QuestProgress(0, listOf(0, 0, 0), false), koch))
+    }
+
+    @Test
+    fun `turning in at another npc than the step's plans nothing`() {
+        assertNull(QuestPlans.turnIn(quest, state(1), QuestProgress(1, listOf(3), true), koch))
     }
 }

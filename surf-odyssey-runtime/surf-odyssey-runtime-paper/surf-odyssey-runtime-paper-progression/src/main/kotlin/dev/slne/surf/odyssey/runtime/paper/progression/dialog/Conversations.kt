@@ -151,9 +151,9 @@ object Conversations {
             }
 
             is NodeAction.AcceptQuest -> runQuestAction(player, npc, quest, action.then) { QuestEngine.accept(player, it) }
-            is NodeAction.CompleteTalk -> runQuestAction(player, npc, quest, action.then) { QuestEngine.completeTalk(player, it) }
+            is NodeAction.CompleteTalk -> runQuestAction(player, npc, quest, action.then) { QuestEngine.completeTalk(player, it, npc) }
             is NodeAction.DeliverItems -> runQuestAction(player, npc, quest, action.then) { QuestEngine.deliver(player, it, npc) }
-            is NodeAction.TurnIn -> runQuestAction(player, npc, quest, action.then) { QuestEngine.turnIn(player, it) }
+            is NodeAction.TurnIn -> runQuestAction(player, npc, quest, action.then) { QuestEngine.turnIn(player, it, npc) }
         }
     }
 

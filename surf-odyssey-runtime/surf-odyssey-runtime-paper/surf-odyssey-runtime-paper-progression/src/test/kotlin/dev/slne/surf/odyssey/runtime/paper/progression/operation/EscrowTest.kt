@@ -106,6 +106,19 @@ class EscrowTest {
     }
 
     @Test
+    fun `an operation is not started while the service is unavailable`() = runTest {
+        val inv = FakeInventory(mapOf(TestItems.ink to 12))
+        var commits = 0
+        val runner = TestRunner(commit = { commits++; OperationResultDto.Applied(emptyList()) }, available = false)
+
+        val outcome = runner.run(inv, OperationPlan(listOf(Ingredient(TestItems.ink, 12)), emptyList(), emptyList(), "t"))
+
+        assertEquals(OperationOutcome.NotStarted, outcome)
+        assertEquals(12, inv.count(TestItems.ink))
+        assertEquals(0, commits)
+    }
+
+    @Test
     fun `a commit that times out twice returns the items`() = runTest {
         val inv = FakeInventory(mapOf(TestItems.ink to 12))
         var calls = 0

@@ -52,7 +52,7 @@ object ConversationActions {
     fun after(outcome: OperationOutcome, then: String?): ConversationStep = when (outcome) {
         OperationOutcome.Success -> then?.let(ConversationStep::ShowNode) ?: ConversationStep.Close
         OperationOutcome.MissingItems -> ConversationStep.Hint(ConversationHint.MISSING_ITEMS)
-        OperationOutcome.Unavailable -> ConversationStep.Hint(ConversationHint.UNAVAILABLE)
+        OperationOutcome.Unavailable, OperationOutcome.NotStarted -> ConversationStep.Hint(ConversationHint.UNAVAILABLE)
         is OperationOutcome.Rejected -> ConversationStep.Hint(ConversationHint.REFUSED)
         OperationOutcome.Busy -> ConversationStep.Ignore
     }

@@ -85,10 +85,11 @@ class OperationRunner(
      * Runs one operation for [player] on the player's thread.
      *
      * @return the outcome; [OperationOutcome.Busy] without doing anything when another operation of the player is
-     *         running, [OperationOutcome.Unavailable] when the service or the player's state is not available
+     *         running, [OperationOutcome.NotStarted] without doing anything when the service or the player's state is
+     *         not available, [OperationOutcome.Unavailable] when the service failed during the operation
      */
     suspend fun run(player: Player, plan: OperationPlan): OperationOutcome {
-        if (!store.isAvailableFor(player.uniqueId)) return OperationOutcome.Unavailable
+        if (!store.isAvailableFor(player.uniqueId)) return OperationOutcome.NotStarted
         val outcome = onPlayerThread(player) { flow.run(player.uniqueId, PlayerEscrowInventory(player), plan) }
         if (outcome == OperationOutcome.Success) notifySuccess(player)
         return outcome
@@ -168,7 +169,7 @@ class OperationRunner(
     fun report(player: Player, outcome: OperationOutcome) {
         when (outcome) {
             OperationOutcome.MissingItems -> ProgressionMessages.missingItems(player)
-            OperationOutcome.Unavailable -> ProgressionMessages.unavailable(player)
+            OperationOutcome.Unavailable, OperationOutcome.NotStarted -> ProgressionMessages.unavailable(player)
             OperationOutcome.Success, OperationOutcome.Busy, is OperationOutcome.Rejected -> Unit
         }
     }

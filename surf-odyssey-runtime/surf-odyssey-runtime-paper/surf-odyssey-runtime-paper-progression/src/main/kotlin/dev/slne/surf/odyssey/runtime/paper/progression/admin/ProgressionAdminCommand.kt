@@ -205,7 +205,8 @@ private fun runPlan(sender: CommandSender, target: Player, plan: OperationPlan, 
             OperationOutcome.Success -> reply(sender, done)
             OperationOutcome.Busy -> refuse(sender, AdminMessages.busy(target.name))
             OperationOutcome.MissingItems -> refuse(sender, AdminMessages.missingItems(target.name))
-            OperationOutcome.Unavailable -> refuse(sender, AdminMessages.serviceUnavailable())
+            OperationOutcome.Unavailable, OperationOutcome.NotStarted ->
+                refuse(sender, AdminMessages.serviceUnavailable())
             is OperationOutcome.Rejected -> refuse(sender, AdminMessages.rejected(outcome.reason))
         }
     }

@@ -79,14 +79,16 @@ object AccessoryRules {
 
     /**
      * Returns what happens to a detached accessory after the operation that gives it to the player ended with
-     * [outcome]: [RemovalResult.DELIVERED] on success, [RemovalResult.REATTACH] on busy, missing items or rejection,
-     * and [RemovalResult.PENDING] when the service could not be reached.
+     * [outcome]: [RemovalResult.DELIVERED] on success, [RemovalResult.REATTACH] on busy, missing items, rejection or
+     * an operation that was not started, and [RemovalResult.PENDING] when the service could not be reached during the
+     * operation.
      *
      * @param outcome the outcome of the operation
      */
     fun afterRemoval(outcome: OperationOutcome): RemovalResult = when (outcome) {
         OperationOutcome.Success -> RemovalResult.DELIVERED
-        OperationOutcome.Busy, OperationOutcome.MissingItems, is OperationOutcome.Rejected -> RemovalResult.REATTACH
+        OperationOutcome.Busy, OperationOutcome.MissingItems, OperationOutcome.NotStarted, is OperationOutcome.Rejected ->
+            RemovalResult.REATTACH
         OperationOutcome.Unavailable -> RemovalResult.PENDING
     }
 }

@@ -232,7 +232,7 @@ object QuestEngine {
     /**
      * Runs [action] for [player] on the player's thread while no other quest action of the player runs.
      *
-     * @return [OperationOutcome.Busy] if another quest action runs, [OperationOutcome.Unavailable] if no engine is
+     * @return [OperationOutcome.Busy] if another quest action runs, [OperationOutcome.NotStarted] if no engine is
      *         installed or the player's state is not loaded, [OperationOutcome.Rejected] outside of
      *         [ProgressionMode.FULL], otherwise the result of [action]
      */
@@ -240,9 +240,9 @@ object QuestEngine {
         player: Player,
         action: suspend (ProgressionRuntime, PlayerProgression) -> OperationOutcome,
     ): OperationOutcome {
-        val runtime = Progression.runtimeOrNull ?: return OperationOutcome.Unavailable
+        val runtime = Progression.runtimeOrNull ?: return OperationOutcome.NotStarted
         if (runtime.mode != ProgressionMode.FULL) return OperationOutcome.Rejected("quests change only on hub servers")
-        val progression = runtime.store[player.uniqueId] ?: return OperationOutcome.Unavailable
+        val progression = runtime.store[player.uniqueId] ?: return OperationOutcome.NotStarted
         if (!running.add(player.uniqueId)) return OperationOutcome.Busy
         try {
             return withContext(ProgressionModule.plugin.entityDispatcher(player)) { action(runtime, progression) }

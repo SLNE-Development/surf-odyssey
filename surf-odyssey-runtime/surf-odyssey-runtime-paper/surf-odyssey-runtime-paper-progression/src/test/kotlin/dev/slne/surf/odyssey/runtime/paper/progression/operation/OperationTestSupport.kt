@@ -101,12 +101,14 @@ class FakeInventory(initial: Map<ItemRef, Int>, private var freeSlots: Int = 36)
  * @param claimFails whether claiming a delivery throws
  * @param corruptFirstClaim whether the first claimed delivery hands out an item that cannot be decoded
  * @param commitTimeout how long a commit may take
+ * @param available whether the service is reported as reachable before an operation starts
  */
 class TestRunner(
     private val commit: suspend (OperationDto) -> OperationResultDto,
     private val claimFails: Boolean = false,
     private var corruptFirstClaim: Boolean = false,
     commitTimeout: Duration = 10.seconds,
+    private val available: Boolean = true,
 ) {
     /** The player every operation runs for. */
     val player: UUID = UUID.randomUUID()
@@ -140,8 +142,8 @@ class TestRunner(
 
     /** Records each change of the service's state that the flow reports. */
     private val hooks = object : OperationHooks {
-        /** Always reports the service as reachable. */
-        override fun isAvailable(): Boolean = true
+        /** Reports the service as reachable unless [available] is false. */
+        override fun isAvailable(): Boolean = available
 
         /** Counts the failure in [serviceFailures]. */
         override fun onServiceFailure(action: String, error: Throwable) {

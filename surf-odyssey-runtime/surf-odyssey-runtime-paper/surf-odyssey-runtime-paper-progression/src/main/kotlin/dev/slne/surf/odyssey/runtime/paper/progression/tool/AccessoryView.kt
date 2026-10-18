@@ -24,6 +24,7 @@ import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playGeneralCli
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playNoSound
 import dev.slne.surf.odyssey.runtime.paper.common.menu.utils.view.playYesSound
 import dev.slne.surf.odyssey.runtime.paper.progression.Progression
+import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMessages
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.Ingredient
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ref
@@ -202,15 +203,21 @@ private fun insertAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot,
  * Detaches the accessory in the slot [slot] of the tool item [toolUuid] of [player] and gives it to the player through
  * an operation, so that it lands in the inventory or the pickup box. When the operation definitely was not stored, the
  * accessory is attached again, or given back as an item when the tool is gone. When the service could not be reached,
- * the slot stays empty, the case is logged and the player is told that the accessory will be delivered. The view is
- * opened again after a successful removal.
+ * the slot stays empty, the case is logged and the player is told that the accessory will be delivered. While the
+ * service or the player's state is not available, nothing is detached and the player is told so. The view is opened
+ * again after a successful removal.
  *
  * Must run on the thread of [player].
  */
 private fun removeAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot) {
+    val runtime = Progression.runtime
+    if (!runtime.store.isAvailableFor(player.uniqueId)) {
+        player.playNoSound()
+        ProgressionMessages.unavailable(player)
+        return
+    }
     val held = findTool(player, toolUuid) ?: return
     val (detached, accessoryId) = AccessoryRules.detach(held.state, slot.id) ?: return
-    val runtime = Progression.runtime
     val accessory = runtime.registry.accessory(accessoryId) ?: run {
         ProgressionModule.plugin.logger.warning("Tool $toolUuid holds the unknown accessory $accessoryId")
         return

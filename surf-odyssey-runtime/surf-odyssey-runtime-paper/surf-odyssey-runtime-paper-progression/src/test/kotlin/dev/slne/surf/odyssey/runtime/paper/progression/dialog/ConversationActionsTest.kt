@@ -33,6 +33,14 @@ class ConversationActionsTest {
     }
 
     @Test
+    fun `an operation that was not started shows the unavailable hint`() {
+        assertEquals(
+            ConversationStep.Hint(ConversationHint.UNAVAILABLE),
+            ConversationActions.after(OperationOutcome.NotStarted, "brina_thanks"),
+        )
+    }
+
+    @Test
     fun `a refusal shows the refused hint`() {
         assertEquals(
             ConversationStep.Hint(ConversationHint.REFUSED),

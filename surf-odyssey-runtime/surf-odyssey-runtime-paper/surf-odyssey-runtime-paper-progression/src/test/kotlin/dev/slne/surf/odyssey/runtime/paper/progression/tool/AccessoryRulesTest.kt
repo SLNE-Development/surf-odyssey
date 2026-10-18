@@ -90,6 +90,7 @@ class AccessoryRulesTest {
         assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.Busy))
         assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.MissingItems))
         assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.Rejected("no")))
+        assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.NotStarted))
     }
 
     @Test

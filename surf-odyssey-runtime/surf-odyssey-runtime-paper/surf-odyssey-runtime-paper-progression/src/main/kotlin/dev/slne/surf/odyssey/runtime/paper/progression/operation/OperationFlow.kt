@@ -49,6 +49,12 @@ sealed interface OperationOutcome {
     data object Unavailable : OperationOutcome
 
     /**
+     * The operation was not started because the progression service or the player's state was not available;
+     * nothing was taken from the player and nothing was sent to the service.
+     */
+    data object NotStarted : OperationOutcome
+
+    /**
      * The progression service refused the operation; the items held in escrow were given back.
      *
      * @property reason the reason the service gave
@@ -144,10 +150,11 @@ class OperationFlow(
     /**
      * Runs [plan] for [player], taking from and giving to [inventory].
      *
-     * @return [OperationOutcome.Busy] without doing anything when another operation of [player] is running
+     * @return [OperationOutcome.NotStarted] without doing anything when the service is not considered reachable,
+     *         [OperationOutcome.Busy] without doing anything when another operation of [player] is running
      */
     suspend fun run(player: UUID, inventory: EscrowInventory, plan: OperationPlan): OperationOutcome {
-        if (!hooks.isAvailable()) return OperationOutcome.Unavailable
+        if (!hooks.isAvailable()) return OperationOutcome.NotStarted
         if (!running.add(player)) return OperationOutcome.Busy
         try {
             return execute(player, inventory, plan)

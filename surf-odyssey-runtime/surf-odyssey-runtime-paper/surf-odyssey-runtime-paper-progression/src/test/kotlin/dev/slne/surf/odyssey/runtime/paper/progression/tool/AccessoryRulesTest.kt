@@ -6,6 +6,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.Accessory
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolType
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.accessory
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.tool
+import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationOutcome
 import net.kyori.adventure.text.Component.text
 import org.bukkit.Material
 import java.util.*
@@ -77,5 +78,22 @@ class AccessoryRulesTest {
     @Test
     fun `detaching an empty slot does nothing`() {
         assertNull(AccessoryRules.detach(state(100), "bait"))
+    }
+
+    @Test
+    fun `a stored removal delivers the accessory`() {
+        assertEquals(RemovalResult.DELIVERED, AccessoryRules.afterRemoval(OperationOutcome.Success))
+    }
+
+    @Test
+    fun `a removal that definitely did not happen attaches the accessory again`() {
+        assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.Busy))
+        assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.MissingItems))
+        assertEquals(RemovalResult.REATTACH, AccessoryRules.afterRemoval(OperationOutcome.Rejected("no")))
+    }
+
+    @Test
+    fun `a removal with an unreachable service leaves the slot empty`() {
+        assertEquals(RemovalResult.PENDING, AccessoryRules.afterRemoval(OperationOutcome.Unavailable))
     }
 }

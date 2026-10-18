@@ -199,8 +199,10 @@ private fun insertAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot,
 
 /**
  * Detaches the accessory in the slot [slot] of the tool item [toolUuid] of [player] and gives it to the player through
- * an operation, so that it lands in the inventory or the pickup box. If the operation fails, the accessory is
- * attached again, or given back as an item when the tool is gone. The view is opened again afterwards.
+ * an operation, so that it lands in the inventory or the pickup box. When the operation definitely was not stored, the
+ * accessory is attached again, or given back as an item when the tool is gone. When the service could not be reached,
+ * the slot stays empty, the case is logged and the player is told that the accessory will be delivered. The view is
+ * opened again after a successful removal.
  *
  * Must run on the thread of [player].
  */
@@ -218,17 +220,35 @@ private fun removeAccessory(player: Player, toolUuid: UUID, slot: AccessorySlot)
     plugin.launch {
         val plan = OperationPlan(emptyList(), emptyList(), listOf(ItemReward(accessory.item.ref, 1)), ACCESSORY_SOURCE)
         val outcome = runtime.operations.run(player, plan)
+        val result = AccessoryRules.afterRemoval(outcome)
+        if (result == RemovalResult.PENDING) {
+            plugin.logger.warning(
+                "Removing accessory ${accessory.id} from tool $toolUuid of ${player.uniqueId} was not confirmed: " +
+                    "the slot stays empty"
+            )
+        }
         withContext(plugin.entityDispatcher(player)) {
-            if (outcome == OperationOutcome.Success) {
-                player.playYesSound()
-                reopen(player, toolUuid)
-                return@withContext
+            when (result) {
+                RemovalResult.DELIVERED -> {
+                    player.playYesSound()
+                    reopen(player, toolUuid)
+                }
+                RemovalResult.PENDING -> {
+                    player.playNoSound()
+                    ToolMessages.accessoryPending(player)
+                }
+                RemovalResult.REATTACH -> {
+                    runtime.operations.report(player, outcome)
+                    player.playNoSound()
+                    val current = findTool(player, toolUuid)
+                    val reattached = current?.let { AccessoryRules.attach(it.tool, it.state, slot.id, accessory) }
+                    if (current != null && reattached != null) {
+                        store(player, current, reattached)
+                    } else {
+                        giveBack(player, accessory)
+                    }
+                }
             }
-            runtime.operations.report(player, outcome)
-            player.playNoSound()
-            val current = findTool(player, toolUuid)
-            val reattached = current?.let { AccessoryRules.attach(it.tool, it.state, slot.id, accessory) }
-            if (current != null && reattached != null) store(player, current, reattached) else giveBack(player, accessory)
         }
     }
 }
@@ -307,5 +327,11 @@ object ToolMessages {
     fun noFittingAccessory(player: Player) = player.sendText {
         appendErrorPrefix()
         error("Du hast kein passendes Zubehör dabei.")
+    }
+
+    /** Tells [player] that a removed accessory is delivered once the progression service can be reached again. */
+    fun accessoryPending(player: Player) = player.sendText {
+        appendInfoPrefix()
+        info("Das Zubehör wird dir zugestellt, sobald der Dienst wieder erreichbar ist. Prüfe dein Abholfach.")
     }
 }

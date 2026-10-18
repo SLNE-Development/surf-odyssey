@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression.tool
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessoryDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessorySlot
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
+import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationOutcome
 import java.util.*
 
 /**
@@ -34,6 +35,18 @@ object ToolSlots {
         tool.slots.entries.filter { it.key <= level }.sortedBy { it.key }.map { it.value }
 }
 
+/** What happens to a detached accessory after the operation that gives it to the player. */
+enum class RemovalResult {
+    /** The operation was stored; the accessory is in the inventory or the pickup box. */
+    DELIVERED,
+
+    /** The operation was definitely not stored; the accessory goes back into its slot. */
+    REATTACH,
+
+    /** The service could not be reached, so the operation may still be stored; the slot stays empty. */
+    PENDING,
+}
+
 /** Attaches accessories to and detaches them from the slots of a tool state. */
 object AccessoryRules {
     /**
@@ -62,5 +75,18 @@ object AccessoryRules {
     fun detach(state: ToolState, slotId: String): Pair<ToolState, String>? {
         val accessoryId = state.accessories[slotId] ?: return null
         return state.copy(accessories = state.accessories - slotId) to accessoryId
+    }
+
+    /**
+     * Returns what happens to a detached accessory after the operation that gives it to the player ended with
+     * [outcome]: [RemovalResult.DELIVERED] on success, [RemovalResult.REATTACH] on busy, missing items or rejection,
+     * and [RemovalResult.PENDING] when the service could not be reached.
+     *
+     * @param outcome the outcome of the operation
+     */
+    fun afterRemoval(outcome: OperationOutcome): RemovalResult = when (outcome) {
+        OperationOutcome.Success -> RemovalResult.DELIVERED
+        OperationOutcome.Busy, OperationOutcome.MissingItems, is OperationOutcome.Rejected -> RemovalResult.REATTACH
+        OperationOutcome.Unavailable -> RemovalResult.PENDING
     }
 }

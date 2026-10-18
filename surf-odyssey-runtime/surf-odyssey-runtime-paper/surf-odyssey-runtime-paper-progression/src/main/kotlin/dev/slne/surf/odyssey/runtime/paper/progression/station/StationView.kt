@@ -33,8 +33,9 @@ import org.bukkit.entity.Player
 
 /**
  * The menu of one station kind, passed as the initial data and named after it. The first two rows show the open jobs
- * of the viewer at stations of this kind, the soonest ready first: clicking a finished job collects it and opens the
- * menu again, clicking a running job refreshes the remaining times. The button in the bottom row opens the recipe
+ * of the viewer at stations of this kind, the soonest ready first: clicking a finished job collects exactly the job
+ * its item showed and opens the menu again, clicking a running job or a job that is no longer open refreshes the
+ * menu. The button in the bottom row opens the recipe
  * browser of the station.
  */
 val stationView: AbstractSurfView = surfView("Station") {
@@ -63,8 +64,13 @@ val stationView: AbstractSurfView = surfView("Station") {
                     item = StationJobs.jobsAt(player, station).getOrNull(index)?.let(StationJobs::itemOf)
                 }
                 onItemClick {
-                    val open = StationJobs.jobsAt(player, station).getOrNull(index) ?: return@onItemClick
+                    val shown = StationJobs.shownJobId(clickOrigin.currentItem) ?: return@onItemClick
                     playGeneralClickSound()
+                    val open = StationJobs.find(StationJobs.jobsAt(player, station), shown)
+                    if (open == null) {
+                        update()
+                        return@onItemClick
+                    }
                     if (CraftPlanner.isReady(open.job, Progression.runtime.clock.instant())) {
                         StationJobs.collect(player, open) { collector -> StationView.open(collector, station) }
                     } else {

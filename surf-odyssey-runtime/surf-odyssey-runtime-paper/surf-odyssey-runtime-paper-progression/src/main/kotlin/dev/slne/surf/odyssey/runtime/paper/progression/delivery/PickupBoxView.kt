@@ -4,7 +4,6 @@ package dev.slne.surf.odyssey.runtime.paper.progression.delivery
 
 import com.github.shynixn.mccoroutine.folia.entityDispatcher
 import com.github.shynixn.mccoroutine.folia.launch
-import com.github.shynixn.mccoroutine.folia.scope
 import dev.slne.surf.api.core.font.toSmallCaps
 import dev.slne.surf.api.core.messages.adventure.buildText
 import dev.slne.surf.api.paper.inventory.framework.dsl.onItemClick
@@ -29,15 +28,22 @@ import dev.slne.surf.odyssey.runtime.paper.progression.Progression
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMessages
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionModule
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 /**
- * The pickup box: every unclaimed delivery of the viewer, oldest first. Clicking a delivery claims it and puts its
- * item into the inventory, then the box is opened again with the remaining deliveries.
+ * The deliveries a pickup box is opened with.
+ *
+ * @property deliveries the unclaimed deliveries, oldest first
+ */
+private class PickupBoxContent(val deliveries: List<DeliveryDto>)
+
+/**
+ * The pickup box: the unclaimed deliveries of the viewer, oldest first, as loaded by [openPickupBox]. Clicking a
+ * delivery claims it and puts its item into the inventory, then the box is opened again with the remaining
+ * deliveries.
  */
 val pickupBoxView: AbstractPaginatedSurfView = paginatedSurfView("Abholfach") {
     settings {
@@ -47,10 +53,7 @@ val pickupBoxView: AbstractPaginatedSurfView = paginatedSurfView("Abholfach") {
     layoutTarget('D')
 
     pagination<DeliveryDto> {
-        lazyAsyncSource { context ->
-            val player = context.player
-            ProgressionModule.plugin.scope.future<Iterable<DeliveryDto>> { loadDeliveries(player) }
-        }
+        lazySource { context -> (context.initialData as? PickupBoxContent)?.deliveries.orEmpty() }
         itemFactory { delivery ->
             withItem(displayItem(delivery))
 
@@ -73,25 +76,38 @@ val pickupBoxView: AbstractPaginatedSurfView = paginatedSurfView("Abholfach") {
 }
 
 /**
- * Opens the pickup box for [player], or tells the player that it is not available while the progression service
- * or the player's state is not.
+ * Loads the deliveries of [player] in the background and opens the pickup box with them. While the progression
+ * service or the player's state is not available, or when loading fails, the player is told that it is not
+ * available and an open inventory is closed.
  */
 fun openPickupBox(player: Player) {
     if (!Progression.isAvailable || !Progression.runtime.store.isAvailableFor(player.uniqueId)) {
         ProgressionMessages.unavailable(player)
         return
     }
-    pickupBoxView.open(player)
+    val plugin = ProgressionModule.plugin
+    plugin.launch {
+        val deliveries = loadDeliveries(player)
+        withContext(plugin.entityDispatcher(player)) {
+            if (!player.isOnline) return@withContext
+            if (deliveries == null) {
+                player.closeInventory()
+                ProgressionMessages.unavailable(player)
+                return@withContext
+            }
+            pickupBoxView.open(player, PickupBoxContent(deliveries))
+        }
+    }
 }
 
-/** Loads the unclaimed deliveries of [player], oldest first; returns none when the service fails. */
-private suspend fun loadDeliveries(player: Player): List<DeliveryDto> = try {
+/** Loads the unclaimed deliveries of [player], oldest first; returns `null` when the service fails. */
+private suspend fun loadDeliveries(player: Player): List<DeliveryDto>? = try {
     ProgressionBridge.loadState(player.uniqueId).deliveries.sortedBy { it.createdAt }
 } catch (e: CancellationException) {
     throw e
 } catch (e: Exception) {
     Progression.reportFailure(ProgressionModule.plugin.logger, "load the deliveries of ${player.uniqueId}", e)
-    emptyList()
+    null
 }
 
 /** Returns the item of [delivery] with a lore line that explains how to pick it up. */
@@ -104,7 +120,7 @@ private fun displayItem(delivery: DeliveryDto): ItemStack {
     return item
 }
 
-/** Claims [delivery] for [player] in the background, tells the player the result and opens the box again. */
+/** Claims [delivery] for [player] in the background, tells the player the result and loads and opens the box again. */
 private fun claimFromBox(player: Player, delivery: DeliveryDto) {
     val plugin = ProgressionModule.plugin
     plugin.launch {
@@ -132,7 +148,7 @@ private fun claimFromBox(player: Player, delivery: DeliveryDto) {
                     return@withContext
                 }
             }
-            if (player.isOnline) pickupBoxView.open(player)
+            if (player.isOnline) openPickupBox(player)
         }
     }
 }

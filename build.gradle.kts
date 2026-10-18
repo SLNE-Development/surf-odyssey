@@ -53,8 +53,9 @@ developmentStack {
     server("home") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home"
         directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run")
-        // Player worlds are stored through the polar-paper microservice, CraftEngine sends the resource pack
-        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "craft-engine")
+        // Player worlds are stored through the polar-paper microservice, CraftEngine sends the resource pack,
+        // MiniPlaceholders provides the progression tags such as <odyssey_title>
+        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "craft-engine", "MiniPlaceholders")
     }
     server("pack-01") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-pack"

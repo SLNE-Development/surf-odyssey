@@ -23,6 +23,8 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.ArrivalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.Portal
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.PortalListener
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.WorldPosition
+import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.MobLootProvider
+import dev.slne.surf.odyssey.runtime.paper.progression.vanilla.VanillaLockdown
 import net.kyori.adventure.text.Component
 import org.bukkit.World
 
@@ -91,6 +93,7 @@ abstract class HubPlugin : OdysseyPaperMain() {
         HubRedis.connect(name)
         ReconnectService.start(this)
         server.worlds.forEach { it.isAutoSave = false }
+        VanillaLockdown.install(this, MobLootProvider.NONE)
         HubProtectionListener.register()
         WorldChangeListener.register()
         FishingListener.register()

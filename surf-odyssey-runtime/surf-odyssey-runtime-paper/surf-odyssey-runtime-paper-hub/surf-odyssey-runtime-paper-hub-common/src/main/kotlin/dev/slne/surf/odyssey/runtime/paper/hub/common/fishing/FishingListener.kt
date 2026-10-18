@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.fishing
 
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.DoubleDrop
 import dev.slne.surf.odyssey.runtime.paper.hub.common.progression.RegionProgress
 import dev.slne.surf.odyssey.runtime.paper.progression.quest.ProgressEvent
 import dev.slne.surf.odyssey.runtime.paper.progression.tool.ToolBonuses
@@ -18,7 +19,8 @@ import kotlin.random.Random
  * hook block if it is water, otherwise at the block below it.
  *
  * A catch from a region's table counts for the player's quests and for the rod in the main hand. A rod with a bite
- * speed bonus shortens the wait of its hook when it is cast in the hub world.
+ * speed bonus shortens the wait of its hook when it is cast in the hub world, and a rod with a double drop bonus may
+ * put a second stack of the catch into the inventory of the player.
  */
 object FishingListener : Listener {
     private const val MAX_DEPTH_SCAN = 16
@@ -34,7 +36,8 @@ object FishingListener : Listener {
 
     /**
      * Rolls the region's table when a fish is caught and reports the catch; outside every fishing region or
-     * with no fitting fish the catch is cancelled.
+     * with no fitting fish the catch is cancelled. When the double drop bonus of the rod doubles the catch, a second
+     * stack goes into the inventory of the player, or at the feet of the player if it does not fit.
      */
     @EventHandler(ignoreCancelled = true)
     fun onFish(event: PlayerFishEvent) {
@@ -65,6 +68,11 @@ object FishingListener : Listener {
         }
         val item = fish.item()
         caught.itemStack = item
+        val player = event.player
+        val rod = event.hand?.let { player.inventory.getItem(it) } ?: player.inventory.itemInMainHand
+        if (DoubleDrop.roll(ToolBonuses.doubleDropChance(rod)) > 1) {
+            player.inventory.addItem(item.clone()).values.forEach { player.world.dropItemNaturally(player.location, it) }
+        }
         val name = PlainTextComponentSerializer.plainText().serialize(item.effectiveName())
         RegionProgress.fished(event.player, ProgressEvent.Fished(fish.id, item.type, region.id), fish.weight, name)
     }

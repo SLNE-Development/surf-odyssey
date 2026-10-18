@@ -18,6 +18,8 @@ surfPaperPluginApi {
         registerRequired("MiniPlaceholders")
         // Portal surfaces are CraftEngine blocks
         registerRequired("CraftEngine")
+        // The progression NPCs are spawned through surf-npc
+        registerRequired("surf-npc-paper")
     }
 
     testing {

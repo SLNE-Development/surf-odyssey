@@ -18,6 +18,8 @@ surfPaperPluginApi {
         registerRequired("MiniPlaceholders")
         // Custom blocks and items of the hub worlds come from CraftEngine
         registerRequired("CraftEngine")
+        // The progression NPCs are spawned through surf-npc
+        registerRequired("surf-npc-paper")
     }
 
     testing {

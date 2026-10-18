@@ -24,7 +24,8 @@ val paperServerPlugins = listOf(
     "surf-api-paper-server", "surf-rabbitmq-paper", "surf-redis-paper", "surf-core-paper",
     "CommandAPI", "LuckPerms", "packetevents", "HuskSync"
 )
-val hubServerPlugins = paperServerPlugins + listOf("craft-engine", "MiniPlaceholders")
+// surf-npc is downloaded from https://github.com/SLNE-Development/surf-npc/releases (surf-npc-paper-*-all.jar)
+val hubServerPlugins = paperServerPlugins + listOf("craft-engine", "MiniPlaceholders", "surf-npc-paper")
 
 /** Adds the dev server [name] running the hub world module [world]. */
 fun DevelopmentStackExtension.hubServer(name: String, world: String) = server(name) {

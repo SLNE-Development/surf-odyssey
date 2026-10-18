@@ -180,13 +180,7 @@ services:
         condition: service_healthy
       hub-lobby-01:
         condition: service_started
-      hub-lobby-02:
-        condition: service_started
-      hub-lobby-03:
-        condition: service_started
       hub-north-01:
-        condition: service_started
-      hub-north-02:
         condition: service_started
       hub-south-01:
         condition: service_started
@@ -211,38 +205,6 @@ services:
       - ./docker/paper/plugins:/plugins:ro
       - ./docker/paper/hub/plugins:/plugins-hub:ro
 
-  hub-lobby-02:
-    <<: *paper
-    environment:
-      <<: *hub-environment
-      LUCKPERMS_SERVER: hub-lobby-02
-      CFG_SURF_SERVER_NAME: hub-lobby-02
-      CFG_SURF_SERVER_DISPLAY_NAME: Lobby
-      CFG_SURF_SERVER_CATEGORY: odyssey-hub-lobby
-      WORLD: /worlds/lobby
-    volumes:
-      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-02:/data
-      - ./docker/worlds/lobby:/worlds/lobby:ro
-      - ./docker/paper/config:/config:ro
-      - ./docker/paper/plugins:/plugins:ro
-      - ./docker/paper/hub/plugins:/plugins-hub:ro
-
-  hub-lobby-03:
-    <<: *paper
-    environment:
-      <<: *hub-environment
-      LUCKPERMS_SERVER: hub-lobby-03
-      CFG_SURF_SERVER_NAME: hub-lobby-03
-      CFG_SURF_SERVER_DISPLAY_NAME: Lobby
-      CFG_SURF_SERVER_CATEGORY: odyssey-hub-lobby
-      WORLD: /worlds/lobby
-    volumes:
-      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-lobby/run/hub-lobby-03:/data
-      - ./docker/worlds/lobby:/worlds/lobby:ro
-      - ./docker/paper/config:/config:ro
-      - ./docker/paper/plugins:/plugins:ro
-      - ./docker/paper/hub/plugins:/plugins-hub:ro
-
   hub-north-01:
     <<: *paper
     environment:
@@ -254,22 +216,6 @@ services:
       WORLD: /worlds/north
     volumes:
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-01:/data
-      - ./docker/worlds/north:/worlds/north:ro
-      - ./docker/paper/config:/config:ro
-      - ./docker/paper/plugins:/plugins:ro
-      - ./docker/paper/hub/plugins:/plugins-hub:ro
-
-  hub-north-02:
-    <<: *paper
-    environment:
-      <<: *hub-environment
-      LUCKPERMS_SERVER: hub-north-02
-      CFG_SURF_SERVER_NAME: hub-north-02
-      CFG_SURF_SERVER_DISPLAY_NAME: Norden
-      CFG_SURF_SERVER_CATEGORY: odyssey-hub-north
-      WORLD: /worlds/north
-    volumes:
-      - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-hub/surf-odyssey-runtime-paper-hub-north/run/hub-north-02:/data
       - ./docker/worlds/north:/worlds/north:ro
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro

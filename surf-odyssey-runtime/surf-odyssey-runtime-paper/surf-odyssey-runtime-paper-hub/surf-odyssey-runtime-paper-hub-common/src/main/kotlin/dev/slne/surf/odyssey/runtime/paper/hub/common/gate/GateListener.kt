@@ -11,6 +11,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.player.PlayerFishEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -18,7 +19,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 
 /**
  * Cancels what players do in regions whose gate locks them out: breaking and placing blocks, interacting with blocks
- * and entities, fishing and attacking. An action counts as inside a locked region if the player stands in one or the
+ * and entities, fishing, attacking and picking up items. An action counts as inside a locked region if the player stands in one or the
  * block, entity or hook it targets lies in one. The player is reminded in the action bar.
  *
  * Every handler runs first, so cancelled actions give no drops, quest progress or tool usage.
@@ -68,6 +69,16 @@ object GateListener : Listener {
         if (blocks(attacker, event.entity.location)) event.isCancelled = true
     }
 
+    /**
+     * Cancels a player picking up an item while standing in a locked region or from one, without a reminder, since
+     * the event repeats every tick.
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    fun onPickup(event: EntityPickupItemEvent) {
+        val player = event.entity as? Player ?: return
+        if (isLockedOut(player, event.item.location)) event.isCancelled = true
+    }
+
     /** Forgets the gate state of a leaving player. */
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) = GateEnforcer.forget(event.player)
@@ -77,9 +88,13 @@ object GateListener : Listener {
      * if so.
      */
     private fun blocks(player: Player, target: Location?): Boolean {
-        val locked = GateAccess.isLockedOut(player, PlayerRegionTracker.regionOf(player)) ||
-            (target != null && GateAccess.isLockedOut(player, GateAccess.regionAt(target)))
+        val locked = isLockedOut(player, target)
         if (locked) GateAccess.tellRegionLocked(player)
         return locked
     }
+
+    /** Returns whether [player] is locked out of the region they stand in or the region at [target]. */
+    private fun isLockedOut(player: Player, target: Location?): Boolean =
+        GateAccess.isLockedOut(player, PlayerRegionTracker.regionOf(player)) ||
+            (target != null && GateAccess.isLockedOut(player, GateAccess.regionAt(target)))
 }

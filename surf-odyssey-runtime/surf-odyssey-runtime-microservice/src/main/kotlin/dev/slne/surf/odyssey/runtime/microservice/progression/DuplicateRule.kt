@@ -23,7 +23,7 @@ object DuplicateRule {
 
     /**
      * Returns `true` if the holder of the tool changed at least twice within the last [WINDOW_MILLIS] before [now],
-     * such as a hand-over from A to B and back to A.
+     * such as a hand-over from A to B and back to A. A sighting exactly [WINDOW_MILLIS] old still counts.
      */
     fun isSuspected(sightings: List<Sighting>, now: Long): Boolean {
         val recent = sightings.filter { it.at >= now - WINDOW_MILLIS }.sortedBy { it.at }

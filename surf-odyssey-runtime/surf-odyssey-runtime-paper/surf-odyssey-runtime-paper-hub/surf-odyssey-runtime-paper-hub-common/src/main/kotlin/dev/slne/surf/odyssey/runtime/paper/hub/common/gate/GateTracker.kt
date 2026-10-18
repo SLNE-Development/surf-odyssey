@@ -2,6 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.gate
 
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Remembers which locked region each player is in, since when, when they last took damage there and whether they
@@ -26,8 +27,11 @@ class GateTracker {
     /** The players whose world gate check is finished since they joined. */
     private val worldPassed = ConcurrentHashMap.newKeySet<UUID>()
 
-    /** The players whose transfer to the lobby is running. */
-    private val worldTransfers = ConcurrentHashMap.newKeySet<UUID>()
+    /** The token of the running transfer to the lobby of each player. */
+    private val worldTransfers = ConcurrentHashMap<UUID, Long>()
+
+    /** The source of transfer tokens; every started transfer gets a new one. */
+    private val nextTransfer = AtomicLong()
 
     /** When the last transfer to the lobby of each player started, in epoch milliseconds. */
     private val worldAttempts = ConcurrentHashMap<UUID, Long>()
@@ -84,25 +88,28 @@ class GateTracker {
      * @param player the player
      * @param now the current time in epoch milliseconds
      * @param retryAfterMillis the shortest time between two transfers
-     * @return whether the transfer may start; if so, it is recorded as running
+     * @return the token of the started transfer, recorded as running, or `null` if the transfer may not start
      */
-    fun tryStartWorldTransfer(player: UUID, now: Long, retryAfterMillis: Long): Boolean {
+    fun tryStartWorldTransfer(player: UUID, now: Long, retryAfterMillis: Long): Long? {
         val last = worldAttempts[player]
-        if (last != null && now - last < retryAfterMillis) return false
-        if (!worldTransfers.add(player)) return false
+        if (last != null && now - last < retryAfterMillis) return null
+        val token = nextTransfer.incrementAndGet()
+        if (worldTransfers.putIfAbsent(player, token) != null) return null
         worldAttempts[player] = now
-        return true
+        return token
     }
 
     /**
-     * Ends the running transfer of [player]. A successful transfer finishes the world gate check; after a failed one
-     * the next transfer may start once the retry interval has passed.
+     * Ends the running transfer [token] of [player]. A successful transfer finishes the world gate check; after a
+     * failed one the next transfer may start once the retry interval has passed. A token that is no longer running,
+     * because the player was forgotten or the tracker cleared since it started, changes nothing.
      *
      * @param player the player
+     * @param token the token [tryStartWorldTransfer] returned for the transfer
      * @param sent whether the player was transferred
      */
-    fun finishWorldTransfer(player: UUID, sent: Boolean) {
-        worldTransfers.remove(player)
+    fun finishWorldTransfer(player: UUID, token: Long, sent: Boolean) {
+        if (!worldTransfers.remove(player, token)) return
         if (sent) worldPassed += player
     }
 

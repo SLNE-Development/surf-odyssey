@@ -4,6 +4,8 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Tests how [GateTracker] follows players through locked regions. */
@@ -59,26 +61,55 @@ class GateTrackerTest {
     @Test
     fun `a world transfer starts once and waits while it runs`() {
         val tracker = GateTracker()
-        assertTrue(tracker.tryStartWorldTransfer(player, 0, 5_000))
-        assertFalse(tracker.tryStartWorldTransfer(player, 10_000, 5_000))
+        assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        assertNull(tracker.tryStartWorldTransfer(player, 10_000, 5_000))
     }
 
     @Test
     fun `a failed world transfer is retried after the retry interval`() {
         val tracker = GateTracker()
-        tracker.tryStartWorldTransfer(player, 0, 5_000)
-        tracker.finishWorldTransfer(player, sent = false)
+        val transfer = assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        tracker.finishWorldTransfer(player, transfer, sent = false)
         assertFalse(tracker.isWorldGatePassed(player))
-        assertFalse(tracker.tryStartWorldTransfer(player, 4_999, 5_000))
-        assertTrue(tracker.tryStartWorldTransfer(player, 5_000, 5_000))
+        assertNull(tracker.tryStartWorldTransfer(player, 4_999, 5_000))
+        assertNotNull(tracker.tryStartWorldTransfer(player, 5_000, 5_000))
     }
 
     @Test
     fun `a successful world transfer ends the world gate check`() {
         val tracker = GateTracker()
-        tracker.tryStartWorldTransfer(player, 0, 5_000)
-        tracker.finishWorldTransfer(player, sent = true)
+        val transfer = assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        tracker.finishWorldTransfer(player, transfer, sent = true)
         assertTrue(tracker.isWorldGatePassed(player))
+    }
+
+    @Test
+    fun `a transfer that ends after the player was forgotten changes nothing`() {
+        val tracker = GateTracker()
+        val transfer = assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        tracker.forget(player)
+        tracker.finishWorldTransfer(player, transfer, sent = true)
+        assertFalse(tracker.isWorldGatePassed(player))
+        assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+    }
+
+    @Test
+    fun `a transfer of an earlier join does not end the transfer of the current one`() {
+        val tracker = GateTracker()
+        val earlier = assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        tracker.forget(player)
+        assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        tracker.finishWorldTransfer(player, earlier, sent = false)
+        assertNull(tracker.tryStartWorldTransfer(player, 10_000, 5_000))
+    }
+
+    @Test
+    fun `a transfer that ends after clearing changes nothing`() {
+        val tracker = GateTracker()
+        val transfer = assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        tracker.clear()
+        tracker.finishWorldTransfer(player, transfer, sent = true)
+        assertFalse(tracker.isWorldGatePassed(player))
     }
 
     @Test
@@ -88,7 +119,7 @@ class GateTrackerTest {
         tracker.inLockedRegion(player, "mine", damage, 0)
         assertTrue(tracker.forget(player))
         assertFalse(tracker.isWorldGatePassed(player))
-        assertTrue(tracker.tryStartWorldTransfer(player, 0, 5_000))
+        assertNotNull(tracker.tryStartWorldTransfer(player, 0, 5_000))
     }
 
     @Test

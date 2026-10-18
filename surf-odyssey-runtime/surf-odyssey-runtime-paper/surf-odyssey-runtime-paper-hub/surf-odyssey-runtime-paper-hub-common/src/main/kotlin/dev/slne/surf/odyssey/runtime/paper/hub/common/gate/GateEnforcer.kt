@@ -131,13 +131,13 @@ object GateEnforcer {
             tracker.markWorldGatePassed(id)
             return
         }
-        if (!tracker.tryStartWorldTransfer(id, now, WORLD_RETRY_MILLIS)) return
+        val transfer = tracker.tryStartWorldTransfer(id, now, WORLD_RETRY_MILLIS) ?: return
         hub.launch {
             var sent = false
             try {
                 sent = HubTravel.send(player, LOBBY_CATEGORY)
             } finally {
-                tracker.finishWorldTransfer(id, sent)
+                tracker.finishWorldTransfer(id, transfer, sent)
             }
         }
     }

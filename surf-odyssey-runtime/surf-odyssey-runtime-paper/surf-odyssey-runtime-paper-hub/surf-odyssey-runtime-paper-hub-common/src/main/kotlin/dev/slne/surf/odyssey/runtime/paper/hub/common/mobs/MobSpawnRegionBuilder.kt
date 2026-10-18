@@ -41,6 +41,7 @@ class MobSpawnRegionBuilder(private val id: String) {
     private val types = mutableListOf<EntityType>()
     private val points = mutableListOf<BlockPoint>()
     private var settings = ProtectionSettings()
+    private var loot = MobLootTable.EMPTY
 
     /** Sets the changes allowed inside the region in addition to those the world allows. */
     fun settings(block: ProtectionSettingsBuilder.() -> Unit) {
@@ -50,6 +51,11 @@ class MobSpawnRegionBuilder(private val id: String) {
     /** Sets the shape of the region. */
     fun shape(block: ShapeBuilder.() -> Unit) {
         shape = ShapeBuilder().apply(block).build()
+    }
+
+    /** Sets the code loot the region's mobs drop when they die; without it they drop nothing. */
+    fun drops(block: MobLootBuilder.() -> Unit) {
+        loot = MobLootBuilder().apply(block).build()
     }
 
     /** Adds mob types to pick from; each must be a spawnable mob. */
@@ -69,6 +75,6 @@ class MobSpawnRegionBuilder(private val id: String) {
      */
     internal fun build() = MobSpawnRegion(
         id, displayName, requireNotNull(shape) { "Region '$id' has no shape" },
-        types.toList(), points.toList(), respawnInterval, maxAlive, settings, gate, gateDamage,
+        types.toList(), points.toList(), respawnInterval, maxAlive, settings, loot, gate, gateDamage,
     )
 }

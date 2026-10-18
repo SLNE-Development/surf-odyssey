@@ -23,6 +23,7 @@ import kotlin.time.Duration
  * @property spawnPoints blocks mobs spawn on, all inside the shape
  * @property respawnInterval time between two spawns, positive
  * @property maxAlive most mobs alive at once, at least 1
+ * @property loot the code loot the mobs of this region drop when they die
  * @property gate the requirement to act in this region, or `null` if it is open to everyone
  * @property gateDamage how this region hurts players its [gate] locks out
  */
@@ -35,6 +36,7 @@ class MobSpawnRegion(
     val respawnInterval: Duration,
     val maxAlive: Int,
     settings: ProtectionSettings = ProtectionSettings(),
+    val loot: MobLootTable = MobLootTable.EMPTY,
     override val gate: Requirement? = null,
     override val gateDamage: GateDamage = GateDamage(),
 ) : Region(id, displayName, shape, settings) {

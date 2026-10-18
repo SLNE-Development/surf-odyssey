@@ -437,7 +437,7 @@ class ProgressionServiceImpl(private val clock: Clock) : ProgressionService {
             ?.get(TrackedQuestTable.questId)
         val deliveries = DeliveryTable.selectAll()
             .where { (DeliveryTable.player eq player) and DeliveryTable.claimedAt.isNull() }
-            .orderBy(DeliveryTable.createdAt, SortOrder.ASC)
+            .orderBy(DeliveryTable.createdAt to SortOrder.ASC, DeliveryTable.position to SortOrder.ASC)
             .map { it.toDelivery() }
             .toList()
         val jobs = StationJobTable.selectAll()

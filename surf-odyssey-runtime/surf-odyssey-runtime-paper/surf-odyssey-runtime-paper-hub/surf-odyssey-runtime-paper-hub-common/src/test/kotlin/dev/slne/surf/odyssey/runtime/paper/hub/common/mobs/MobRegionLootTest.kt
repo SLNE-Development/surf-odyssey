@@ -48,4 +48,16 @@ class MobRegionLootTest {
     @Test
     fun `a mob dying outside every region drops nothing`() =
         assertNull(MobRegionLoot.regionOf(regions, { false }, at(BlockPoint(100, 5, 5))))
+
+    @Test
+    fun `a mob without a player killer drops nothing`() =
+        assertNull(MobRegionLoot.lootRegion(regions, { it === wolves }, at(BlockPoint(5, 5, 5)), admits = null))
+
+    @Test
+    fun `a killer the region locks out gets no loot`() =
+        assertNull(MobRegionLoot.lootRegion(regions, { it === wolves }, at(BlockPoint(5, 5, 5)), admits = { false }))
+
+    @Test
+    fun `a killer the region admits gets its loot`() =
+        assertSame(wolves, MobRegionLoot.lootRegion(regions, { it === wolves }, at(BlockPoint(5, 5, 5)), admits = { it === wolves }))
 }

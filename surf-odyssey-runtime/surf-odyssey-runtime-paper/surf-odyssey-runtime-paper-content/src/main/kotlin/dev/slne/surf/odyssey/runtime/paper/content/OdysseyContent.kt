@@ -11,34 +11,40 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.title.TitleDef
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessoryDefinition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolDefinition
 
-/**
- * The progression content that the world plugins and the home server install.
- */
+/** The progression content that the world plugins and the home server install. */
 object OdysseyContent : ContentPack {
-    /** The custom items of the content. */
-    override val items: List<ItemDefinition> = emptyList()
+    /** The items of [Items]. */
+    override val items: List<ItemDefinition>
+        get() = Items.all
 
-    /** The station kinds of the content. */
-    override val stations: List<StationDefinition> = emptyList()
+    /** The stations of [Stations]. */
+    override val stations: List<StationDefinition>
+        get() = Stations.all
 
-    /** The recipes of the content. */
-    override val recipes: List<RecipeDefinition> = emptyList()
+    /** The recipes of [Recipes]. */
+    override val recipes: List<RecipeDefinition>
+        get() = Recipes.all
 
-    /** The titles of the content. */
-    override val titles: List<TitleDefinition> = emptyList()
+    /** The titles of [Titles]. */
+    override val titles: List<TitleDefinition>
+        get() = Titles.all
 
-    /** The NPCs of the content. */
-    override val npcs: List<NpcDefinition> = emptyList()
+    /** No NPCs yet. */
+    override val npcs: List<NpcDefinition>
+        get() = emptyList()
 
-    /** The quests of the content. */
-    override val quests: List<QuestDefinition> = emptyList()
+    /** No quests yet. */
+    override val quests: List<QuestDefinition>
+        get() = emptyList()
 
-    /** The progression tools of the content. */
-    override val tools: List<ToolDefinition> = emptyList()
+    /** The tools of [Tools]. */
+    override val tools: List<ToolDefinition>
+        get() = Tools.all
 
-    /** The tool accessories of the content. */
-    override val accessories: List<AccessoryDefinition> = emptyList()
+    /** The accessories of [Accessories]. */
+    override val accessories: List<AccessoryDefinition>
+        get() = Accessories.all
 
-    /** The default draw counts of the recurring quest pools. */
-    override val pools: RecurringPools = RecurringPools()
+    /** No recurring quests are drawn yet. */
+    override val pools: RecurringPools = RecurringPools(dailyCount = 0, weeklyCount = 0, monthlyCount = 0)
 }

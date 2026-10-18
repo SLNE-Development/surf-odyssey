@@ -14,6 +14,7 @@ import org.bukkit.scheduler.BukkitTask
 import java.time.Clock
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Level
 
 /**
  * Applies the gates of the hub world once per second on the main thread.
@@ -39,7 +40,8 @@ object GateEnforcer {
     private var task: BukkitTask? = null
 
     /**
-     * Starts checking every online player once per second.
+     * Starts checking every online player once per second. A check that fails for one player is logged as a warning
+     * and does not stop the checks of the others.
      *
      * @param hub the hub plugin
      * @param clock the source of the current time
@@ -47,7 +49,10 @@ object GateEnforcer {
     fun start(hub: HubPlugin, clock: Clock = Clock.systemUTC()) {
         task = hub.server.scheduler.runTaskTimer(hub, Runnable {
             val now = clock.millis()
-            hub.server.onlinePlayers.forEach { check(hub, it, now) }
+            hub.server.onlinePlayers.forEach { player ->
+                runCatching { check(hub, player, now) }
+                    .onFailure { hub.logger.log(Level.WARNING, "Could not apply the gates to ${player.name}", it) }
+            }
         }, 20L, 20L)
     }
 

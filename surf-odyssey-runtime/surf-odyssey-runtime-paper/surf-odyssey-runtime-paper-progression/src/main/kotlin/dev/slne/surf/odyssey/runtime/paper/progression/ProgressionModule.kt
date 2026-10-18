@@ -42,6 +42,7 @@ object ProgressionModule {
      * @param plugin the plugin that owns the listeners, coroutines and log
      * @param pack the content of this server
      * @param mode which parts of the engine run
+     * @param serverName returns the name of this server, as sent with every tool sighting
      * @param clock the clock every time of the engine comes from
      * @return the installed engine
      * @throws dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentValidationException if
@@ -51,6 +52,7 @@ object ProgressionModule {
         plugin: Plugin,
         pack: ContentPack,
         mode: ProgressionMode,
+        serverName: () -> String,
         clock: Clock = Clock.systemUTC(),
     ): ProgressionRuntime {
         val registry = ProgressionRegistry.build(pack)
@@ -64,7 +66,7 @@ object ProgressionModule {
         Progression.runtime = runtime
         RewardPlanner.toolRewards = ToolRewardFactory(ToolItems::create)
         store.start()
-        if (mode == ProgressionMode.FULL) ToolModule.install(plugin, runtime)
+        if (mode == ProgressionMode.FULL) ToolModule.install(plugin, runtime, serverName)
         return runtime
     }
 }

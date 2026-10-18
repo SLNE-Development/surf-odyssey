@@ -6,12 +6,16 @@ import org.bukkit.plugin.Plugin
 /** Installs the Paper side of progression tools on servers where tools level. */
 object ToolModule {
     /**
-     * Registers the listeners that keep the owner chains of tool items current.
+     * Registers the listeners that keep the owner chains of tool items current and starts reporting tool sightings:
+     * every minute for all online players and immediately when a player takes a tool over.
      *
      * @param plugin the plugin that owns the listeners
      * @param runtime the installed progression engine
+     * @param serverName returns the name of this server, as sent with every tool sighting
      */
-    fun install(plugin: Plugin, runtime: ProgressionRuntime) {
-        plugin.server.pluginManager.registerEvents(ToolProgressListener(), plugin)
+    fun install(plugin: Plugin, runtime: ProgressionRuntime, serverName: () -> String) {
+        val sightings = ToolSightings(plugin, serverName)
+        plugin.server.pluginManager.registerEvents(ToolProgressListener(sightings::reportNow), plugin)
+        sightings.start()
     }
 }

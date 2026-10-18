@@ -6,10 +6,12 @@ import dev.slne.surf.microservice.api.microservice.Microservice
 import dev.slne.surf.odyssey.core.common.home.HomeService
 import dev.slne.surf.odyssey.core.common.player.PlayerService
 import dev.slne.surf.odyssey.core.common.skill.SkillService
+import dev.slne.surf.odyssey.core.common.trade.TradeService
 import dev.slne.surf.odyssey.runtime.microservice.db.CreateDatabaseTables
 import dev.slne.surf.odyssey.runtime.microservice.home.HomeServiceImpl
 import dev.slne.surf.odyssey.runtime.microservice.player.PlayerServiceImpl
 import dev.slne.surf.odyssey.runtime.microservice.skill.SkillServiceImpl
+import dev.slne.surf.odyssey.runtime.microservice.trade.TradeServiceImpl
 import dev.slne.surf.rabbitmq.api.ServerRabbitMQApi
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -31,6 +33,7 @@ class OdysseyMicroservice : Microservice() {
         rabbitApi.registerRpcService<SkillService>(SkillServiceImpl)
         rabbitApi.registerRpcService<HomeService>(HomeServiceImpl)
         rabbitApi.registerRpcService<PlayerService>(PlayerServiceImpl)
+        rabbitApi.registerRpcService<TradeService>(TradeServiceImpl)
         rabbitApi.freezeAndConnect()
     }
 

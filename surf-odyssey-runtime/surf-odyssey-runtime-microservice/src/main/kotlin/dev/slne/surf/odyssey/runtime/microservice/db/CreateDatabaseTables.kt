@@ -5,6 +5,10 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.s
 import dev.slne.surf.odyssey.runtime.microservice.db.table.HomeTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.OdysseyPlayerTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.SkillTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeItemTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeRequestTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeSettingTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeTable
 
 /** Creates the odyssey tables that do not exist yet. */
 object CreateDatabaseTables {
@@ -12,7 +16,11 @@ object CreateDatabaseTables {
         SchemaUtils.create(
             OdysseyPlayerTable,
             HomeTable,
-            SkillTable
+            SkillTable,
+            TradeTable,
+            TradeItemTable,
+            TradeRequestTable,
+            TradeSettingTable
         )
     }
 }

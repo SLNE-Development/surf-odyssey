@@ -26,18 +26,22 @@ import org.bukkit.plugin.Plugin
 /**
  * Keeps the [OdysseyBook] in the last hotbar slot of every player and opens the Odyssey menu with it.
  *
- * The book is put back on join, shortly after the join, on respawn and on a world change. It cannot be dropped,
+ * The book is put back on join if its slot is free, and shortly after the join, on respawn and on a world change
+ * also when another item has to make room for it. It cannot be dropped,
  * moved, picked over, handed to entities, put into containers or the off hand. Shift and right click opens the
  * [OdysseyMenuDialog]; a plain right click tells the player that research follows soon.
  *
  * @param plugin the plugin whose scheduler runs the delayed checks
  */
 class OdysseyBookListener(private val plugin: Plugin) : Listener {
-    /** Gives the joining player the book, and once more after [JOIN_RECHECK_TICKS] once synced data is applied. */
+    /**
+     * Gives the joining player the book if the book slot is free, and after [JOIN_RECHECK_TICKS], once synced data
+     * is applied, makes room for it with [OdysseyBook.ensure].
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     fun onJoin(event: PlayerJoinEvent) {
         val player = event.player
-        OdysseyBook.ensure(player)
+        OdysseyBook.placeIfFree(player)
         player.scheduler.runDelayed(plugin, { OdysseyBook.ensure(player) }, null, JOIN_RECHECK_TICKS)
     }
 

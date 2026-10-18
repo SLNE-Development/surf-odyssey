@@ -113,20 +113,38 @@ object OdysseyBook {
     }
 
     /**
-     * Puts a fresh book into [BookRules.BOOK_SLOT] of [player] and removes every other book from the inventory and
-     * the cursor. An item that was in the book slot is moved into the inventory, or dropped at the player's feet if
-     * the inventory is full.
+     * Removes every book outside [BookRules.BOOK_SLOT] from the inventory and the cursor of [player] and puts a fresh
+     * book into that slot if it is empty or already holds the book. Another item in the slot is left alone.
+     *
+     * @return `true` if the slot now holds the book, `false` if another item occupies it
      */
-    fun ensure(player: Player) {
+    fun placeIfFree(player: Player): Boolean {
         val inventory = player.inventory
         for (slot in 0 until inventory.size) {
             if (slot != BookRules.BOOK_SLOT && isBook(inventory.getItem(slot))) inventory.setItem(slot, null)
         }
         if (isBook(player.itemOnCursor)) player.setItemOnCursor(null)
-        val displaced = inventory.getItem(BookRules.BOOK_SLOT)?.takeUnless { it.isEmpty || isBook(it) }
+        val current = inventory.getItem(BookRules.BOOK_SLOT)
+        if (current != null && !current.isEmpty && !isBook(current)) return false
         inventory.setItem(BookRules.BOOK_SLOT, create())
-        if (displaced != null) {
-            inventory.addItem(displaced).values.forEach { player.world.dropItem(player.location, it) }
-        }
+        return true
+    }
+
+    /**
+     * Does what [placeIfFree] does and, if another item occupies [BookRules.BOOK_SLOT], moves that item into a free
+     * storage slot and puts the book into its place. When no storage slot is free, the item stays where it is and
+     * the player gets no book.
+     *
+     * @return `true` if the slot now holds the book
+     */
+    fun ensure(player: Player): Boolean {
+        if (placeIfFree(player)) return true
+        val inventory = player.inventory
+        val free = inventory.storageContents.indices.firstOrNull { slot ->
+            slot != BookRules.BOOK_SLOT && inventory.getItem(slot).let { it == null || it.isEmpty }
+        } ?: return false
+        inventory.setItem(free, inventory.getItem(BookRules.BOOK_SLOT))
+        inventory.setItem(BookRules.BOOK_SLOT, create())
+        return true
     }
 }

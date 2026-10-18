@@ -14,6 +14,8 @@ surfPaperPluginApi {
         registerRequired("surf-rabbitmq-paper")
         // Player data is synced between the servers by HuskSync
         registerRequired("HuskSync")
+        // The Odyssey book is a CraftEngine item
+        registerRequired("CraftEngine")
     }
 
     testing {

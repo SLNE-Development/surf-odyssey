@@ -109,4 +109,10 @@ object ProgressionMessages {
         success("Rezept gelernt: ")
         append(name)
     }
+
+    /** Tells [player] that research with the Odyssey book follows soon. */
+    fun researchSoon(player: Player) = player.sendText {
+        appendInfoPrefix()
+        info("Die Forschung folgt bald.")
+    }
 }

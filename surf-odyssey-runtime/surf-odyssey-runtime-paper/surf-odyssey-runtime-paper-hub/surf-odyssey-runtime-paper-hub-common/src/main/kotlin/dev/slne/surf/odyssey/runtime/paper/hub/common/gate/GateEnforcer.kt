@@ -6,6 +6,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.PlayerRegionTracker
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.Region
 import dev.slne.surf.odyssey.runtime.paper.hub.common.travel.HubTravel
 import dev.slne.surf.odyssey.runtime.paper.progression.Progression
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -53,19 +54,21 @@ object GateEnforcer {
         }, 20L, 20L)
     }
 
-    /** Stops checking. */
+    /** Stops checking, removes the darkness it applied from every online player and forgets every player. */
     fun stop() {
         task?.cancel()
         task = null
+        tracker.clear().forEach { id -> Bukkit.getPlayer(id)?.removePotionEffect(PotionEffectType.DARKNESS) }
+        worldChecked.clear()
     }
 
     /**
-     * Forgets everything about [player].
+     * Removes the darkness this enforcer applied to [player] and forgets everything about them.
      *
      * @param player the leaving player
      */
     fun forget(player: Player) {
-        tracker.release(player.uniqueId)
+        release(player)
         worldChecked.remove(player.uniqueId)
     }
 

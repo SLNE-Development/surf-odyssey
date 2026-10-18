@@ -17,8 +17,8 @@ object Quests {
     /** The side quest "Das erste Gericht", given by Koch Anselm. */
     val KOCH_FIRST_DISH: QuestDefinition = kochFirstDish()
 
-    /** All quests in the order they are registered. */
-    val all: List<QuestDefinition> = listOf(LEUCHTFEUER, KOCH_FIRST_DISH)
+    /** All quests in the order they are registered: the one-time quests, then the [RecurringQuests]. */
+    val all: List<QuestDefinition> = listOf(LEUCHTFEUER, KOCH_FIRST_DISH) + RecurringQuests.all
 }
 
 /**

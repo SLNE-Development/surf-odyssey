@@ -21,6 +21,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.trade.Price
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.trade.TradeResult
 import org.bukkit.Material
 import org.bukkit.Registry
+import org.bukkit.entity.EntityType
 import org.bukkit.attribute.Attribute
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -50,7 +51,10 @@ class OdysseyContentTest {
             every { RegistryAccess.registryAccess() } returns access
         }
 
-        /** Creates a proxy of [type] whose calls are answered by [answer]. */
+        /**
+         * Creates a JDK proxy that implements the interface [type] and answers every call with [answer], which
+         * receives the called method and its arguments. Unlike a mock, creating it does not redefine the interface.
+         */
         private fun <T> proxy(type: Class<T>, answer: (Method, Array<out Any?>?) -> Any?): T =
             type.cast(Proxy.newProxyInstance(type.classLoader, arrayOf(type)) { _, method, args -> answer(method, args) })
     }
@@ -185,6 +189,67 @@ class OdysseyContentTest {
                 assertTrue(key.asString() in images, "npc ${npc.id} mood $mood portrait $key")
             }
         }
+    }
+
+    @Test
+    fun `the recurring pools draw two dailies one weekly and one monthly`() {
+        assertEquals(listOf("daily_cod", "daily_spruce", "daily_wolves"), registry.pool(QuestType.DAILY).map { it.id })
+        assertEquals(listOf("weekly_ore", "weekly_cook"), registry.pool(QuestType.WEEKLY).map { it.id })
+        assertEquals(listOf("monthly_angler", "monthly_feast"), registry.pool(QuestType.MONTHLY).map { it.id })
+        assertEquals(2, registry.pools.dailyCount)
+        assertEquals(1, registry.pools.weeklyCount)
+        assertEquals(1, registry.pools.monthlyCount)
+    }
+
+    @Test
+    fun `dailies come from olek weeklies from mira and monthlies from ysa`() {
+        assertTrue(registry.pool(QuestType.DAILY).all { it.giver == Npcs.OLEK })
+        assertTrue(registry.pool(QuestType.WEEKLY).all { it.giver == Npcs.MIRA })
+        assertTrue(registry.pool(QuestType.MONTHLY).all { it.giver == Npcs.YSA })
+    }
+
+    @Test
+    fun `the recurring quests have the objectives and rewards of the pools`() {
+        assertObjectives("daily_cod", Objective.Deliver(Material.COD.ref, 16, Npcs.OLEK))
+        assertObjectives("daily_spruce", Objective.Harvest(Material.SPRUCE_LOG, 32, "north_forest_spruce"))
+        assertObjectives("daily_wolves", Objective.Kill(EntityType.WOLF, 3, "north_wolves"))
+        assertObjectives(
+            "weekly_ore",
+            Objective.Harvest(Material.IRON_ORE, 24, "north_mine_ridge"),
+            Objective.Harvest(Material.DEEPSLATE_IRON_ORE, 16, "north_mine_ridge"),
+            Objective.Harvest(Material.COAL_ORE, 24, "north_mine_ridge"),
+        )
+        assertObjectives("weekly_cook", Objective.Craft(Recipes.SUSHI, 5))
+        assertObjectives(
+            "monthly_angler",
+            Objective.Fish(null, Material.COD, 140, "north_lake"),
+            Objective.Fish(null, Material.SALMON, 60, "north_lake"),
+        )
+        assertObjectives("monthly_feast", Objective.Craft(Recipes.FISH_PLATTER, 10))
+        assertEquals(64, registry.quest("weekly_ore")!!.steps.single().objectives.sumOf { it.amount })
+        assertEquals(200, registry.quest("monthly_angler")!!.steps.single().objectives.sumOf { it.amount })
+
+        assertEquals(
+            listOf(CurrencyReward("coins", 30.0), ItemReward(Items.SMOKED_FISH.ref, 2)),
+            registry.quest("daily_cod")?.rewards,
+        )
+        assertEquals(
+            listOf(CurrencyReward("coins", 30.0), ItemReward(Items.COPPER_SHEET.ref, 2)),
+            registry.quest("daily_spruce")?.rewards,
+        )
+        assertEquals(
+            listOf(CurrencyReward("coins", 40.0), ItemReward(Items.LANTERN_OIL.ref, 1)),
+            registry.quest("daily_wolves")?.rewards,
+        )
+        assertEquals(listOf(RecipeReward(Recipes.FISH_PLATTER)), registry.quest("weekly_ore")?.rewards)
+        assertEquals(listOf(CurrencyReward("coins", 120.0)), registry.quest("weekly_cook")?.rewards)
+        assertEquals(listOf(TitleReward(Titles.ANGLER)), registry.quest("monthly_angler")?.rewards)
+        assertEquals(listOf(ToolReward(Tools.PIT_PICKAXE)), registry.quest("monthly_feast")?.rewards)
+    }
+
+    /** Asserts that the only step of the quest [id] has exactly [objectives]. */
+    private fun assertObjectives(id: String, vararg objectives: Objective) {
+        assertEquals(objectives.toList(), registry.quest(id)?.steps?.single()?.objectives, "quest $id")
     }
 
     /** Returns the node an answer with [action] leads to, or `null` if it leaves the quest's conversation. */

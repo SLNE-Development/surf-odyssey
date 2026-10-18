@@ -46,6 +46,6 @@ object OdysseyContent : ContentPack {
     override val accessories: List<AccessoryDefinition>
         get() = Accessories.all
 
-    /** No recurring quests are drawn yet. */
-    override val pools: RecurringPools = RecurringPools(dailyCount = 0, weeklyCount = 0, monthlyCount = 0)
+    /** Two daily, one weekly and one monthly quest per period. */
+    override val pools: RecurringPools = RecurringPools(dailyCount = 2, weeklyCount = 1, monthlyCount = 1)
 }

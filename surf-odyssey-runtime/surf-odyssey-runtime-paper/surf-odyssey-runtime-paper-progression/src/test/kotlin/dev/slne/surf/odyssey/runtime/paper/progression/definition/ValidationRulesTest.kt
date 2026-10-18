@@ -12,6 +12,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.quest.QuestTyp
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.recipe.recipe
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentValidationException
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.reward.QuestReward
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.station
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.AccessorySlot
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolBonus
@@ -156,5 +157,15 @@ class ValidationRulesTest {
             slot(0, AccessorySlot("bait", text("Köder")))
         }
         assertTrue(problemsWithTool(pick).any { "slot at level 0" in it })
+    }
+
+    @Test
+    fun `an unknown reward type is reported`() {
+        val mystery = object : QuestReward {
+            /** Key no validator knows. */
+            override val typeKey: String = "mystery"
+        }
+        val quest = questQ { reward(mystery) }
+        assertTrue(problemsWithQuest(quest).any { "unknown reward type 'mystery'" in it })
     }
 }

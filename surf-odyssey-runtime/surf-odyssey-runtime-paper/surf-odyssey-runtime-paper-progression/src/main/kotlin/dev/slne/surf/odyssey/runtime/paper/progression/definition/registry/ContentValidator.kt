@@ -245,7 +245,7 @@ internal class ContentValidator(private val pack: ContentPack) {
         if (questId !in questIds) problems += "$where references unknown quest '$questId'"
     }
 
-    /** Checks the target and amount of a reward. */
+    /** Checks the target and amount of a reward and reports reward types without a check. */
     private fun checkReward(where: String, reward: QuestReward) {
         when (reward) {
             is ItemReward -> {
@@ -260,7 +260,7 @@ internal class ContentValidator(private val pack: ContentPack) {
                 problems += "$where references unknown tool '${reward.tool.id}'"
             }
             is CurrencyReward -> if (reward.amount <= 0) problems += "$where has a non-positive currency reward"
-            else -> Unit
+            else -> problems += "$where has an unknown reward type '${reward.typeKey}'"
         }
     }
 

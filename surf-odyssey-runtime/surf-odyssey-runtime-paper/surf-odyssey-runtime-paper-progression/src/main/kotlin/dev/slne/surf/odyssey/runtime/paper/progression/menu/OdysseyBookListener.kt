@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.menu
 
 import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionMessages
+import io.papermc.paper.event.player.PlayerPickItemEvent
 import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -27,7 +28,7 @@ import org.bukkit.plugin.Plugin
  * Keeps the [OdysseyBook] in the last hotbar slot of every player and opens the Odyssey menu with it.
  *
  * The book is put back on join, shortly after the join, on respawn and on a world change. It cannot be dropped,
- * moved, put into containers, item frames, armor stands or the off hand. Shift and right click opens the
+ * moved, picked over, put into containers, item frames, armor stands or the off hand. Shift and right click opens the
  * [OdysseyMenuDialog]; a plain right click tells the player that research follows soon.
  *
  * @param plugin the plugin whose scheduler runs the delayed checks
@@ -115,6 +116,20 @@ class OdysseyBookListener(private val plugin: Plugin) : Listener {
     fun onInteractEntity(event: PlayerInteractEntityEvent) {
         if (event.rightClicked !is ItemFrame) return
         if (OdysseyBook.isBook(event.player.inventory.getItem(event.hand))) event.isCancelled = true
+    }
+
+    /** Cancels picking a block or entity into the book slot or out of the book. */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    fun onPickItem(event: PlayerPickItemEvent) {
+        val inventory = event.player.inventory
+        val source = event.sourceSlot.takeIf { it >= 0 }
+        val sourceBook = source != null && OdysseyBook.isBook(inventory.getItem(source))
+        val targetBook = OdysseyBook.isBook(inventory.getItem(event.targetSlot))
+        if (BookRules.isProtectedMove(BookMove.PICK, event.targetSlot, targetBook) ||
+            BookRules.isProtectedMove(BookMove.PICK, source, sourceBook)
+        ) {
+            event.isCancelled = true
+        }
     }
 
     /** Cancels putting the book onto an armor stand. */

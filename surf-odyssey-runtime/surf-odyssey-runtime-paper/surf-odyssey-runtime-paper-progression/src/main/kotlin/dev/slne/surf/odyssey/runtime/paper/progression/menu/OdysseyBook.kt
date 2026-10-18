@@ -31,6 +31,9 @@ enum class BookMove {
 
     /** Dragging the cursor item over a slot. */
     DRAG,
+
+    /** Picking a block or entity, which swaps the picked item into a hotbar slot. */
+    PICK,
 }
 
 /** Decides which inventory moves the Odyssey book blocks, so that it stays in [BOOK_SLOT]. */
@@ -42,16 +45,18 @@ object BookRules {
      * Returns whether [move] has to be cancelled to keep the book in its slot.
      *
      * Dropping and swapping into the off hand are blocked when they move the book. Clicks, shift clicks, number key
-     * swaps and drags are blocked when they move the book or touch [BOOK_SLOT] of the player's inventory.
+     * swaps, drags and picks are blocked when they move the book or touch [BOOK_SLOT] of the player's inventory.
      *
      * @param move the move
      * @param slot the slot of the player's inventory the move touches: the clicked or dragged-over slot, or the hotbar
-     *        slot of a number key; `null` if the move touches no slot of the player's inventory
+     *        slot of a number key, or the source or target slot of a pick; `null` if the move touches no slot of the
+     *        player's inventory
      * @param isBook whether the item the move takes is the Odyssey book
      */
     fun isProtectedMove(move: BookMove, slot: Int?, isBook: Boolean): Boolean = when (move) {
         BookMove.DROP, BookMove.OFFHAND_SWAP -> isBook
-        BookMove.CLICK, BookMove.SHIFT_CLICK, BookMove.NUMBER_KEY, BookMove.DRAG -> isBook || slot == BOOK_SLOT
+        BookMove.CLICK, BookMove.SHIFT_CLICK, BookMove.NUMBER_KEY, BookMove.DRAG, BookMove.PICK ->
+            isBook || slot == BOOK_SLOT
     }
 }
 

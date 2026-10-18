@@ -44,4 +44,11 @@ class OdysseyBookRulesTest {
         assertTrue(BookRules.isProtectedMove(BookMove.DRAG, slot = BookRules.BOOK_SLOT, isBook = false))
         assertFalse(BookRules.isProtectedMove(BookMove.DRAG, slot = 12, isBook = false))
     }
+
+    @Test
+    fun `picking an item into the book slot or picking the book is blocked`() {
+        assertTrue(BookRules.isProtectedMove(BookMove.PICK, slot = BookRules.BOOK_SLOT, isBook = false))
+        assertTrue(BookRules.isProtectedMove(BookMove.PICK, slot = 4, isBook = true))
+        assertFalse(BookRules.isProtectedMove(BookMove.PICK, slot = 4, isBook = false))
+    }
 }

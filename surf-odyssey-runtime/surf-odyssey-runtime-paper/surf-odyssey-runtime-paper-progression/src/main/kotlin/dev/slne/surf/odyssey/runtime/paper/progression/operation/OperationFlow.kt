@@ -112,7 +112,7 @@ interface OperationHooks {
  *
  * @param backend the progression service
  * @param codec encodes the items of deliveries
- * @param planRewards turns the rewards of a plan into state changes and item stacks
+ * @param planRewards turns the rewards of a plan for the player into state changes and item stacks
  * @param hooks the server the operations run on
  * @param currency pays currency rewards after the operation is stored
  * @param commitTimeout how long a commit may take before it counts as failed
@@ -120,7 +120,7 @@ interface OperationHooks {
 class OperationFlow(
     backend: OperationBackend,
     private val codec: StackCodec,
-    private val planRewards: (List<QuestReward>) -> Pair<List<StateChange>, List<ItemStack>>,
+    private val planRewards: (List<QuestReward>, UUID) -> Pair<List<StateChange>, List<ItemStack>>,
     private val hooks: OperationHooks,
     private val currency: CurrencyGateway,
     commitTimeout: Duration = 10.seconds,
@@ -148,7 +148,7 @@ class OperationFlow(
 
     /** Runs [plan] while the player's slot in [running] is held. */
     private suspend fun execute(player: UUID, inventory: EscrowInventory, plan: OperationPlan): OperationOutcome {
-        val (rewardChanges, rewardItems) = planRewards(plan.rewards)
+        val (rewardChanges, rewardItems) = planRewards(plan.rewards, player)
         val newDeliveries = rewardItems.map { NewDeliveryDto(codec.encode(it), plan.source) }
         val escrow = inventory.take(plan.take) ?: return OperationOutcome.MissingItems
         val operation = OperationDto(UUID.randomUUID(), player, plan.changes + rewardChanges, newDeliveries)

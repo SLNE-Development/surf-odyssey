@@ -16,12 +16,13 @@ import java.util.logging.Logger
 /** Creates the item of a progression tool that a reward gives. */
 fun interface ToolRewardFactory {
     /**
-     * Creates a new item of [tool].
+     * Creates a new item of [tool] for [owner].
      *
      * @param tool the rewarded tool
+     * @param owner the player who receives the tool
      * @return the tool item
      */
-    fun create(tool: ToolDefinition): ItemStack
+    fun create(tool: ToolDefinition, owner: UUID): ItemStack
 }
 
 /** Pays currency amounts to players. */
@@ -59,6 +60,7 @@ object RewardPlanner {
      * Currency rewards produce neither; [currencies] returns them for payment after the operation is committed.
      *
      * @param rewards the rewards to plan
+     * @param owner the player who receives the rewards
      * @param stacks creates the stacks of an item reward from the item and the total amount
      * @return the state changes and the item stacks, each in the order of [rewards]
      * @throws IllegalStateException if a tool reward is planned while [toolRewards] is `null`
@@ -66,6 +68,7 @@ object RewardPlanner {
      */
     fun plan(
         rewards: List<QuestReward>,
+        owner: UUID,
         stacks: (ItemRef, Int) -> List<ItemStack> = ::stacksOf,
     ): Pair<List<StateChange>, List<ItemStack>> {
         val changes = mutableListOf<StateChange>()
@@ -76,7 +79,7 @@ object RewardPlanner {
                 is TitleReward -> changes += StateChange.TitleUnlocked(reward.title.id)
                 is ItemReward -> items += stacks(reward.item, reward.amount)
                 is ToolReward -> items += checkNotNull(toolRewards) { "tool rewards are not installed" }
-                    .create(reward.tool)
+                    .create(reward.tool, owner)
                 is CurrencyReward -> Unit
                 else -> throw IllegalArgumentException("unknown reward type ${reward.typeKey}")
             }

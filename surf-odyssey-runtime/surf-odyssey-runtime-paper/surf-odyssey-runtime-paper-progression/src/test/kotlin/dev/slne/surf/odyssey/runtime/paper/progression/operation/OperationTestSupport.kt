@@ -178,7 +178,7 @@ class TestRunner(
     private val flow = OperationFlow(
         backend = backend,
         codec = FakeCodec,
-        planRewards = { RewardPlanner.plan(it, FakeStacks::factory) },
+        planRewards = { rewards, owner -> RewardPlanner.plan(rewards, owner, FakeStacks::factory) },
         hooks = hooks,
         currency = object : CurrencyGateway {
             override fun grant(player: UUID, currencyId: String, amount: Double) {

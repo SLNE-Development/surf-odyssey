@@ -14,6 +14,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.ToolType
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.tool.tool
 import net.kyori.adventure.text.Component.text
 import org.bukkit.Material
+import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,6 +24,8 @@ import kotlin.test.assertTrue
 
 /** Tests for turning quest rewards into state changes, item stacks and currency payments. */
 class RewardPlannerTest {
+    private val owner = UUID.randomUUID()
+
     private val pick = tool("pick", ToolType.PICKAXE) {
         name = text("Hacke")
         material = Material.IRON_PICKAXE
@@ -39,7 +42,7 @@ class RewardPlannerTest {
         val recipe = TestPacks.valid().recipes.single()
         val angler = title("angler") { display = text("Angler") }
 
-        val (changes, stacks) = RewardPlanner.plan(listOf(RecipeReward(recipe), TitleReward(angler)), FakeStacks::factory)
+        val (changes, stacks) = RewardPlanner.plan(listOf(RecipeReward(recipe), TitleReward(angler)), owner, FakeStacks::factory)
 
         assertEquals(listOf(StateChange.RecipeUnlocked("sushi"), StateChange.TitleUnlocked("angler")), changes)
         assertTrue(stacks.isEmpty())
@@ -47,7 +50,7 @@ class RewardPlannerTest {
 
     @Test
     fun `item rewards become item stacks`() {
-        val (changes, stacks) = RewardPlanner.plan(listOf(ItemReward(TestItems.ink, 3)), FakeStacks::factory)
+        val (changes, stacks) = RewardPlanner.plan(listOf(ItemReward(TestItems.ink, 3)), owner, FakeStacks::factory)
 
         assertTrue(changes.isEmpty())
         assertEquals(listOf(TestItems.ink to 3), stacks.map(FakeStacks::contentOf))
@@ -56,7 +59,7 @@ class RewardPlannerTest {
     @Test
     fun `tool rewards fail while no tool factory is installed`() {
         val error = assertFailsWith<IllegalStateException> {
-            RewardPlanner.plan(listOf(ToolReward(pick)), FakeStacks::factory)
+            RewardPlanner.plan(listOf(ToolReward(pick)), owner, FakeStacks::factory)
         }
         assertEquals("tool rewards are not installed", error.message)
     }
@@ -64,18 +67,20 @@ class RewardPlannerTest {
     @Test
     fun `tool rewards use the installed tool factory`() {
         val stack = FakeStacks.of(TestItems.ink, 1)
-        RewardPlanner.toolRewards = ToolRewardFactory { stack }
+        val created = mutableListOf<Pair<String, UUID>>()
+        RewardPlanner.toolRewards = ToolRewardFactory { tool, toolOwner -> created += tool.id to toolOwner; stack }
 
-        val (_, stacks) = RewardPlanner.plan(listOf(ToolReward(pick)), FakeStacks::factory)
+        val (_, stacks) = RewardPlanner.plan(listOf(ToolReward(pick)), owner, FakeStacks::factory)
 
         assertSame(stack, stacks.single())
+        assertEquals(listOf("pick" to owner), created)
     }
 
     @Test
     fun `currency rewards neither change state nor create items`() {
         val rewards = listOf(CurrencyReward("coins", 5.0))
 
-        val (changes, stacks) = RewardPlanner.plan(rewards, FakeStacks::factory)
+        val (changes, stacks) = RewardPlanner.plan(rewards, owner, FakeStacks::factory)
 
         assertTrue(changes.isEmpty())
         assertTrue(stacks.isEmpty())
@@ -88,6 +93,6 @@ class RewardPlannerTest {
             override val typeKey: String = "mystery"
         }
 
-        assertFailsWith<IllegalArgumentException> { RewardPlanner.plan(listOf(unknown), FakeStacks::factory) }
+        assertFailsWith<IllegalArgumentException> { RewardPlanner.plan(listOf(unknown), owner, FakeStacks::factory) }
     }
 }

@@ -71,7 +71,7 @@ class OperationRunner(
     }
 
     /** The flow every operation runs through. */
-    private val flow = OperationFlow(BridgeBackend(bridge), ItemCodec, { RewardPlanner.plan(it) }, hooks, currency)
+    private val flow = OperationFlow(BridgeBackend(bridge), ItemCodec, { rewards, owner -> RewardPlanner.plan(rewards, owner) }, hooks, currency)
 
     /**
      * Runs one operation for [player] on the player's thread.

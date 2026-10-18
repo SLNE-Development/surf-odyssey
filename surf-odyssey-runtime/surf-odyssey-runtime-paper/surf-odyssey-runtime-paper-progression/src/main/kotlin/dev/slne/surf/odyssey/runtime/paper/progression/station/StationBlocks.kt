@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression.station
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.station.StationDefinition
 import org.bukkit.World
 import org.bukkit.block.Block
+import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -78,14 +79,16 @@ object StationBlocks {
  * @param positions the station positions
  */
 private class StationBlockListener(private val positions: StationPositions) : Listener {
-    /** Cancels any interaction with a station block and opens the station on a main-hand right-click. */
+    /**
+     * Cancels any interaction with a station block and opens the station on a main-hand right-click that no other
+     * listener denied before.
+     */
     @EventHandler(priority = EventPriority.HIGHEST)
     fun onInteract(event: PlayerInteractEvent) {
         val station = event.clickedBlock?.let(::stationAt) ?: return
+        val alreadyDenied = event.useInteractedBlock() == Event.Result.DENY
         event.isCancelled = true
-        if (event.action == Action.RIGHT_CLICK_BLOCK && event.hand == EquipmentSlot.HAND) {
-            StationView.open(event.player, station)
-        }
+        if (StationClicks.opens(event.action, event.hand, alreadyDenied)) StationView.open(event.player, station)
     }
 
     /** Cancels breaking a station block. */
@@ -102,4 +105,18 @@ private class StationBlockListener(private val positions: StationPositions) : Li
 
     /** Returns the station at [block], or `null`. */
     private fun stationAt(block: Block): StationDefinition? = positions.stationAt(block.world.uid, block.x, block.y, block.z)
+}
+
+/** Decides which clicks on a station block open the station. */
+internal object StationClicks {
+    /**
+     * Returns whether a click opens the station: only a right-click on the block with the main hand that no other
+     * listener denied.
+     *
+     * @param action the kind of click
+     * @param hand the hand that clicked, or `null` if unknown
+     * @param alreadyDenied whether another listener already denied using the block
+     */
+    fun opens(action: Action, hand: EquipmentSlot?, alreadyDenied: Boolean): Boolean =
+        !alreadyDenied && action == Action.RIGHT_CLICK_BLOCK && hand == EquipmentSlot.HAND
 }

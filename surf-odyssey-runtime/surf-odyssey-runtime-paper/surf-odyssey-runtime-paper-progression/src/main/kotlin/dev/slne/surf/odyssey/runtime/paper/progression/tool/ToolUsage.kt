@@ -76,82 +76,40 @@ object ToolUsage {
         val added = amount.coerceAtLeast(0).toLong()
         if (added == 0L && detail == null) return
 
-        val before = state.usage + buffer.pendingUsage(state.uuid)
+        val holder = player.uniqueId
+        val before = state.usage + buffer.pendingUsage(holder, state.uuid)
         val leveledUp = ToolProgress.isLevelUp(tool, before, added)
-        buffer.add(state.uuid, player.uniqueId, added, detail)
-        if (buffer.shouldWriteNow(state.uuid, now(), leveledUp) && writeInto(item)) {
-            player.inventory.setItemInMainHand(item)
-        }
+        buffer.add(holder, state.uuid, player.inventory.heldItemSlot, added, detail)
+        if (buffer.shouldWriteNow(holder, state.uuid, now(), leveledUp)) flushTool(player, state.uuid)
 
         if (leveledUp) announceLevel(player, tool, ToolProgress.levelFor(tool, before + added))
     }
 
     /**
-     * Writes the buffered changes of the tool [item] into it, with bonuses and lore, and changes it in place.
+     * Writes the changes [holder] buffered for the tool [item] into it, with bonuses and lore, and changes it in place.
      *
+     * @param holder the player whose buffered changes are written
      * @param item the item to write into, may be `null`
-     * @return `true` if [item] is a tool with buffered changes and was changed
+     * @return `true` if [item] is a tool with buffered changes of [holder] and was changed
      */
-    fun writeInto(item: ItemStack?): Boolean {
+    fun writeInto(holder: UUID, item: ItemStack?): Boolean {
+        if (item == null) return false
         val state = ToolItems.read(item) ?: return false
         val tool = ToolItems.definitionOf(state) ?: return false
-        val delta = buffer.drain(state.uuid, now()) ?: return false
+        val delta = buffer.drain(holder, state.uuid, now()) ?: return false
         val updated = state.copy(
             usage = state.usage + delta.usage,
             chronicle = delta.events.fold(state.chronicle) { chronicle, event -> chronicle.record(event) },
         )
-        ToolItems.write(item!!, updated)
+        ToolItems.write(item, updated)
         ToolItems.refresh(item, tool, updated)
         return true
     }
 
     /**
-     * Writes the buffered changes of the tool item in inventory slot [slot] of [player].
-     *
-     * Must run on the thread of [player].
-     *
-     * @param player the player whose inventory holds the item
-     * @param slot the slot index of the inventory contents
-     */
-    fun flushSlot(player: Player, slot: Int) {
-        val item = player.inventory.getItem(slot) ?: return
-        if (writeInto(item)) player.inventory.setItem(slot, item)
-    }
-
-    /**
-     * Writes the buffered changes of every tool item in the inventory of [player].
-     *
-     * Must run on the thread of [player].
-     *
-     * @param player the player whose tools are written
-     */
-    fun flushAll(player: Player) {
-        val contents = player.inventory.contents
-        contents.indices.filter { ToolItems.uuidOf(contents[it])?.let(buffer::hasPending) == true }
-            .forEach { flushSlot(player, it) }
-    }
-
-    /**
-     * Writes the buffered changes of every tool item in the inventory of [player] and forgets their write times; used
-     * when the player leaves.
-     *
-     * Must run on the thread of [player].
-     *
-     * @param player the leaving player
-     */
-    fun flushOnQuit(player: Player) {
-        flushAll(player)
-        player.inventory.contents.mapNotNull(ToolItems::uuidOf).forEach(buffer::forget)
-    }
-
-    /**
-     * Returns every buffered tool with its newest holder whose last write is at least a second ago, for writes after
-     * the buffering interval.
-     */
-    fun due(): List<Pair<UUID, UUID>> = buffer.due(now())
-
-    /**
-     * Writes the buffered changes of the tool item [tool] when [player] holds it.
+     * Writes the changes [player] buffered for the tool item [tool] into the inventory slot the tool was in at the
+     * newest change, if that slot still holds it, otherwise into the first slot that holds it. Nothing is written
+     * while the player holds no item with that UUID; the changes stay buffered.
      *
      * Must run on the thread of [player].
      *
@@ -159,8 +117,46 @@ object ToolUsage {
      * @param tool the unique ID of the tool item
      */
     fun flushTool(player: Player, tool: UUID) {
-        ToolItems.findSlot(player, tool)?.let { flushSlot(player, it) }
+        val holder = player.uniqueId
+        val remembered = buffer.slotOf(holder, tool) ?: return
+        val inventory = player.inventory
+        val slot = remembered.takeIf { it in 0 until inventory.size && ToolItems.uuidOf(inventory.getItem(it)) == tool }
+            ?: ToolItems.findSlot(player, tool)
+            ?: return
+        val item = inventory.getItem(slot) ?: return
+        if (writeInto(holder, item)) inventory.setItem(slot, item)
     }
+
+    /**
+     * Writes every buffered change of [player] into the matching tool items of the inventory.
+     *
+     * Must run on the thread of [player].
+     *
+     * @param player the player whose tools are written
+     */
+    fun flushAll(player: Player) {
+        buffer.pendingOf(player.uniqueId).forEach { flushTool(player, it) }
+    }
+
+    /**
+     * Writes every buffered change of a leaving [player] into the inventory, then drops the changes whose tool is no
+     * longer in the inventory and the write times of the player.
+     *
+     * Must run on the thread of [player].
+     *
+     * @param player the leaving player
+     * @return the tools whose buffered changes were dropped
+     */
+    fun flushOnQuit(player: Player): List<UUID> {
+        flushAll(player)
+        return buffer.discard(player.uniqueId)
+    }
+
+    /**
+     * Returns every buffered entry as holder and tool whose last write is at least a second ago, for writes after the
+     * buffering interval.
+     */
+    fun due(): List<Pair<UUID, UUID>> = buffer.due(now())
 
     /** Returns the current time of the engine clock in epoch milliseconds. */
     private fun now(): Long = Progression.runtime.clock.millis()

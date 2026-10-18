@@ -21,19 +21,22 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Writes buffered tool usage to the tool items when they could leave the player's hand or inventory: on a switch of
  * the held item, a drop, opening or closing an inventory, death and quit.
+ *
+ * @param plugin the plugin whose log records dropped changes
  */
-class ToolWriteListener : Listener {
+class ToolWriteListener(private val plugin: Plugin) : Listener {
     /** Writes the tool in the previously held slot. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onHeldItemChange(event: PlayerItemHeldEvent) {
-        ToolUsage.flushSlot(event.player, event.previousSlot)
+        val tool = ToolItems.uuidOf(event.player.inventory.getItem(event.previousSlot)) ?: return
+        ToolUsage.flushTool(event.player, tool)
     }
 
     /** Writes a dropped tool before its item entity carries it away. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onDrop(event: PlayerDropItemEvent) {
         val stack = event.itemDrop.itemStack
-        if (ToolUsage.writeInto(stack)) event.itemDrop.itemStack = stack
+        if (ToolUsage.writeInto(event.player.uniqueId, stack)) event.itemDrop.itemStack = stack
     }
 
     /** Writes every tool of a player who opens an inventory, before items can be moved into it. */
@@ -51,14 +54,17 @@ class ToolWriteListener : Listener {
     /** Writes the tools among the drops of a dying player and the tools the player keeps. */
     @EventHandler(priority = EventPriority.LOWEST)
     fun onDeath(event: PlayerDeathEvent) {
-        event.drops.forEach(ToolUsage::writeInto)
+        event.drops.forEach { ToolUsage.writeInto(event.player.uniqueId, it) }
         ToolUsage.flushAll(event.player)
     }
 
-    /** Writes every tool of a leaving player. */
+    /** Writes every tool of a leaving player and logs buffered changes whose tool was no longer held. */
     @EventHandler(priority = EventPriority.MONITOR)
     fun onQuit(event: PlayerQuitEvent) {
-        ToolUsage.flushOnQuit(event.player)
+        val dropped = ToolUsage.flushOnQuit(event.player)
+        if (dropped.isNotEmpty()) {
+            plugin.logger.fine("Dropped buffered usage of ${event.player.uniqueId} for tools no longer held: $dropped")
+        }
     }
 
     /** Holds the background write loop. */
@@ -73,7 +79,7 @@ class ToolWriteListener : Listener {
             plugin.launch {
                 while (isActive) {
                     delay(1.seconds)
-                    ToolUsage.due().groupBy({ it.second }, { it.first }).forEach { (holder, tools) ->
+                    ToolUsage.due().groupBy({ it.first }, { it.second }).forEach { (holder, tools) ->
                         val player = plugin.server.getPlayer(holder) ?: return@forEach
                         plugin.launch {
                             withContext(plugin.entityDispatcher(player)) {

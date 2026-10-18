@@ -17,7 +17,7 @@ object ToolModule {
     fun install(plugin: Plugin, runtime: ProgressionRuntime, serverName: () -> String) {
         val sightings = ToolSightings(plugin, serverName)
         plugin.server.pluginManager.registerEvents(ToolProgressListener(sightings::reportNow), plugin)
-        plugin.server.pluginManager.registerEvents(ToolWriteListener(), plugin)
+        plugin.server.pluginManager.registerEvents(ToolWriteListener(plugin), plugin)
         ToolWriteListener.startWriteLoop(plugin)
         sightings.start()
     }

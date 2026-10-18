@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.progression.definition.tool
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.Definition
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.ProgressionDsl
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.curve.Curve
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.curve.Curves
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.item.ItemDefinition
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
@@ -136,8 +137,16 @@ class ToolBuilder(private val id: String, private val type: ToolType) {
     /** CraftEngine item that provides the model, or `null`. */
     var craftEngineId: Key? = null
 
-    /** Usage needed per level; required. */
-    var curve: Curve? = null
+    /**
+     * Usage needed per level. Defaults to the shared curve of the tool type: [Curves.PICKAXE], [Curves.AXE],
+     * [Curves.ROD], or [Curves.WEAPON] for swords and bows.
+     */
+    var curve: Curve = when (type) {
+        ToolType.PICKAXE -> Curves.PICKAXE
+        ToolType.AXE -> Curves.AXE
+        ToolType.ROD -> Curves.ROD
+        ToolType.SWORD, ToolType.BOW -> Curves.WEAPON
+    }
 
     /** Highest level of the tool. */
     var maxLevel: Int = 10
@@ -171,7 +180,7 @@ class ToolBuilder(private val id: String, private val type: ToolType) {
     /**
      * Creates the definition.
      *
-     * @throws IllegalStateException if [name], [material] or [curve] is missing
+     * @throws IllegalStateException if [name] or [material] is missing
      */
     fun build(): ToolDefinition = ToolDefinition(
         id = id,
@@ -179,7 +188,7 @@ class ToolBuilder(private val id: String, private val type: ToolType) {
         name = checkNotNull(name) { "tool $id needs a name" },
         material = checkNotNull(material) { "tool $id needs a material" },
         craftEngineId = craftEngineId,
-        curve = checkNotNull(curve) { "tool $id needs a curve" },
+        curve = curve,
         maxLevel = maxLevel,
         bonuses = bonuses.mapValues { it.value.toList() },
         slots = slots.toMap(),

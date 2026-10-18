@@ -12,6 +12,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.ProgressionPlacements
 import dev.slne.surf.odyssey.runtime.paper.progression.SpawnPoint
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirements
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
 import org.bukkit.inventory.ItemStack
@@ -47,7 +48,8 @@ fun ProgressionPlacements.northPlacements() {
 
 /**
  * Declares the regions of North: three forests, two mines, a lake, the ruins and a wolf area. The ridge mine opens at
- * the third step of the lighthouse questline, and wolves drop a bone, leather or nothing. Coordinates are placeholders
+ * the third step of the lighthouse questline, the lake yields cod, salmon at night and ink sacs, and wolves drop a
+ * bone, leather or nothing. Coordinates are placeholders
  * until the map is in place.
  */
 fun RegionRegistry.northRegions() {
@@ -91,6 +93,7 @@ fun RegionRegistry.northRegions() {
         shape { prism(minY = 50, maxY = 64) { point(400, 100); point(460, 100); point(460, 160); point(400, 160) } }
         fish("frost_trout", weight = 30) { night(); item { ItemStack(Material.SALMON) } }
         fish("lake_perch", weight = 70) { item { ItemStack(Material.COD) } }
+        fish("ink_sac", weight = 20) { item { inkSac() } }
     }
     region(NorthRuinsRegion())
     mobSpawn("north_wolves") {
@@ -114,3 +117,8 @@ fun RegionRegistry.northRegions() {
 fun northPortals() = listOf(
     Portal("to_lobby", shape { cuboid(-2, 64, -2, 2, 67, -2) }, "odyssey-hub-lobby", WorldPosition(0.5, 64.0, 0.5, 0f, 0f)),
 )
+
+/** Returns one ink sac named "Tintenbeutel", as caught in the lake `north_lake`. */
+private fun inkSac(): ItemStack = ItemStack(Material.INK_SAC).apply {
+    editMeta { it.customName(Component.text("Tintenbeutel").decoration(TextDecoration.ITALIC, false)) }
+}

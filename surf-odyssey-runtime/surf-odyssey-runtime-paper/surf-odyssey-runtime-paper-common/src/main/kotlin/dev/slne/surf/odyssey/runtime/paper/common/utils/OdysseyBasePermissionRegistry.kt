@@ -18,4 +18,9 @@ object OdysseyBasePermissionRegistry : PermissionRegistry() {
 
     // Hub
     val HUB_DOUBLE_JUMP = create("$PREFIX.hub.doublejump")
+
+    // Trade
+
+    val TRADE_COMMAND = create("$COMMAND_PREFIX.trade")
+
 }

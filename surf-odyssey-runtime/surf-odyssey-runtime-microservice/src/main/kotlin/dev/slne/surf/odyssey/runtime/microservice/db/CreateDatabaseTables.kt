@@ -4,6 +4,10 @@ import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import dev.slne.surf.database.libs.org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import dev.slne.surf.odyssey.runtime.microservice.db.table.HomeTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.OdysseyPlayerTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeItemTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeRequestTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeSettingTable
+import dev.slne.surf.odyssey.runtime.microservice.db.table.TradeTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.progression.DeliveryTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.progression.OperationTable
 import dev.slne.surf.odyssey.runtime.microservice.db.table.progression.QuestCounterTable
@@ -21,6 +25,10 @@ object CreateDatabaseTables {
         SchemaUtils.create(
             OdysseyPlayerTable,
             HomeTable,
+            TradeTable,
+            TradeItemTable,
+            TradeRequestTable,
+            TradeSettingTable,
             QuestStateTable,
             QuestCounterTable,
             UnlockedRecipeTable,

@@ -2,6 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.entity.EntityType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -30,6 +31,18 @@ class RegionIndexTest {
         assertEquals("north_mine", index.regionAt(5, 5, 5)?.id)
         assertEquals("north_forest", index.regionAt(25, 5, 25)?.id)
         assertNull(index.regionAt(15, 5, 15))
+    }
+
+    @Test
+    fun `the mob spawn regions are listed apart`() {
+        val regions = registry() + RegionRegistry().apply {
+            mobSpawn("north_wolves") {
+                shape { cuboid(40, 0, 40, 49, 9, 49) }
+                mobs(EntityType.WOLF)
+                spawnPoint(45, 5, 45)
+            }
+        }.build()
+        assertEquals(listOf("north_wolves"), RegionIndex(regions).mobSpawnRegions.map { it.id })
     }
 
     @Test

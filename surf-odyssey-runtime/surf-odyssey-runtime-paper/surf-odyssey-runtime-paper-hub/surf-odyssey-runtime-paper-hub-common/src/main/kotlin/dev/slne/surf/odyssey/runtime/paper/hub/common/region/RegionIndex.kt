@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.region
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.mobs.MobSpawnRegion
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Bounds
 
 /**
@@ -12,6 +13,9 @@ class RegionIndex(regions: List<Region>) {
     /** All regions in declaration order. */
     val regions: List<Region> = regions.toList()
     private val byId = this.regions.associateBy { it.id }
+
+    /** The mob spawn regions among [regions], in declaration order. */
+    val mobSpawnRegions: List<MobSpawnRegion> = this.regions.filterIsInstance<MobSpawnRegion>()
 
     init {
         val duplicates = this.regions.groupBy { it.id }.filterValues { it.size > 1 }.keys

@@ -21,9 +21,8 @@ object MobRegionLoot : MobLootProvider {
         val hub = HubPlugin.instance
         val location = entity.location
         if (location.world != hub.hubWorld) return null
-        val regions = hub.regionIndex.regions.filterIsInstance<MobSpawnRegion>()
         val deathRegion = hub.regionIndex.regionAt(location.blockX, location.blockY, location.blockZ)
-        val region = regionOf(regions, { it.hasSpawned(entity.uniqueId) }, deathRegion) ?: return null
+        val region = regionOf(hub.regionIndex.mobSpawnRegions, { it.hasSpawned(entity.uniqueId) }, deathRegion) ?: return null
         return MobLoot(region.loot.drops(Random.Default), 0)
     }
 

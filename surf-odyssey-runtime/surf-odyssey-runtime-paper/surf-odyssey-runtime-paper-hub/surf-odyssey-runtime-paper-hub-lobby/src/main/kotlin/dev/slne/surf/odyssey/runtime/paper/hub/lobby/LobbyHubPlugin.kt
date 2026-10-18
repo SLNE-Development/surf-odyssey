@@ -46,13 +46,13 @@ fun lobbyPortals() = listOf(
 
 /**
  * Places the progression of the lobby on the spawn platform: Brina and Koch Anselm stand north of the spawn, facing
- * it, and the workbench is the smooth stone platform block at 0 63 5 in front of the spawn, which opens the
+ * it, and the workbench is the crafting table at 0 64 5 on the platform in front of the spawn, which opens the
  * workbench when right-clicked.
  */
 fun ProgressionPlacements.lobbyPlacements() {
     npc(Npcs.BRINA, SpawnPoint(3.5, 64.0, -4.5, 45f, 0f))
     npc(Npcs.KOCH, SpawnPoint(-3.5, 64.0, -4.5, -45f, 0f))
-    station(Stations.WORKBENCH, BlockPos(0, 63, 5))
+    station(Stations.WORKBENCH, BlockPos(0, 64, 5))
 }
 
 /** The running lobby plugin instance. */

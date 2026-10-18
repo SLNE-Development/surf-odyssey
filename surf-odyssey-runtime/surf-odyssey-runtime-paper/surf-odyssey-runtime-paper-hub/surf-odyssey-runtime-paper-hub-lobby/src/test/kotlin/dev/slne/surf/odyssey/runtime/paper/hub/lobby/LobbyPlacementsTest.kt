@@ -26,9 +26,9 @@ class LobbyPlacementsTest {
     }
 
     @Test
-    fun `the workbench is a platform block in front of the spawn`() {
+    fun `the workbench is a crafting table on the platform in front of the spawn`() {
         val station = placements.stations.single()
         assertEquals("workbench", station.station.id)
-        assertEquals(BlockPos(0, 63, 5), BlockPos(station.x, station.y, station.z))
+        assertEquals(BlockPos(0, 64, 5), BlockPos(station.x, station.y, station.z))
     }
 }

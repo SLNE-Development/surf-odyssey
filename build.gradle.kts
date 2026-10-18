@@ -24,7 +24,8 @@ val paperServerPlugins = listOf(
     "surf-api-paper-server", "surf-rabbitmq-paper", "surf-redis-paper", "surf-core-paper",
     "CommandAPI", "LuckPerms", "packetevents", "HuskSync"
 )
-val hubServerPlugins = paperServerPlugins + listOf("craft-engine", "MiniPlaceholders")
+// surf-npc is downloaded from https://github.com/SLNE-Development/surf-npc/releases (surf-npc-paper-*-all.jar)
+val hubServerPlugins = paperServerPlugins + listOf("craft-engine", "MiniPlaceholders", "surf-npc-paper")
 
 /** Adds the dev server [name] running the hub world module [world]. */
 fun DevelopmentStackExtension.hubServer(name: String, world: String) = server(name) {
@@ -47,13 +48,13 @@ developmentStack {
     }
     hubServer("hub-lobby-01", "lobby")
     hubServer("hub-north-01", "north")
-    hubServer("hub-north-02", "north")
     hubServer("hub-south-01", "south")
     server("home") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home"
         directory = layout.projectDirectory.dir("surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run")
-        // Player worlds are stored through the polar-paper microservice, CraftEngine sends the resource pack
-        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "craft-engine")
+        // Player worlds are stored through the polar-paper microservice, CraftEngine sends the resource pack,
+        // MiniPlaceholders provides the progression tags such as <odyssey_title>
+        requiredPlugins = paperServerPlugins + listOf("polarpaper", "surf-polar-paper-runtime-paper", "craft-engine", "MiniPlaceholders")
     }
     server("pack-01") {
         project = ":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-pack"

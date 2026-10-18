@@ -6,6 +6,8 @@ plugins {
 
 surfPaperPluginApi {
     mainClass("dev.slne.surf.odyssey.runtime.paper.hub.south.SouthHubPlugin")
+    // Registers the Odyssey menu as quick action
+    bootstrapper("dev.slne.surf.odyssey.runtime.paper.progression.menu.OdysseyBootstrap")
     withCorePaper()
     withSurfRedis()
 
@@ -18,6 +20,8 @@ surfPaperPluginApi {
         registerRequired("MiniPlaceholders")
         // Custom blocks and items of the hub worlds come from CraftEngine
         registerRequired("CraftEngine")
+        // The progression NPCs are spawned through surf-npc
+        registerRequired("surf-npc-paper")
     }
 
     testing {
@@ -27,4 +31,5 @@ surfPaperPluginApi {
 
 dependencies {
     api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperHub.surfOdysseyRuntimePaperHubCommon)
+    implementation(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperContent)
 }

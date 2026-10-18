@@ -2,6 +2,7 @@ package dev.slne.surf.odyssey.runtime.paper.hub.common.travel
 
 import com.github.shynixn.mccoroutine.folia.launch
 import dev.slne.surf.odyssey.runtime.paper.hub.common.HubPlugin
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateAccess
 import dev.slne.surf.odyssey.runtime.paper.hub.common.reconnect.ReconnectService
 import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks
 import net.momirealms.craftengine.core.util.Key
@@ -15,7 +16,8 @@ import org.bukkit.event.player.PlayerQuitEvent
 /**
  * Sends a player who steps onto a portal block inside a portal area to the portal's target.
  *
- * A player can use portals at most once every three seconds and never while a transfer is still running. While the
+ * A player can use portals at most once every three seconds and never while a transfer is still running. A portal
+ * whose gate locks the player out sends nobody and tells them so in the action bar. While the
  * transfer runs, the player is noted as leaving through the portal, so that leaving records them in front of it; the
  * note is dropped again if the transfer fails or throws.
  */
@@ -42,6 +44,10 @@ object PortalListener : Listener {
         val id = player.uniqueId
         if (inFlight.isRunning(id)) return
         if (!cooldown.tryUse(id, System.currentTimeMillis())) return
+        if (GateAccess.isLockedOut(player, portal.gate)) {
+            GateAccess.tellPortalLocked(player)
+            return
+        }
         if (!inFlight.tryStart(id)) return
         ReconnectService.departThroughPortal(id, portal.arrival)
         hub.launch {

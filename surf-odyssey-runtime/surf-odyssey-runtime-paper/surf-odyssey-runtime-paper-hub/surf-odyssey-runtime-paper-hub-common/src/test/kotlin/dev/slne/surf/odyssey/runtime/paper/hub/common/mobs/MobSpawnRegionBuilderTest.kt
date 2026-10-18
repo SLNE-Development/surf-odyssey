@@ -36,6 +36,16 @@ class MobSpawnRegionBuilderTest {
     fun `a spawn point inside the shape is accepted`() = assertEquals(1, wolves().build().size)
 
     @Test
+    fun `a region without drops has no code loot`() =
+        assertTrue((wolves().build().single() as MobSpawnRegion).loot.entries.isEmpty())
+
+    @Test
+    fun `drops become the code loot of the region`() {
+        val region = wolves { drops { entry(3) { error("not needed") }; nothing(7) } }.build().single() as MobSpawnRegion
+        assertEquals(listOf(3, 7), region.loot.entries.map { it.weight })
+    }
+
+    @Test
     fun `a spawn point outside the shape fails with the region id`() = assertRejected { wolves(x = 50) }
 
     @Test

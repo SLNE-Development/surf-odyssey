@@ -20,4 +20,5 @@ dependencies {
     compileOnly("net.momirealms:craft-engine-bukkit:26.9.1")
     compileOnly("net.momirealms:craft-engine-core:26.9.1")
     api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperCommon)
+    api(projects.surfOdysseyRuntime.surfOdysseyRuntimePaper.surfOdysseyRuntimePaperProgression)
 }

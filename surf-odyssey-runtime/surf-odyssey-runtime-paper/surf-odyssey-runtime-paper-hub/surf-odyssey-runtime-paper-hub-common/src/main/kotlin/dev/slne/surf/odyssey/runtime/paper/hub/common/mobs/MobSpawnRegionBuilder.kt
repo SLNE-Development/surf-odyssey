@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.hub.common.mobs
 
+import dev.slne.surf.odyssey.runtime.paper.hub.common.gate.GateDamage
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettings
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.ProtectionSettingsBuilder
 import dev.slne.surf.odyssey.runtime.paper.hub.common.protection.protectionSettings
@@ -8,6 +9,7 @@ import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.BlockPoint
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.RegionDsl
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.Shape
 import dev.slne.surf.odyssey.runtime.paper.hub.common.region.shape.ShapeBuilder
+import dev.slne.surf.odyssey.runtime.paper.progression.definition.requirement.Requirement
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.EntityType
 import kotlin.time.Duration
@@ -29,10 +31,17 @@ class MobSpawnRegionBuilder(private val id: String) {
     /** Most mobs alive at once, at least 1. */
     var maxAlive: Int = 5
 
+    /** Requirement a player must meet to act in the region, or `null` to open it to everyone. */
+    var gate: Requirement? = null
+
+    /** How the region hurts players its [gate] locks out. */
+    var gateDamage: GateDamage = GateDamage()
+
     private var shape: Shape? = null
     private val types = mutableListOf<EntityType>()
     private val points = mutableListOf<BlockPoint>()
     private var settings = ProtectionSettings()
+    private var loot = MobLootTable.EMPTY
 
     /** Sets the changes allowed inside the region in addition to those the world allows. */
     fun settings(block: ProtectionSettingsBuilder.() -> Unit) {
@@ -42,6 +51,11 @@ class MobSpawnRegionBuilder(private val id: String) {
     /** Sets the shape of the region. */
     fun shape(block: ShapeBuilder.() -> Unit) {
         shape = ShapeBuilder().apply(block).build()
+    }
+
+    /** Sets the code loot the region's mobs drop when they die; without it they drop nothing. */
+    fun drops(block: MobLootBuilder.() -> Unit) {
+        loot = MobLootBuilder().apply(block).build()
     }
 
     /** Adds mob types to pick from; each must be a spawnable mob. */
@@ -61,6 +75,6 @@ class MobSpawnRegionBuilder(private val id: String) {
      */
     internal fun build() = MobSpawnRegion(
         id, displayName, requireNotNull(shape) { "Region '$id' has no shape" },
-        types.toList(), points.toList(), respawnInterval, maxAlive, settings,
+        types.toList(), points.toList(), respawnInterval, maxAlive, settings, loot, gate, gateDamage,
     )
 }

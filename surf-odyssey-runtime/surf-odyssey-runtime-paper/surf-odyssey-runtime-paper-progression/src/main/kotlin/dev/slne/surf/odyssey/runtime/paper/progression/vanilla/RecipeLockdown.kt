@@ -1,8 +1,8 @@
 package dev.slne.surf.odyssey.runtime.paper.progression.vanilla
 
-import com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent
 import org.bukkit.Bukkit
 import org.bukkit.Keyed
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -12,6 +12,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.inventory.PrepareAnvilEvent
+import org.bukkit.event.inventory.PrepareGrindstoneEvent
 import org.bukkit.event.inventory.PrepareItemCraftEvent
 import org.bukkit.event.inventory.PrepareSmithingEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -30,12 +31,7 @@ internal object RecipeLockdown : Listener {
      * @return the number of recipes that were removed
      */
     fun clearRecipes(): Int {
-        var count = 0
-        val iterator = Bukkit.recipeIterator()
-        while (iterator.hasNext()) {
-            iterator.next()
-            count++
-        }
+        val count = Bukkit.recipeIterator().asSequence().count()
         Bukkit.clearRecipes()
         return count
     }
@@ -44,11 +40,15 @@ internal object RecipeLockdown : Listener {
     private fun isCustom(recipe: Recipe?): Boolean =
         recipe is Keyed && recipe.key.namespace != "minecraft"
 
+    /** Makes [player] forget every discovered recipe. */
+    fun forgetRecipes(player: Player) {
+        player.undiscoverRecipes(player.discoveredRecipes)
+    }
+
     /** Makes a joining player forget every discovered recipe. */
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
-        val player = event.player
-        player.undiscoverRecipes(player.discoveredRecipes)
+        forgetRecipes(event.player)
     }
 
     /** Empties the result of a crafting grid unless the recipe is custom. */
@@ -82,13 +82,25 @@ internal object RecipeLockdown : Listener {
         event.isCancelled = true
     }
 
-    /** Cancels clicks that would put items into a brewing stand. */
+    /**
+     * Cancels clicks that would put items into a brewing stand: placing the cursor item, swapping a
+     * hotbar or offhand item into it and shift-clicking from the player inventory. Taking items out
+     * stays possible.
+     */
     @EventHandler(ignoreCancelled = true)
     fun onBrewerClick(event: InventoryClickEvent) {
         if (event.view.topInventory !is BrewerInventory) return
-        val intoBrewer = event.clickedInventory is BrewerInventory ||
-            event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY
-        if (intoBrewer) event.isCancelled = true
+        val inTop = event.clickedInventory is BrewerInventory
+        val insertion = when (event.action) {
+            InventoryAction.PLACE_ALL,
+            InventoryAction.PLACE_ONE,
+            InventoryAction.PLACE_SOME,
+            InventoryAction.SWAP_WITH_CURSOR -> inTop && !event.cursor.isEmpty
+            InventoryAction.HOTBAR_SWAP -> inTop
+            InventoryAction.MOVE_TO_OTHER_INVENTORY -> !inTop
+            else -> false
+        }
+        if (insertion) event.isCancelled = true
     }
 
     /** Cancels drags that would put items into a brewing stand. */

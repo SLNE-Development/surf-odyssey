@@ -31,6 +31,8 @@ fun interface MobLootProvider {
     /**
      * Returns the loot of a dying entity of the given type.
      *
+     * Providers may return shared stacks; the caller copies them before dropping.
+     *
      * @param entityType the type of the entity that died
      * @return the loot, or `null` if this type drops nothing
      */
@@ -71,7 +73,7 @@ internal class LootLockdown(private val mobLoot: MobLootProvider) : Listener {
     fun onEntityDeath(event: EntityDeathEvent) {
         val loot = LootLockdownRules.lootFor(event.entityType, mobLoot) ?: return
         event.drops.clear()
-        event.drops.addAll(loot.items)
+        loot.items.forEach { event.drops.add(it.clone()) }
         event.droppedExp = loot.exp
     }
 

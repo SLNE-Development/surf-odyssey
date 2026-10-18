@@ -27,4 +27,12 @@ class CurvesTest {
             (2..10).forEach { assertTrue(c.usageFor(it) > c.usageFor(it - 1)) }
         }
     }
+
+    @Test
+    fun `predefined curves reach their maximum usage at level 10`() {
+        assertEquals(150_000, Curves.PICKAXE.usageFor(10))
+        assertEquals(120_000, Curves.AXE.usageFor(10))
+        assertEquals(60_000, Curves.ROD.usageFor(10))
+        assertEquals(40_000, Curves.WEAPON.usageFor(10))
+    }
 }

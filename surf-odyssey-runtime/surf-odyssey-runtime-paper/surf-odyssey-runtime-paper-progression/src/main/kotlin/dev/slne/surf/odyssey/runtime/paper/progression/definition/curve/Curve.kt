@@ -87,15 +87,15 @@ object Curves {
         return level
     }
 
-    /** Curve of pickaxes: quadratic up to 100 000 usage at level 10. */
-    val PICKAXE: Curve = quadratic(100_000)
+    /** Curve of pickaxes: quadratic up to 150 000 usage at level 10. */
+    val PICKAXE: Curve = quadratic(150_000)
 
-    /** Curve of axes: quadratic up to 100 000 usage at level 10. */
-    val AXE: Curve = quadratic(100_000)
+    /** Curve of axes: quadratic up to 120 000 usage at level 10. */
+    val AXE: Curve = quadratic(120_000)
 
-    /** Curve of fishing rods: quadratic up to 100 000 usage at level 10. */
-    val ROD: Curve = quadratic(100_000)
+    /** Curve of fishing rods: quadratic up to 60 000 usage at level 10. */
+    val ROD: Curve = quadratic(60_000)
 
-    /** Curve of swords and bows: quadratic up to 100 000 usage at level 10. */
-    val WEAPON: Curve = quadratic(100_000)
+    /** Curve of swords and bows: quadratic up to 40 000 usage at level 10. */
+    val WEAPON: Curve = quadratic(40_000)
 }

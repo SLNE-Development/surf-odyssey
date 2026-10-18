@@ -19,6 +19,10 @@ object Progression {
     val runtimeOrNull: ProgressionRuntime?
         get() = if (::runtime.isInitialized) runtime else null
 
+    /** Whether [runtime] is set. */
+    val isInstalled: Boolean
+        get() = ::runtime.isInitialized
+
     /** Backs [isAvailable]. */
     private val available = AtomicBoolean(true)
 

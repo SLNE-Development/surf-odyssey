@@ -1,0 +1,39 @@
+package dev.slne.surf.odyssey.runtime.paper.common.commands.scoreboard
+
+import com.github.shynixn.mccoroutine.folia.launch
+import dev.jorel.commandapi.kotlindsl.commandTree
+import dev.jorel.commandapi.kotlindsl.playerExecutor
+import dev.slne.surf.api.core.messages.adventure.sendText
+import dev.slne.surf.odyssey.runtime.paper.common.plugin
+import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.OdysseySidebar
+import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.scoreboardPreferences
+import dev.slne.surf.odyssey.runtime.paper.common.utils.OdysseyBasePermissionRegistry
+import java.util.logging.Level
+
+/** Registers `/scoreboard`, which switches the scoreboard of the sender on or off. */
+fun scoreboardCommand() = commandTree("scoreboard") {
+    withPermission(OdysseyBasePermissionRegistry.SCOREBOARD_COMMAND)
+
+    playerExecutor { player, _ ->
+        plugin.launch {
+            val result = scoreboardPreferences.toggle(player.uniqueId)
+
+            player.scheduler.run(plugin, {
+                if (result.enabled) OdysseySidebar.show(player) else OdysseySidebar.hide(player)
+            }, null)
+
+            player.sendText {
+                appendInfoPrefix()
+                info(if (result.enabled) "Das Scoreboard ist jetzt eingeschaltet." else "Das Scoreboard ist jetzt ausgeschaltet.")
+            }
+
+            result.saveError?.let {
+                plugin.logger.log(Level.SEVERE, "Failed to store the scoreboard setting of ${player.name}", it)
+                player.sendText {
+                    appendErrorPrefix()
+                    error("Die Einstellung konnte nicht gespeichert werden und gilt nur bis zum Logout.")
+                }
+            }
+        }
+    }
+}

@@ -7,6 +7,7 @@ object OdysseyPaperListenerManager {
     fun registerAllListeners() {
         PlayerConnectionListener.register()
         TradeListener.register()
+        ScoreboardListener.register()
     }
 }
 

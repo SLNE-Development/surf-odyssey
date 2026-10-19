@@ -3,6 +3,7 @@ package dev.slne.surf.odyssey.runtime.paper.common
 import com.github.shynixn.mccoroutine.folia.SuspendingJavaPlugin
 import dev.slne.surf.odyssey.core.client.OdysseyClientInstance
 import dev.slne.surf.odyssey.runtime.paper.common.menu.registerViews
+import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.OdysseySidebar
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeLog
 import dev.slne.surf.odyssey.runtime.paper.common.trade.TradeManager
 
@@ -26,11 +27,13 @@ abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
         OdysseyPaperCommandManager.registerAllCommands()
         OdysseyPaperListenerManager.registerAllListeners()
         TradeManager.start()
+        if (serverType != OdysseyPaperServerType.PACK) OdysseySidebar.start(this)
         onEnabled()
     }
 
     final override suspend fun onDisableAsync() {
         onDisabled()
+        OdysseySidebar.stop()
         TradeManager.shutdown()
         TradeLog.flush()
         OdysseyClientInstance.INSTANCE.onDisable()

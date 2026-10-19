@@ -23,4 +23,7 @@ object OdysseyBasePermissionRegistry : PermissionRegistry() {
 
     val TRADE_COMMAND = create("$COMMAND_PREFIX.trade")
 
+    // Scoreboard
+    val SCOREBOARD_COMMAND = create("$COMMAND_PREFIX.scoreboard")
+
 }

@@ -94,7 +94,7 @@ object ScoreboardLayout {
 
     /** The name line and, if the player shows a title, the title line. */
     private fun identity(snapshot: ScoreboardSnapshot): List<Component> = buildList {
-        add(labeled("Spieler", buildText { variableValue(snapshot.playerName) }))
+        add(labeled("Name", buildText { variableValue(snapshot.playerName) }))
         val title = snapshot.title
         if (title != null && PLAIN.serialize(title).isNotEmpty()) {
             add(labeled("Titel", shorten(title, MAX_LINE_LENGTH - "Titel: ".length)))

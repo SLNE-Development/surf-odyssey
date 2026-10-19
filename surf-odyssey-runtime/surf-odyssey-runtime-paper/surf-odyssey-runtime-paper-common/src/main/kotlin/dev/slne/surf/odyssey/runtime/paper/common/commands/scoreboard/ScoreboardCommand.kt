@@ -10,7 +10,6 @@ import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.scoreboardPreferenc
 import dev.slne.surf.odyssey.runtime.paper.common.utils.OdysseyBasePermissionRegistry
 import java.util.logging.Level
 
-/** Registers `/scoreboard`, which switches the scoreboard of the sender on or off. */
 fun scoreboardCommand() = commandTree("scoreboard") {
     withPermission(OdysseyBasePermissionRegistry.SCOREBOARD_COMMAND)
 

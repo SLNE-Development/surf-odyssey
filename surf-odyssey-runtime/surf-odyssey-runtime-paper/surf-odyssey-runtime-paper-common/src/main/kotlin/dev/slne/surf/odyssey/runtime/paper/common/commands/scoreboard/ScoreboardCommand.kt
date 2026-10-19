@@ -5,7 +5,7 @@ import dev.jorel.commandapi.kotlindsl.commandTree
 import dev.jorel.commandapi.kotlindsl.playerExecutor
 import dev.slne.surf.api.core.messages.adventure.sendText
 import dev.slne.surf.odyssey.runtime.paper.common.plugin
-import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.OdysseySidebar
+import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.OdysseyScoreboard
 import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.scoreboardPreferences
 import dev.slne.surf.odyssey.runtime.paper.common.utils.OdysseyBasePermissionRegistry
 import java.util.logging.Level
@@ -18,7 +18,7 @@ fun scoreboardCommand() = commandTree("scoreboard") {
             val enabled = scoreboardPreferences.toggle(player.uniqueId)
 
             player.scheduler.run(plugin, {
-                if (scoreboardPreferences.isEnabled(player.uniqueId)) OdysseySidebar.show(player) else OdysseySidebar.hide(player)
+                if (scoreboardPreferences.isEnabled(player.uniqueId)) OdysseyScoreboard.show(player) else OdysseyScoreboard.hide(player)
             }, null)
 
             player.sendText {

@@ -1,7 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.common.listener
 
 import dev.slne.surf.odyssey.runtime.paper.common.plugin
-import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.OdysseySidebar
+import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.OdysseyScoreboard
 import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.scoreboardPreferences
 import kotlinx.coroutines.runBlocking
 import org.bukkit.event.EventHandler
@@ -26,12 +26,13 @@ internal object ScoreboardListener : Listener {
     /** Shows the scoreboard to a joining player who did not switch it off. */
     @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerJoin(event: PlayerJoinEvent) {
-        if (scoreboardPreferences.isEnabled(event.player.uniqueId)) OdysseySidebar.show(event.player)
+        if (scoreboardPreferences.isEnabled(event.player.uniqueId)) OdysseyScoreboard.show(event.player)
     }
 
-    /** Forgets the setting of a leaving player; the sidebar removes the viewer itself. */
+    /** Removes the scoreboard from a leaving player and forgets the setting. */
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPlayerQuit(event: PlayerQuitEvent) {
+        OdysseyScoreboard.hide(event.player)
         scoreboardPreferences.evict(event.player.uniqueId)
     }
 }

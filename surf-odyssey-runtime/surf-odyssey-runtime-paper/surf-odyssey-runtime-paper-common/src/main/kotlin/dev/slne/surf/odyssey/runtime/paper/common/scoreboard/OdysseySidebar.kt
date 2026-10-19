@@ -9,6 +9,7 @@ import kotlin.time.Duration.Companion.seconds
 
 /** Owns the sidebar that shows the scoreboard to the players who did not switch it off. */
 internal object OdysseySidebar {
+    @Volatile
     private var sidebar: SurfAutoUpdatingSidebar? = null
 
     /** Creates the sidebar, owned by [plugin], that refreshes every 2 seconds. Does nothing if it exists. */

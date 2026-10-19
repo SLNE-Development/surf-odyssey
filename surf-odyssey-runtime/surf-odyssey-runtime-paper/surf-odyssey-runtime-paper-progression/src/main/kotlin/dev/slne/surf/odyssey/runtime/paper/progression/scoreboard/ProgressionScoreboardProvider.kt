@@ -40,16 +40,24 @@ object ScoreboardQuestText {
 
 /** Supplies the active title and the tracked quest of a player from the progression engine. */
 object ProgressionScoreboardProvider : ScoreboardProvider {
-    /** Returns the display of the title [player] shows, or `null` if there is none or the state is not loaded. */
+    /**
+     * Returns the display of the title [player] shows, or `null` if there is none, the state is not loaded or the
+     * progression service is unreachable.
+     */
     override fun titleOf(player: Player): Component? {
         val runtime = Progression.runtimeOrNull ?: return null
+        if (!runtime.store.isAvailableFor(player.uniqueId)) return null
         val titleId = runtime.store[player.uniqueId]?.state?.activeTitle ?: return null
         return runtime.registry.title(titleId)?.display
     }
 
-    /** Returns the quest [player] tracks, or `null` if there is none or the state is not loaded. */
+    /**
+     * Returns the quest [player] tracks, or `null` if there is none, the state is not loaded or the progression
+     * service is unreachable.
+     */
     override fun questOf(player: Player): ScoreboardQuest? {
         val runtime = Progression.runtimeOrNull ?: return null
+        if (!runtime.store.isAvailableFor(player.uniqueId)) return null
         val state = runtime.store[player.uniqueId]?.state ?: return null
         val quest = state.trackedQuest?.let(runtime.registry::quest) ?: return null
         val stored = state.quests.find { it.questId == quest.id }

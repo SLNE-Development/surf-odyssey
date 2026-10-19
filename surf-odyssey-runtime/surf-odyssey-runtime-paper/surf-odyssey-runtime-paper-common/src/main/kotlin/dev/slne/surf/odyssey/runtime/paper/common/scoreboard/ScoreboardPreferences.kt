@@ -2,6 +2,8 @@ package dev.slne.surf.odyssey.runtime.paper.common.scoreboard
 
 import dev.slne.surf.odyssey.core.common.scoreboard.ScoreboardBridge
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -25,14 +27,6 @@ internal object BridgeScoreboardStore : ScoreboardStore {
 }
 
 /**
- * The outcome of [ScoreboardPreferences.toggle].
- *
- * @property enabled whether the scoreboard is shown after the toggle
- * @property saveError why the new value could not be stored, or `null` if it was stored
- */
-data class ScoreboardToggle(val enabled: Boolean, val saveError: Exception?)
-
-/**
  * Caches, for every online player, whether they see the scoreboard.
  *
  * @param store where the setting is stored
@@ -43,6 +37,7 @@ class ScoreboardPreferences(
     private val loadTimeout: Duration = 2.seconds,
 ) {
     private val disabled = ConcurrentHashMap.newKeySet<UUID>()
+    private val saveLocks = ConcurrentHashMap<UUID, Mutex>()
 
     /** Whether [uuid] sees the scoreboard; players that are not cached see it. */
     fun isEnabled(uuid: UUID): Boolean = uuid !in disabled
@@ -59,29 +54,41 @@ class ScoreboardPreferences(
     }
 
     /**
-     * Flips the setting of [uuid] in the cache and then stores it. A failing store does not undo the flip.
+     * Flips the setting of [uuid] in the cache without storing it; call [persist] afterwards.
      *
-     * @return the new value and the error of the store, if any
+     * @return whether the scoreboard is shown after the flip
      */
-    suspend fun toggle(uuid: UUID): ScoreboardToggle {
+    fun toggle(uuid: UUID): Boolean {
         val enabled = disabled.remove(uuid)
         if (!enabled) disabled.add(uuid)
+        return enabled
+    }
 
-        return try {
-            store.save(uuid, enabled)
-            ScoreboardToggle(enabled, null)
+    /**
+     * Stores the cached setting of [uuid]. Calls for the same player run one after the other and each stores the
+     * value the cache has when its turn comes, so the last call leaves the latest value in the store. A failing
+     * store does not change the cache.
+     *
+     * @return the error of the store, or `null` if the setting was stored
+     */
+    suspend fun persist(uuid: UUID): Exception? = saveLocks.computeIfAbsent(uuid) { Mutex() }.withLock {
+        try {
+            store.save(uuid, isEnabled(uuid))
+            null
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            ScoreboardToggle(enabled, e)
+            e
         }
     }
 
     /** Removes [uuid] from the cache. */
     fun evict(uuid: UUID) {
         disabled.remove(uuid)
+        saveLocks.remove(uuid)
     }
 
+    /** Sets the cached setting of [uuid] to [enabled]. */
     private fun cache(uuid: UUID, enabled: Boolean) {
         if (enabled) disabled.remove(uuid) else disabled.add(uuid)
     }

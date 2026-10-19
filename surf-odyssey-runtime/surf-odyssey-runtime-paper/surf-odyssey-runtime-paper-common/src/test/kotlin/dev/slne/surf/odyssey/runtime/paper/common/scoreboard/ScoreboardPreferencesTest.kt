@@ -1,5 +1,6 @@
 package dev.slne.surf.odyssey.runtime.paper.common.scoreboard
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
@@ -14,11 +15,13 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /** Tests for the cached scoreboard setting of the online players. */
 class ScoreboardPreferencesTest {
+    /** A store in memory whose load and save can be slowed down or made to fail. */
     private class FakeStore(
         var stored: Boolean = true,
         var loadDelayMillis: Long = 0,
         var failLoad: Boolean = false,
         var failSave: Boolean = false,
+        val saveDelaysMillis: MutableList<Long> = mutableListOf(),
     ) : ScoreboardStore {
         val saves = mutableListOf<Boolean>()
 
@@ -29,6 +32,8 @@ class ScoreboardPreferencesTest {
         }
 
         override suspend fun save(uuid: UUID, enabled: Boolean) {
+            val delayMillis = saveDelaysMillis.removeFirstOrNull() ?: 0L
+            if (delayMillis > 0) delay(delayMillis)
             if (failSave) error("down")
             saves += enabled
         }
@@ -70,28 +75,46 @@ class ScoreboardPreferencesTest {
     }
 
     @Test
-    fun `toggle flips and stores the setting`() = runBlocking {
-        val store = FakeStore()
-        val preferences = ScoreboardPreferences(store)
+    fun `toggle flips the cached setting`() {
+        val preferences = ScoreboardPreferences(FakeStore())
 
-        val first = preferences.toggle(uuid)
-        val second = preferences.toggle(uuid)
-
-        assertFalse(first.enabled)
-        assertNull(first.saveError)
-        assertTrue(second.enabled)
-        assertEquals(listOf(false, true), store.saves)
+        assertFalse(preferences.toggle(uuid))
+        assertFalse(preferences.isEnabled(uuid))
+        assertTrue(preferences.toggle(uuid))
+        assertTrue(preferences.isEnabled(uuid))
     }
 
     @Test
-    fun `a failing save keeps the new value and reports the error`() = runBlocking {
+    fun `persist stores the current setting`() = runBlocking {
+        val store = FakeStore()
+        val preferences = ScoreboardPreferences(store)
+        preferences.toggle(uuid)
+
+        assertNull(preferences.persist(uuid))
+
+        assertEquals(listOf(false), store.saves)
+    }
+
+    @Test
+    fun `a failing save keeps the new value and returns the error`() = runBlocking {
         val preferences = ScoreboardPreferences(FakeStore(failSave = true))
+        preferences.toggle(uuid)
 
-        val result = preferences.toggle(uuid)
-
-        assertFalse(result.enabled)
-        assertNotNull(result.saveError)
+        assertNotNull(preferences.persist(uuid))
         assertFalse(preferences.isEnabled(uuid))
+    }
+
+    @Test
+    fun `quick toggles end with the last value in the store`() = runBlocking {
+        val store = FakeStore(saveDelaysMillis = mutableListOf(100L, 0L))
+        val preferences = ScoreboardPreferences(store)
+
+        val first = async { preferences.toggle(uuid); preferences.persist(uuid) }
+        val second = async { preferences.toggle(uuid); preferences.persist(uuid) }
+        first.await()
+        second.await()
+
+        assertEquals(preferences.isEnabled(uuid), store.saves.last())
     }
 
     @Test

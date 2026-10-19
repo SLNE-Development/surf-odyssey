@@ -15,18 +15,18 @@ fun scoreboardCommand() = commandTree("scoreboard") {
 
     playerExecutor { player, _ ->
         plugin.launch {
-            val result = scoreboardPreferences.toggle(player.uniqueId)
+            val enabled = scoreboardPreferences.toggle(player.uniqueId)
 
             player.scheduler.run(plugin, {
-                if (result.enabled) OdysseySidebar.show(player) else OdysseySidebar.hide(player)
+                if (scoreboardPreferences.isEnabled(player.uniqueId)) OdysseySidebar.show(player) else OdysseySidebar.hide(player)
             }, null)
 
             player.sendText {
                 appendInfoPrefix()
-                info(if (result.enabled) "Das Scoreboard ist jetzt eingeschaltet." else "Das Scoreboard ist jetzt ausgeschaltet.")
+                info(if (enabled) "Das Scoreboard ist jetzt eingeschaltet." else "Das Scoreboard ist jetzt ausgeschaltet.")
             }
 
-            result.saveError?.let {
+            scoreboardPreferences.persist(player.uniqueId)?.let {
                 plugin.logger.log(Level.SEVERE, "Failed to store the scoreboard setting of ${player.name}", it)
                 player.sendText {
                     appendErrorPrefix()

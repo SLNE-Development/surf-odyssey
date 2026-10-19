@@ -1,6 +1,7 @@
 package dev.slne.surf.odyssey.runtime.paper.progression
 
 import dev.slne.surf.api.paper.inventory.framework.register
+import dev.slne.surf.odyssey.runtime.paper.common.scoreboard.ScoreboardProviders
 import dev.slne.surf.odyssey.runtime.paper.progression.admin.progressionAdminCommand
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ContentPack
 import dev.slne.surf.odyssey.runtime.paper.progression.definition.registry.ProgressionRegistry
@@ -11,6 +12,7 @@ import dev.slne.surf.odyssey.runtime.paper.progression.menu.MenuModule
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.LoggingCurrencyGateway
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.OperationRunner
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.RewardPlanner
+import dev.slne.surf.odyssey.runtime.paper.progression.scoreboard.ProgressionScoreboardProvider
 import dev.slne.surf.odyssey.runtime.paper.progression.operation.ToolRewardFactory
 import dev.slne.surf.odyssey.runtime.paper.progression.state.ProgressionStore
 import dev.slne.surf.odyssey.runtime.paper.progression.dialog.ConversationHooks
@@ -84,6 +86,7 @@ object ProgressionModule {
         val operations = OperationRunner(plugin, store, LoggingCurrencyGateway(plugin.logger))
         val runtime = ProgressionRuntime(registry, mode, store, operations, clock)
         Progression.runtime = runtime
+        ScoreboardProviders.register(ProgressionScoreboardProvider)
         RewardPlanner.toolRewards = ToolRewardFactory(ToolItems::create)
         store.start()
         progressionAdminCommand(mode)

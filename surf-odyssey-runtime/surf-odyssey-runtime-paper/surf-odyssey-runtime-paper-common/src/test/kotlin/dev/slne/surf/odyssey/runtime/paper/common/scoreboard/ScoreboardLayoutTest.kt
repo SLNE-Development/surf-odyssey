@@ -109,4 +109,20 @@ class ScoreboardLayoutTest {
 
         assertTrue(total <= ScoreboardLayout.MAX_LINES, "needs $total lines")
     }
+
+    @Test
+    fun `keeps the whole title line within the line limit`() {
+        val snapshot = ScoreboardSnapshot("Timonso", Component.text("t".repeat(80)), null, ping = 5, online = 1)
+
+        assertTrue(viewer(snapshot)[1].length <= ScoreboardLayout.MAX_LINE_LENGTH)
+    }
+
+    @Test
+    fun `follows the clock change in the night to summer time`() {
+        val before = ZonedDateTime.of(2026, 3, 29, 0, 30, 0, 0, ZoneId.of("UTC"))
+        val after = ZonedDateTime.of(2026, 3, 29, 1, 30, 0, 0, ZoneId.of("UTC"))
+
+        assertEquals("${label("Uhrzeit")}: 01:30:00", clock(before)[1])
+        assertEquals("${label("Uhrzeit")}: 03:30:00", clock(after)[1])
+    }
 }

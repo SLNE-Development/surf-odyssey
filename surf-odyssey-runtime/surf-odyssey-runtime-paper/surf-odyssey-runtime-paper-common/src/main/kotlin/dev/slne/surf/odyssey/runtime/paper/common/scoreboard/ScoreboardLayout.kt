@@ -28,7 +28,7 @@ data class ScoreboardSnapshot(
     val online: Int,
 )
 
-/** Builds the title and the lines of the scoreboard from a [ScoreboardSnapshot] and the current time. */
+/** Builds the banner and the lines of the scoreboard from a [ScoreboardSnapshot] and the current time. */
 object ScoreboardLayout {
     /** The number of characters a line may have before it is shortened. */
     const val MAX_LINE_LENGTH = 28
@@ -70,8 +70,8 @@ object ScoreboardLayout {
         val local = now.withZoneSameInstant(ZONE)
         return listOf(
             separator(),
-            labeled("Uhrzeit", Component.text(TIME_FORMAT.format(local))),
-            labeled("Datum", Component.text(DATE_FORMAT.format(local))),
+            labeled("Uhrzeit", buildText { variableValue(TIME_FORMAT.format(local)) }),
+            labeled("Datum", buildText { variableValue(DATE_FORMAT.format(local)) }),
         )
     }
 
@@ -97,7 +97,7 @@ object ScoreboardLayout {
         add(labeled("Spieler", buildText { variableValue(snapshot.playerName) }))
         val title = snapshot.title
         if (title != null && PLAIN.serialize(title).isNotEmpty()) {
-            add(labeled("Titel", shorten(title)))
+            add(labeled("Titel", shorten(title, MAX_LINE_LENGTH - "Titel: ".length)))
         }
     }
 

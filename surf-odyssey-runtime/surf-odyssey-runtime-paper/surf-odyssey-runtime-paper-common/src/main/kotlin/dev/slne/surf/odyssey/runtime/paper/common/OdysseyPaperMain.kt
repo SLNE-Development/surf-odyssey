@@ -32,8 +32,11 @@ abstract class OdysseyPaperMain : SuspendingJavaPlugin() {
     }
 
     final override suspend fun onDisableAsync() {
-        onDisabled()
-        OdysseyScoreboard.stop()
+        try {
+            onDisabled()
+        } finally {
+            OdysseyScoreboard.stop()
+        }
         TradeManager.shutdown()
         TradeLog.flush()
         OdysseyClientInstance.INSTANCE.onDisable()

@@ -6,11 +6,13 @@ import dev.slne.surf.microservice.api.microservice.Microservice
 import dev.slne.surf.odyssey.core.common.home.HomeService
 import dev.slne.surf.odyssey.core.common.player.PlayerService
 import dev.slne.surf.odyssey.core.common.progression.ProgressionService
+import dev.slne.surf.odyssey.core.common.scoreboard.ScoreboardService
 import dev.slne.surf.odyssey.core.common.trade.TradeService
 import dev.slne.surf.odyssey.runtime.microservice.db.CreateDatabaseTables
 import dev.slne.surf.odyssey.runtime.microservice.home.HomeServiceImpl
 import dev.slne.surf.odyssey.runtime.microservice.player.PlayerServiceImpl
 import dev.slne.surf.odyssey.runtime.microservice.progression.ProgressionServiceImpl
+import dev.slne.surf.odyssey.runtime.microservice.scoreboard.ScoreboardServiceImpl
 import dev.slne.surf.odyssey.runtime.microservice.trade.TradeServiceImpl
 import dev.slne.surf.rabbitmq.api.ServerRabbitMQApi
 import java.nio.file.Path
@@ -34,6 +36,7 @@ class OdysseyMicroservice : Microservice() {
         rabbitApi.registerRpcService<HomeService>(HomeServiceImpl)
         rabbitApi.registerRpcService<PlayerService>(PlayerServiceImpl)
         rabbitApi.registerRpcService<TradeService>(TradeServiceImpl)
+        rabbitApi.registerRpcService<ScoreboardService>(ScoreboardServiceImpl)
         rabbitApi.registerRpcService<ProgressionService>(ProgressionServiceImpl(Clock.systemUTC()))
         rabbitApi.freezeAndConnect()
     }

@@ -1,0 +1,27 @@
+items:
+  polartest:test_crate:
+    data:
+      item_name: <!i>Polar Test Crate
+    model: minecraft:block/barrel
+    behavior:
+      type: furniture_item
+      rules:
+        ground:
+          rotation: four
+          alignment: center
+      furniture:
+        settings:
+          item: polartest:test_crate
+          hit_times: 1
+        variants:
+          ground:
+            elements:
+              - type: item_display
+                item: polartest:test_crate
+                position: 0,0.5,0
+            hitboxes:
+              - position: 0,0,0
+                type: interaction
+                width: 1
+                height: 1
+                interactive: true

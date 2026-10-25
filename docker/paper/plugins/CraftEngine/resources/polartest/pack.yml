@@ -1,0 +1,5 @@
+author: SLNE Development
+version: 1.0.0
+description: Test furniture of the polar-paper feature test, used on the dev stack only
+namespace: polartest
+enable: true

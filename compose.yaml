@@ -246,14 +246,15 @@ services:
       CFG_SURF_SERVER_DISPLAY_NAME: Home
       CFG_SURF_SERVER_CATEGORY: home
       # docker/paper/home/plugins holds the configs only the home server needs, e.g. surf-polar-paper, and
-      # docker/paper/hub/plugins the CraftEngine config that only sends the pack to players
+      # docker/paper/home/craftengine the CraftEngine config that only sends the pack to players and rebuilds
+      # custom blocks of Polar worlds on chunk load
       COPY_PLUGINS_SRC: /plugins,/plugins-home,/plugins-home-ce
     volumes:
       - ./surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run:/data
       - ./docker/paper/config:/config:ro
       - ./docker/paper/plugins:/plugins:ro
       - ./docker/paper/home/plugins:/plugins-home:ro
-      - ./docker/paper/hub/plugins:/plugins-home-ce:ro
+      - ./docker/paper/home/craftengine:/plugins-home-ce:ro
 
   pack-01:
     <<: *paper

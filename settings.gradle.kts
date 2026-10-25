@@ -21,6 +21,7 @@ include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-pa
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-content")
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-home")
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-pack")
+include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-polartest")
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-common")
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-lobby")
 include("surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-hub:surf-odyssey-runtime-paper-hub-north")

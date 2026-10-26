@@ -1,8 +1,6 @@
 # Synced into the plugins folder of the home dev server on start. Worlds are stored through the polar-paper
 # microservice, which also holds the world locks under the server name from surf-core.
 
-# The game mode this server hosts worlds for.
-game-mode-identifier: home
 storage:
     # Where worlds are stored: DISK, DATABASE or S3. Only the matching section below is used.
     storage-type: DATABASE

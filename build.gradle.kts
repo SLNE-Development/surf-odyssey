@@ -1,3 +1,4 @@
+import dev.slne.surf.odyssey.gradle.devstack.DeployDevelopmentPlugin
 import dev.slne.surf.odyssey.gradle.devstack.DevelopmentStackExtension
 
 buildscript {
@@ -77,4 +78,21 @@ developmentStack {
         schema = "polarpaper"
         redis = true
     }
+}
+
+// The polartest dev plugin runs next to the home plugin and is only deployed by hand, never with the stack
+tasks.register<DeployDevelopmentPlugin>("deployPolarTestPlugin") {
+    group = "developmentStack"
+    description = "Copies the polartest dev plugin into the plugins folder of the home dev server and restarts it if it is running."
+    dependsOn("generateDevelopmentMicroservices")
+
+    val pluginProject = project(":surf-odyssey-runtime:surf-odyssey-runtime-paper:surf-odyssey-runtime-paper-polartest")
+    pluginJar = pluginProject.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
+    deployedJar = layout.projectDirectory.file(
+        "surf-odyssey-runtime/surf-odyssey-runtime-paper/surf-odyssey-runtime-paper-home/run/plugins/${pluginProject.name}.jar"
+    )
+    service = "home"
+    composeDirectory = layout.projectDirectory
+    composeFiles = layout.buildDirectory.file("development-stack/microservices.compose.yaml")
+        .map { "compose.yaml${File.pathSeparator}${it.asFile.absolutePath}" }
 }

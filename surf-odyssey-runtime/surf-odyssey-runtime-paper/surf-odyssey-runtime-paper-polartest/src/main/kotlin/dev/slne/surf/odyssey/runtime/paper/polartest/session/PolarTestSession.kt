@@ -42,9 +42,20 @@ class PolarTestSession(private val plugin: PolarTestPaperMain) {
         return created
     }
 
-    /** Reopens at [version] and loads the main test world, which runs the migrations up to [version]. */
-    suspend fun openMainWorld(version: Int = this.version): SurfWorld =
-        reopen(version).loadWorld(requireTestWorld(worldUuid), MAIN_GAME_MODE)
+    /**
+     * Reopens at [version] and loads the main test world, which runs the migrations up to [version]. When the load
+     * fails, [version] goes back to the version of the last successful open, so the next step opens the world as it is
+     * stored.
+     */
+    suspend fun openMainWorld(version: Int = this.version): SurfWorld {
+        val previous = this.version
+        try {
+            return reopen(version).loadWorld(requireTestWorld(worldUuid), MAIN_GAME_MODE)
+        } catch (exception: Exception) {
+            this.version = previous
+            throw exception
+        }
+    }
 
     /** Deletes the main test world, loading it first when needed, and forgets its uuid. */
     suspend fun deleteMainWorld() {

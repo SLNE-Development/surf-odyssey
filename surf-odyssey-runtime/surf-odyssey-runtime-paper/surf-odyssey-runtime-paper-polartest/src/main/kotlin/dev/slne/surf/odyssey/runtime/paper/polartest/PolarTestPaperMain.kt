@@ -26,8 +26,12 @@ class PolarTestPaperMain : SuspendingJavaPlugin() {
         polarTestCommand(StepRunner(this, PolarTestSteps(this, created)))
     }
 
-    /** Saves, unloads and releases the test worlds of the current instance. */
+    /**
+     * Moves players out of the test worlds, then saves, unloads and releases them when the plugin is disabled while
+     * the server keeps running. While the server stops, surf-polar-paper saves the worlds of this plugin by itself.
+     */
     override suspend fun onDisableAsync() {
+        if (server.isStopping) return
         session?.closeApi()
     }
 }

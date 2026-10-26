@@ -107,7 +107,8 @@ class PolarTestSteps(private val plugin: PolarTestPaperMain, private val session
             bukkit.unloadChunk(cx, cz, true)
         }
         report.expectTrue("Chunk $cx, $cz wurde entladen", plugin.awaitTrue { !bukkit.isChunkLoaded(cx, cz) })
-        val released = plugin.awaitTrue { MarkedPositionsRegistry.get(ref) == null }
+        // Paper delays chunk unloads (delay-chunk-unloads-by, 10 s on the dev servers), so the release comes late
+        val released = plugin.awaitTrue(timeoutTicks = 300) { MarkedPositionsRegistry.get(ref) == null }
         report.expectTrue(
             "Positionen von Chunk $cx, $cz nach dem Entladen freigegeben (gefunden: ${MarkedPositionsRegistry.get(ref)})",
             released

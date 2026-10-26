@@ -101,12 +101,17 @@ class PolarTestSteps(private val plugin: PolarTestPaperMain, private val session
 
         val (cx, cz) = TestLayout.chunks.last()
         val ref = ChunkRef(bukkit.uid, cx, cz)
+        // Every ticket goes: a chunk next to a chunk that is still held stays loaded with it
         plugin.onMain {
-            bukkit.removePluginChunkTicket(cx, cz, plugin)
+            bukkit.removePluginChunkTickets(plugin)
             bukkit.unloadChunk(cx, cz, true)
         }
         report.expectTrue("Chunk $cx, $cz wurde entladen", plugin.awaitTrue { !bukkit.isChunkLoaded(cx, cz) })
-        report.expect("Positionen von Chunk $cx, $cz nach dem Entladen freigegeben", null, MarkedPositionsRegistry.get(ref))
+        val released = plugin.awaitTrue { MarkedPositionsRegistry.get(ref) == null }
+        report.expectTrue(
+            "Positionen von Chunk $cx, $cz nach dem Entladen freigegeben (gefunden: ${MarkedPositionsRegistry.get(ref)})",
+            released
+        )
 
         plugin.loadChunk(bukkit, cx, cz)
         val restored = plugin.awaitTrue { MarkedPositionsRegistry.get(ref) == TestLayout.cobblestone(cx, cz) }
